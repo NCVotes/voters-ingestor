@@ -2,6 +2,7 @@ from functools import partial
 from json import loads
 from datetime import datetime, timezone
 import os
+from zipfile import ZipFile
 
 from django.core.management import BaseCommand
 from django.apps import apps
@@ -56,11 +57,28 @@ def fetch_and_write_new_zip(url, base_path):
                 'target_filename': target_filename}
 
 
+def extract_and_remove_file(filename):
+    try:
+        with ZipFile(filename, "r") as z:
+            z.extractall(os.path.dirname(filename))
+    except IOError:
+        print("Failure writing to file while extracting {0}".format(filename))
+        return False
+    finally:
+        os.remove(filename)
+    return True
+
+
 def process_new_zip(url, base_path, label):
     print("Fetching {0}".format(label))
-    success, target_filename = pluck(fetch_and_write_new_zip(url, base_path), 'success', 'target_filename')
+    success, target_filename = pluck(fetch_and_write_new_zip(url, base_path),
+                                     'success', 'target_filename')
     if success:
         print("Fetched {0} successfully to {1}".format(label, target_filename))
+        print("Extracting {0}".format(label))
+        unzip_success = extract_and_remove_file(target_filename)
+        if unzip_success:
+            print("Finished extracting {0}".format(target_filename))
 
 
 class Command(BaseCommand):

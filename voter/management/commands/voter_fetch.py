@@ -1,11 +1,8 @@
-from functools import partial
-from json import loads
 from datetime import datetime, timezone
 import os
 from zipfile import ZipFile
 
 from django.core.management import BaseCommand
-from django.apps import apps
 
 import requests
 

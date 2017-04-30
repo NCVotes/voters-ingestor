@@ -7,7 +7,7 @@ from django.core.management import BaseCommand
 
 import requests
 
-from voter import queries
+from voter.models import FileTracker
 
 
 NCVOTER_ZIP_URL = "http://dl.ncsbe.gov.s3.amazonaws.com/data/ncvoter_Statewide.zip"
@@ -60,7 +60,8 @@ def attempt_fetch_and_write_new_zip(url, base_path):
     now = datetime.now(timezone.utc)
     target_folder = derive_target_folder(base_path, now)
     target_filename = os.path.join(target_folder, "data.zip")
-    if queries.is_etag_a_duplicate(etag):
+    f_track = FileTracker.objects.filter(etag=etag).first()
+    if f_track:
         status_code = FETCH_STATUS_CODES.CODE_NOTHING_TO_DO
     else:
         if resp.status_code == 200:
@@ -94,7 +95,13 @@ def process_new_zip(url, base_path, label):
                     result_filename = os.path.join(target_dir, filename)
                     print("Finished extracting to {0}".format(result_filename))
             print("Updating FileTracker table")
-            if not queries.create_file_track(etag, result_filename, created_time):
+            if label == 'ncvoter':
+                data_file_kind = FileTracker.DATA_FILE_KIND_NCVOTER
+            else:
+                data_file_kind = FileTracker.DATA_FILE_KIND_NCVHIS
+            ft = FileTracker.objects.create(etag=etag, filename=result_filename,
+                                            created=created_time, data_file_kind=data_file_kind)
+            if not ft:
                 return FETCH_STATUS_CODES.CODE_DB_FAILURE
         else:
             print("Unable to unzip {0}".format(target_filename))

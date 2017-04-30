@@ -4,8 +4,15 @@ from django.contrib.postgres.fields import JSONField
 
 
 class FileTracker(models.Model):
+    DATA_FILE_KIND_NCVOTER = 'NCVoter'
+    DATA_FILE_KIND_NCVHIS = 'NCVHis'
+    DATA_FILE_KIND_CHOICES = [
+        (DATA_FILE_KIND_NCVHIS, 'NCVHis file'),
+        (DATA_FILE_KIND_NCVOTER, 'NCVoter file'),
+    ]
     etag = models.TextField('etag')
     filename = models.TextField('filename')
+    data_file_kind = models.CharField('Data file kind', max_length=7, choices=DATA_FILE_KIND_CHOICES)
     created = models.DateTimeField()
     change_tracker_processed = models.BooleanField('change tracker processed', default=False)
     updates_processed = models.BooleanField('updates processed', default=False)
@@ -29,6 +36,11 @@ class ChangeTracker(models.Model):
 
 
 class NCVHis(models.Model):
+
+    @staticmethod
+    def parse_row(row):
+        return row
+
     md5_hash = models.CharField('MD5 Hash Value', max_length=32)
     voter = models.ForeignKey('NCVoter', on_delete=models.CASCADE, related_name="histories", to_field='ncid')
     county_id = models.SmallIntegerField('county_id')
@@ -49,6 +61,11 @@ class NCVHis(models.Model):
 
 
 class NCVoter(models.Model):
+
+    @staticmethod
+    def parse_row(row):
+        return row
+
     md5_hash = models.CharField('MD5 Hash Value', max_length=32)
     county_id = models.SmallIntegerField()
     birth_age = models.IntegerField()

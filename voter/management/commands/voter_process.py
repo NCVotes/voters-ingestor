@@ -5,6 +5,8 @@ import hashlib
 
 from bencode import bencode
 
+from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter
+
 
 def find_md5(row_data):
     "Given a dictionary of `row_data` returns the hex of its MD5 hash"
@@ -22,9 +24,16 @@ def get_file_lines(filename):
             yield non_empty_row
 
 
-def process_file(filename):
-    for index, row in enumerate(get_file_lines(filename)):
+def process_file(file_tracker):
+    for index, row in enumerate(get_file_lines(file_tracker.filename)):
         hash_val = find_md5(row)
+        if file_tracker.data_file_kind == FileTracker.DATA_FILE_KIND_NCVOTER:
+            parsed_row = NCVoter.parse_row(row)
+        elif file_tracker.data_file_kind == FileTracker.DATA_FILE_KIND_NCVOTER:
+            parsed_row = NCVHis.parse_row(row)
+        else:
+            return
+
         # TODO: Do processing of each row here
         print(hash_val, row)
 
@@ -32,13 +41,8 @@ def process_file(filename):
 class Command(BaseCommand):
     help = "Processes voter data to save into the database"
 
-    def add_arguments(self, parser):
-        parser.add_argument('filename', type=str)
-
     def handle(self, *args, **options):
-        filename = options.get('filename')
-        if filename:
-            process_file(filename)
-        else:
-            #TODO: determine latest filename downloaded from the database
-            pass
+        fts = FileTracker.objects.filter(change_tracker_processed=False) \
+            .order_by('created')
+        for ft in fts:
+            process_file(ft)

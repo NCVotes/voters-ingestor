@@ -25,24 +25,26 @@ def get_file_lines(filename):
 
 
 def process_file(file_tracker):
-    for index, row in enumerate(get_file_lines(file_tracker.filename)):
+    filename = file_tracker.filename
+    for index, row in enumerate(get_file_lines(filename)):
         hash_val = find_md5(row)
         if file_tracker.data_file_kind == FileTracker.DATA_FILE_KIND_NCVOTER:
-            parsed_row = NCVoter.parse_row(row)
-        elif file_tracker.data_file_kind == FileTracker.DATA_FILE_KIND_NCVOTER:
-            parsed_row = NCVHis.parse_row(row)
+            model_class = NCVoter
+        elif file_tracker.data_file_kind == FileTracker.DATA_FILE_KIND_NCVHIS:
+            model_class = NCVHis
         else:
+            print("Unknown file format, aborting processing of {0}".format(filename))
             return
-
-        # TODO: Do processing of each row here
-        print(hash_val, row)
+        # TODO: Search for nc_id in existing data, compare against hash_val
+        parsed_row = model_class.parse_row(row)
+        print(hash_val, parsed_row)
 
 
 class Command(BaseCommand):
     help = "Processes voter data to save into the database"
 
     def handle(self, *args, **options):
-        fts = FileTracker.objects.filter(change_tracker_processed=False) \
+        fts = FileTracker.objects.filter(change_tracker_processed=False, data_file_kind='NCVHis') \
             .order_by('created')
         for ft in fts:
             process_file(ft)

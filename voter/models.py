@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import models
 
 from django.contrib.postgres.fields import JSONField
@@ -39,9 +41,14 @@ class NCVHis(models.Model):
 
     @staticmethod
     def parse_row(row):
+        county_id = int(row['county_id'])
+        row['county_id'] = county_id
+        voted_county_id = int(row['voted_county_id'])
+        row['voted_county_id'] = voted_county_id
         return row
 
     md5_hash = models.CharField('MD5 Hash Value', max_length=32)
+    ncid = models.CharField('ncid', max_length=12)
     voter = models.ForeignKey('NCVoter', on_delete=models.CASCADE, related_name="histories", to_field='ncid')
     county_id = models.SmallIntegerField('county_id')
     county_desc = models.CharField('county_desc', max_length=60, blank=True)
@@ -53,8 +60,7 @@ class NCVHis(models.Model):
     voted_party_desc = models.CharField('voted_party_desc', max_length=60, blank=True)
     pct_label = models.CharField('pct_label', max_length=6, blank=True)
     pct_description = models.CharField('pct_description', max_length=60, blank=True)
-    ncid = models.CharField('ncid', max_length=12)
-    voted_county_id = models.CharField('voted_county_id', max_length=3, blank=True)
+    voted_county_id = models.SmallIntegerField('voted_county_id')
     voted_county_desc = models.CharField('voted_county_desc', max_length=60, blank=True)
     vtd_label = models.CharField('vtd_label', max_length=6, blank=True)
     vtd_description = models.CharField('vtd_description', max_length=60, blank=True)
@@ -64,12 +70,23 @@ class NCVoter(models.Model):
 
     @staticmethod
     def parse_row(row):
+        county_id = int(row['county_id'])
+        row['county_id'] = county_id
+        birth_age = int(row['birth_age'])
+        row['birth_age'] = birth_age
+        drivers_lic_str = row['drivers_lic']
+        drivers_lic = (drivers_lic_str == 'Y' or drivers_lic_str == 'y')
+        row['drivers_lic'] = drivers_lic
+        registr_dt_str = row['registr_dt']
+        registr_dt = datetime.strptime(registr_dt_str, '%m/%d/%Y')
+        row['registr_dt'] = registr_dt
         return row
 
     md5_hash = models.CharField('MD5 Hash Value', max_length=32)
+    ncid = models.CharField('ncid', max_length=12, unique=True)
     county_id = models.SmallIntegerField()
     birth_age = models.IntegerField()
-    age = models.IntegerField()
+    age = models.TextField()
     county_desc = models.CharField('county_desc', max_length=15)
     voter_reg_num = models.CharField('voter_reg_num', max_length=12)
     status_cd = models.CharField('status_cd', max_length=2)
@@ -100,7 +117,7 @@ class NCVoter(models.Model):
     gender_code = models.CharField('gender_code', max_length=1)
     birth_place = models.CharField('birth_place', max_length=30)
     drivers_lic = models.BooleanField('drivers_lic')
-    registr_dt = models.CharField('registr_dt', max_length=10)
+    registr_dt = models.DateTimeField('registr_dt')
     precinct_abbrv = models.CharField('precinct_abbrv', max_length=6)
     precinct_desc = models.CharField('precinct_desc', max_length=60)
     municipality_abbrv = models.CharField('municipality_abbrv', max_length=6)
@@ -135,7 +152,6 @@ class NCVoter(models.Model):
     dist_2_abbrv = models.CharField('dist_2_abbrv', max_length=6)
     dist_2_desc = models.CharField('dist_2_desc', max_length=60)
     Confidential_ind = models.CharField('Confidential_ind', max_length=1)
-    ncid = models.CharField('ncid', max_length=12, unique=True)
     vtd_abbrv = models.CharField('vtd_abbrv', max_length=6)
     vtd_desc = models.CharField('vtd_desc', max_length=60)
 

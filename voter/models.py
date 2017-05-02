@@ -21,17 +21,16 @@ class FileTracker(models.Model):
 
 
 class ChangeTracker(models.Model):
+    OP_CODE_ADD = 'A'
+    OP_CODE_MODIFY = 'M'
+    OP_CODE_DELETE = 'D'
     OP_CODE_CHOICES = [
-        ('A', 'Add'),
-        ('M', 'Modify'),
-        ('D', 'Delete'),
-    ]
-    MODEL_CHOICES = [
-        ('NCVHis', 'NC Voter History'),
-        ('NCVoter', 'NC Voter'),
+        (OP_CODE_ADD, 'Add'),
+        (OP_CODE_MODIFY, 'Modify'),
+        (OP_CODE_DELETE, 'Delete'),
     ]
     op_code = models.CharField('Operation Code', max_length=1, choices=OP_CODE_CHOICES)
-    model_name = models.CharField('Model Name', max_length=20, choices=MODEL_CHOICES)
+    model_name = models.CharField('Model Name', max_length=20, choices=FileTracker.DATA_FILE_KIND_CHOICES)
     data = JSONField()
     ncid = models.CharField('ncid', max_length=12)
     file_tracker = models.ForeignKey('FileTracker', related_name='changes')

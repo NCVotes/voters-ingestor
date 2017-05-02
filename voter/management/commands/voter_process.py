@@ -1,4 +1,5 @@
 from django.core.management import BaseCommand
+from django.db import transaction
 
 import csv
 import hashlib
@@ -41,7 +42,11 @@ def find_model_and_existing_instance(file_tracker, row):
     return model_class, instance
 
 
+@transaction.atomic
 def process_file(file_tracker):
+    added_tally = 0
+    modified_tally = 0
+    ignored_tally = 0
     for index, row in enumerate(get_file_lines(file_tracker.filename)):
         hash_val = find_md5(row)
         model_class, instance = find_model_and_existing_instance(file_tracker, row)
@@ -50,16 +55,24 @@ def process_file(file_tracker):
             return
         if instance is not None and instance.md5_hash == hash_val:
             # Nothing to do, data is up to date, move to next row
+            ignored_tally += 1
             continue
         parsed_row = model_class.parse_row(row)
         if instance is None:
-            pass
-            # TODO: Create ChangeTracker with op_code A here
+            ct = ChangeTracker.objects.create(
+                ncid=row['ncid'], file_tracker=file_tracker,
+                model_name=file_tracker.data_file_kind,
+                op_code=ChangeTracker.OP_CODE_ADD, data=row)
+            added_tally += 1
         else:
+            modified_tally += 1
             pass
             # TODO: Create ChangeTracker with op_code M here
         print(hash_val, parsed_row)
     # TODO: Mark file_tracker.change_tracker_processed=True
+    file_tracker.change_tracker_processed = True
+    file_tracker.save()
+    return (added_tally, modified_tally, ignored_tally)
 
 
 class Command(BaseCommand):
@@ -69,4 +82,8 @@ class Command(BaseCommand):
         fts = FileTracker.objects.filter(change_tracker_processed=False, data_file_kind='NCVHis') \
             .order_by('created')
         for ft in fts:
-            process_file(ft)
+            added, modified, ignored = process_file(ft)
+            print("Added records: {0}".format(added))
+            print("Modified records: {0}".format(modified))
+            print("Ignored records: {0}".format(ignored))
+

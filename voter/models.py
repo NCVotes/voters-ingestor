@@ -174,7 +174,6 @@ class NCVoter(models.Model):
     dist_1_desc = models.CharField('dist_1_desc', max_length=60)
     dist_2_abbrv = models.CharField('dist_2_abbrv', max_length=6)
     dist_2_desc = models.CharField('dist_2_desc', max_length=60)
-    Confidential_ind = models.CharField('Confidential_ind', max_length=1)
     vtd_abbrv = models.CharField('vtd_abbrv', max_length=6)
     vtd_desc = models.CharField('vtd_desc', max_length=60)
 

@@ -1,8 +1,8 @@
 from datetime import datetime
 
 from django.db import models
-
 from django.contrib.postgres.fields import JSONField
+from django.core.serializers.json import DjangoJSONEncoder
 
 
 class FileTracker(models.Model):
@@ -32,7 +32,7 @@ class ChangeTracker(models.Model):
     op_code = models.CharField('Operation Code', max_length=1, choices=OP_CODE_CHOICES)
     model_name = models.CharField('Model Name', max_length=20, choices=FileTracker.DATA_FILE_KIND_CHOICES)
     md5_hash = models.CharField('MD5 Hash Value', max_length=32)
-    data = JSONField()
+    data = JSONField(encoder=DjangoJSONEncoder)
     ncid = models.CharField('ncid', max_length=12)
     election_desc = models.CharField('election_desc', max_length=230, blank=True)
     file_tracker = models.ForeignKey('FileTracker', related_name='changes')
@@ -84,12 +84,16 @@ class NCVoter(models.Model):
         registr_dt_str = row['registr_dt']
         registr_dt = datetime.strptime(registr_dt_str, '%m/%d/%Y')
         row['registr_dt'] = registr_dt.date()
+        confidential_ind_str = row['confidential_ind']
+        row['confidential_ind'] = (confidential_ind_str == "Y")
         return row
 
     md5_hash = models.CharField('MD5 Hash Value', max_length=32)
     ncid = models.CharField('ncid', max_length=12, unique=True)
     county_id = models.SmallIntegerField()
     birth_age = models.IntegerField()
+    confidential_ind = models.BooleanField()
+    birth_state = models.CharField('birth state', max_length=2)
     age = models.TextField()
     county_desc = models.CharField('county_desc', max_length=15)
     voter_reg_num = models.CharField('voter_reg_num', max_length=12)
@@ -100,6 +104,7 @@ class NCVoter(models.Model):
     absent_ind = models.CharField('absent_ind', max_length=1)
     name_prefx_cd = models.CharField('name_prefx_cd', max_length=4)
     last_name = models.CharField('last_name', max_length=25)
+    middle_name = models.CharField('middle_name', max_length=25)
     first_name = models.CharField('first_name', max_length=20)
     midl_name = models.CharField('midl_name', max_length=20)
     name_sufx_cd = models.CharField('name_sufx_cd', max_length=3)

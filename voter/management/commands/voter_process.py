@@ -45,24 +45,25 @@ def get_file_lines(filename):
 
 
 def find_model_and_existing_instance(file_tracker, row):
-    if file_tracker.data_file_kind == FileTracker.DATA_FILE_KIND_NCVOTER:
+    data_file_kind = file_tracker.data_file_kind
+    if data_file_kind == FileTracker.DATA_FILE_KIND_NCVOTER:
         model_class = NCVoter
-        ncid = row['ncid']
-        instance = model_class.objects.filter(ncid=ncid).first()
-    elif file_tracker.data_file_kind == FileTracker.DATA_FILE_KIND_NCVHIS:
+        query_data = {"ncid": row['ncid'],
+                      'model_name': data_file_kind}
+    elif data_file_kind == FileTracker.DATA_FILE_KIND_NCVHIS:
         model_class = NCVHis
-        ncid = row['ncid']
-        election_desc = row['election_desc']
-        instance = model_class.objects.filter(ncid=ncid,
-                                                election_desc=election_desc).first()
+        query_data = {"ncid": row['ncid'],
+                      'election_desc': row['election_desc'],
+                      'model_name': data_file_kind}
     else:
         print("Unknown file format, aborting processing of {0}".format(file_tracker.filename))
         return None, None
+    instance = ChangeTracker.objects.filter(**query_data).last()
     return model_class, instance
 
 
 @transaction.atomic
-def process_file(file_tracker):
+def create_changes(file_tracker):
     print("Processing change tracking for file {0}".format(file_tracker.filename))
     added_tally = 0
     modified_tally = 0
@@ -87,7 +88,7 @@ def process_file(file_tracker):
                 op_code=ChangeTracker.OP_CODE_ADD, data=row)
             added_tally += 1
         else:
-            existing_data = model_to_dict(instance)
+            existing_data = instance.data
             data_diff = diff_dicts(existing_data, parsed_row)
             ChangeTracker.objects.create(
                 ncid=row['ncid'], election_desc=row.get('election_desc', ''),
@@ -104,6 +105,7 @@ def process_file(file_tracker):
 def process_changes(file_tracker):
     print("Processing updates for file {0}".format(file_tracker.filename))
     for change_tracker in file_tracker.changes.iterator():
+        print(".", end='')
         ModelClass = None
         if change_tracker.model_name == FileTracker.DATA_FILE_KIND_NCVOTER:
             ModelClass = NCVoter
@@ -118,33 +120,48 @@ def process_changes(file_tracker):
         if change_tracker.op_code == ChangeTracker.OP_CODE_ADD:
             ModelClass.objects.create(**data)
         if change_tracker.op_code == ChangeTracker.OP_CODE_MODIFY:
-            ModelClass.objects.filter(
-                ncid=change_tracker.ncid,
-                election_desc=change_tracker.election_desc) \
+            if ModelClass == NCVHis:
+                query_data = {
+                    'ncid': change_tracker.ncid,
+                    'election_desc': change_tracker.election_desc
+                }
+            else:
+                query_data = {
+                    'ncid': change_tracker.ncid,
+                }
+            ModelClass.objects.filter(**query_data) \
                 .update(**data)
     file_tracker.updates_processed = True
     file_tracker.save()
+
+
+def process_file(data_file_label, data_file_kind):
+    print("Processing {0} file...".format(data_file_label))
+    unprocessed_file_trackers = FileTracker.objects.filter(
+        change_tracker_processed=False, data_file_kind=data_file_kind) \
+        .order_by('created')
+    for file_tracker in unprocessed_file_trackers:
+        added, modified, ignored = create_changes(file_tracker)
+        print("Change tracking completed:")
+        print("Added records: {0}".format(added))
+        print("Modified records: {0}".format(modified))
+        print("Ignored records: {0}".format(ignored))
+    unupdated_file_trackers = FileTracker.objects.filter(
+        change_tracker_processed=True, updates_processed=False,
+        data_file_kind=data_file_kind) \
+        .order_by('created')
+    for file_tracker in unupdated_file_trackers:
+        process_changes(file_tracker)
+
+
+def process_files():
+    for data_file_label, data_file_kind in [("NCVHis", FileTracker.DATA_FILE_KIND_NCVHIS),
+                                            ("NCVoter", FileTracker.DATA_FILE_KIND_NCVOTER)]:
+        process_file(data_file_label, data_file_kind)
 
 
 class Command(BaseCommand):
     help = "Processes voter data to save into the database"
 
     def handle(self, *args, **options):
-        for data_file_label, data_file_kind in [("NCVHis", FileTracker.DATA_FILE_KIND_NCVHIS),
-                                                ("NCVoter", FileTracker.DATA_FILE_KIND_NCVOTER)]:
-            print("Processing {0} files...".format(data_file_label))
-            unprocessed_file_trackers = FileTracker.objects.filter(
-                change_tracker_processed=False, data_file_kind=data_file_kind) \
-                .order_by('created')
-            for file_tracker in unprocessed_file_trackers:
-                added, modified, ignored = process_file(file_tracker)
-                print("Change tracking completed:")
-                print("Added records: {0}".format(added))
-                print("Modified records: {0}".format(modified))
-                print("Ignored records: {0}".format(ignored))
-            unupdated_file_trackers = FileTracker.objects.filter(
-                change_tracker_processed=True, updates_processed=False,
-                data_file_kind=data_file_kind) \
-                .order_by('created')
-            for file_tracker in unupdated_file_trackers:
-                process_changes(file_tracker)
+        process_files()

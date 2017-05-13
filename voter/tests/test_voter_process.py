@@ -64,3 +64,18 @@ class Simple(TestCase):
                             {'filename': "voter/test_data/ncvoter_2.txt",
                              'file_tracker_id': 3,
                              'added': 1, 'ignored': 7, 'modified': 1}]])
+
+    def test_change_tracker_modified_values(self):
+        change_tallies = process_files(create_changes_only=True)
+        ncvhis_modifieds = ChangeTracker.objects.filter(
+            model_name=FileTracker.DATA_FILE_KIND_NCVHIS, op_code=ChangeTracker.OP_CODE_MODIFY)
+        ncvoter_modifieds = ChangeTracker.objects.filter(
+            model_name=FileTracker.DATA_FILE_KIND_NCVOTER, op_code=ChangeTracker.OP_CODE_MODIFY)
+        self.assertEquals(ncvhis_modifieds.count(), 1)
+        self.assertEquals(ncvhis_modifieds[0].data,
+                          {'voting_method': 'ABSENTEE ONESTOP', 'voted_party_cd': 'ELE', 'voted_party_desc': 'ELEPHANT'})
+        self.assertEquals(ncvoter_modifieds.count(), 1)
+        self.assertEquals(ncvoter_modifieds[0].data,
+                          {'drivers_lic': False,
+                           'mail_addr1': '123 SESAME ST',
+                           'res_street_address': '123 SESAME ST'})

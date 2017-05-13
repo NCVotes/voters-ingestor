@@ -51,6 +51,13 @@ class NCVHis(models.Model):
         row['election_lbl'] = election_lbl_dt.date()
         return row
 
+    @staticmethod
+    def parse_existing(row):
+        election_lbl_str = row['election_lbl']
+        election_lbl_dt = datetime.strptime(election_lbl_str, '%Y-%m-%d')
+        row['election_lbl'] = election_lbl_dt.date()
+        return row
+
     md5_hash = models.CharField('MD5 Hash Value', max_length=32)
     ncid = models.CharField('ncid', max_length=12)
     voter = models.ForeignKey('NCVoter', on_delete=models.CASCADE, related_name="histories", to_field='ncid', null=True)
@@ -86,6 +93,13 @@ class NCVoter(models.Model):
         row['registr_dt'] = registr_dt.date()
         confidential_ind_str = row['confidential_ind']
         row['confidential_ind'] = (confidential_ind_str == "Y")
+        return row
+
+    @staticmethod
+    def parse_existing(row):
+        registr_dt_str = row['registr_dt']
+        registr_dt = datetime.strptime(registr_dt_str, '%Y-%m-%d')
+        row['registr_dt'] = registr_dt.date()
         return row
 
     md5_hash = models.CharField('MD5 Hash Value', max_length=32)

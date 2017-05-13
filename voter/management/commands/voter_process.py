@@ -90,7 +90,7 @@ def create_changes(output, file_tracker):
                 op_code=ChangeTracker.OP_CODE_ADD, data=row)
             added_tally += 1
         else:
-            existing_data = change_tracker_instance.data
+            existing_data = model_class.parse_existing(change_tracker_instance.data)
             data_diff = diff_dicts(existing_data, parsed_row)
             ChangeTracker.objects.create(
                 ncid=row['ncid'], election_desc=row.get('election_desc', ''),
@@ -145,7 +145,7 @@ def process_file(output, create_changes_only, data_file_label, data_file_kind):
         print("Processing {0} file...".format(data_file_label))
     unprocessed_file_trackers = FileTracker.objects.filter(
         change_tracker_processed=False, data_file_kind=data_file_kind) \
-                                                    .order_by('created')
+        .order_by('created')
     for file_tracker in unprocessed_file_trackers:
         added, modified, ignored = create_changes(output, file_tracker)
         results.append(
@@ -163,7 +163,7 @@ def process_file(output, create_changes_only, data_file_label, data_file_kind):
         unupdated_file_trackers = FileTracker.objects.filter(
             change_tracker_processed=True, updates_processed=False,
             data_file_kind=data_file_kind) \
-                                                     .order_by('created')
+            .order_by('created')
         for file_tracker in unupdated_file_trackers:
             process_changes(output, file_tracker)
     return results

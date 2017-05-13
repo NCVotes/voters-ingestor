@@ -38,13 +38,29 @@ file_trackers_data = [
 
 
 def create_file_trackers():
-    for datum in file_trackers_data:
+    return [
         FileTracker.objects.create(**datum)
+        for datum in file_trackers_data
+        ]
 
 
 class Simple(TestCase):
 
-    def test_thing(self):
-        create_file_trackers()
-        process_files()
-        self.assertEquals(2, 1 + 1)
+    def setUp(self):
+        self.file_trackers = create_file_trackers()
+
+    def test_change_tracker_tallies(self):
+        change_tallies = process_files(create_changes_only=True)
+        self.assertEquals(change_tallies,
+                          [[{'filename': "voter/test_data/ncvhis_1.txt",
+                             'file_tracker_id': 2,
+                             'added': 8, 'ignored': 0, 'modified': 0},
+                            {'filename': "voter/test_data/ncvhis_2.txt",
+                             'file_tracker_id': 4,
+                             'added': 1, 'ignored': 7, 'modified': 1}],
+                           [{'filename': "voter/test_data/ncvoter_1.txt",
+                             'file_tracker_id': 1,
+                             'added': 8, 'ignored': 0, 'modified': 0},
+                            {'filename': "voter/test_data/ncvoter_2.txt",
+                             'file_tracker_id': 3,
+                             'added': 1, 'ignored': 7, 'modified': 1}]])

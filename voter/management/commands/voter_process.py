@@ -73,16 +73,16 @@ def create_changes(output, file_tracker):
         if output:
             print(".", end='')
         hash_val = find_md5(row)
-        model_class, instance = find_model_and_existing_instance(file_tracker, row)
+        model_class, change_tracker_instance = find_model_and_existing_instance(file_tracker, row)
         if model_class is None:
             # Can't determine file type, cancel processing
             return
-        if instance is not None and instance.md5_hash == hash_val:
+        if change_tracker_instance is not None and change_tracker_instance.md5_hash == hash_val:
             # Nothing to do, data is up to date, move to next row
             ignored_tally += 1
             continue
         parsed_row = model_class.parse_row(row)
-        if instance is None:
+        if change_tracker_instance is None:
             ChangeTracker.objects.create(
                 ncid=row['ncid'], election_desc=row.get('election_desc', ''),
                 md5_hash=hash_val, file_tracker=file_tracker,
@@ -90,7 +90,7 @@ def create_changes(output, file_tracker):
                 op_code=ChangeTracker.OP_CODE_ADD, data=row)
             added_tally += 1
         else:
-            existing_data = instance.data
+            existing_data = change_tracker_instance.data
             data_diff = diff_dicts(existing_data, parsed_row)
             ChangeTracker.objects.create(
                 ncid=row['ncid'], election_desc=row.get('election_desc', ''),
@@ -139,35 +139,46 @@ def process_changes(output, file_tracker):
     file_tracker.save()
 
 
-def process_file(output, data_file_label, data_file_kind):
+def process_file(output, create_changes_only, data_file_label, data_file_kind):
+    results = []
     if output:
         print("Processing {0} file...".format(data_file_label))
     unprocessed_file_trackers = FileTracker.objects.filter(
         change_tracker_processed=False, data_file_kind=data_file_kind) \
-        .order_by('created')
+                                                    .order_by('created')
     for file_tracker in unprocessed_file_trackers:
         added, modified, ignored = create_changes(output, file_tracker)
+        results.append(
+            {'filename': file_tracker.filename,
+             'file_tracker_id': file_tracker.id,
+             'added': added,
+             'modified': modified,
+             'ignored': ignored})
         if output:
             print("Change tracking completed:")
             print("Added records: {0}".format(added))
             print("Modified records: {0}".format(modified))
             print("Ignored records: {0}".format(ignored))
-    unupdated_file_trackers = FileTracker.objects.filter(
-        change_tracker_processed=True, updates_processed=False,
-        data_file_kind=data_file_kind) \
-        .order_by('created')
-    for file_tracker in unupdated_file_trackers:
-        process_changes(output, file_tracker)
+    if not create_changes_only:
+        unupdated_file_trackers = FileTracker.objects.filter(
+            change_tracker_processed=True, updates_processed=False,
+            data_file_kind=data_file_kind) \
+                                                     .order_by('created')
+        for file_tracker in unupdated_file_trackers:
+            process_changes(output, file_tracker)
+    return results
 
 
-def process_files(output=False):
-    for data_file_label, data_file_kind in [("NCVHis", FileTracker.DATA_FILE_KIND_NCVHIS),
-                                            ("NCVoter", FileTracker.DATA_FILE_KIND_NCVOTER)]:
-        process_file(output, data_file_label, data_file_kind)
+def process_files(output=False, create_changes_only=False):
+    file_label_kind_listing = [("NCVHis", FileTracker.DATA_FILE_KIND_NCVHIS),
+                               ("NCVoter", FileTracker.DATA_FILE_KIND_NCVOTER)]
+    return [process_file(output, create_changes_only,
+                         data_file_label, data_file_kind)
+            for data_file_label, data_file_kind in file_label_kind_listing]
 
 
 class Command(BaseCommand):
     help = "Processes voter data to save into the database"
 
     def handle(self, *args, **options):
-        process_files(output=True)
+        process_files(output=True, create_changes_only=False)

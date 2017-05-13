@@ -79,3 +79,11 @@ class Simple(TestCase):
                           {'drivers_lic': False,
                            'mail_addr1': '123 SESAME ST',
                            'res_street_address': '123 SESAME ST'})
+
+    def test_process_changes_integration(self):
+        change_tallies = process_files(create_changes_only=False)
+        self.assertEquals(NCVoter.objects.count(), 9)
+        self.assertEquals(NCVHis.objects.count(), 9)
+        #TODO: Check NCVoter and NCVHis instance values against latest values in *_2.txt files
+        #print(NCVoter.objects.all().order_by().reverse().values()[:3])
+

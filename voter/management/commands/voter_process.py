@@ -172,9 +172,13 @@ def process_file(output, create_changes_only, data_file_label, data_file_kind):
 def process_files(output=False, create_changes_only=False):
     file_label_kind_listing = [("NCVHis", FileTracker.DATA_FILE_KIND_NCVHIS),
                                ("NCVoter", FileTracker.DATA_FILE_KIND_NCVOTER)]
-    return [process_file(output, create_changes_only,
-                         data_file_label, data_file_kind)
-            for data_file_label, data_file_kind in file_label_kind_listing]
+    change_results = [
+        process_file(output, create_changes_only,
+                     data_file_label, data_file_kind)
+        for data_file_label, data_file_kind in file_label_kind_listing
+        ]
+    # TODO: Add FK's from NCVoter to NCVHis once both are processed
+    return change_results
 
 
 class Command(BaseCommand):

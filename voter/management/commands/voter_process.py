@@ -58,7 +58,10 @@ def find_model_and_existing_instance(file_tracker, row):
     else:
         print("Unknown file format, aborting processing of {0}".format(file_tracker.filename))
         return None, None
-    instance = ChangeTracker.objects.filter(**query_data).last()
+    try:
+        instance = ChangeTracker.objects.filter(**query_data).latest('file_tracker__created')
+    except ChangeTracker.DoesNotExist:
+        instance = None
     return model_class, instance
 
 

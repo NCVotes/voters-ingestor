@@ -58,7 +58,6 @@ class NCVHis(models.Model):
         row['election_lbl'] = election_lbl_dt.date()
         return row
 
-    md5_hash = models.CharField('MD5 Hash Value', max_length=32)
     ncid = models.CharField('ncid', max_length=12)
     voter = models.ForeignKey('NCVoter', on_delete=models.CASCADE, related_name="histories", to_field='ncid', null=True)
     county_id = models.SmallIntegerField('county_id')
@@ -102,7 +101,6 @@ class NCVoter(models.Model):
         row['registr_dt'] = registr_dt.date()
         return row
 
-    md5_hash = models.CharField('MD5 Hash Value', max_length=32)
     ncid = models.CharField('ncid', max_length=12, unique=True)
     county_id = models.SmallIntegerField()
     birth_age = models.IntegerField()

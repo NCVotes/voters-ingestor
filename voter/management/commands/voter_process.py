@@ -125,7 +125,17 @@ def process_changes(output, file_tracker):
             break
         data = change_tracker.data
         if change_tracker.op_code == ChangeTracker.OP_CODE_ADD:
-            ModelClass.objects.create(**data)
+            nc_voter = None
+            if ModelClass == NCVHis:
+                try:
+                    nc_voter = NCVoter.objects.get(ncid=data['ncid'])
+                except NCVoter.DoesNotExist:
+                    nc_voter = None
+            if nc_voter is not None:
+                # TODO: Investigate if this works against real data
+                ModelClass.objects.create(merge_dicts({"voter": nc_voter}, **data))
+            else:
+                ModelClass.objects.create(**data)
         if change_tracker.op_code == ChangeTracker.OP_CODE_MODIFY:
             if ModelClass == NCVHis:
                 query_data = {

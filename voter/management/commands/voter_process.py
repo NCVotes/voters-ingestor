@@ -173,8 +173,8 @@ def process_file(output, create_changes_only, data_file_label, data_file_kind):
 
 
 def process_files(output=False, create_changes_only=False):
-    file_label_kind_listing = [("NCVHis", FileTracker.DATA_FILE_KIND_NCVHIS),
-                               ("NCVoter", FileTracker.DATA_FILE_KIND_NCVOTER)]
+    file_label_kind_listing = [("NCVoter", FileTracker.DATA_FILE_KIND_NCVOTER),
+                               ("NCVHis", FileTracker.DATA_FILE_KIND_NCVHIS)]
     change_results = [
         process_file(output, create_changes_only,
                      data_file_label, data_file_kind)

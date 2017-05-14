@@ -3,8 +3,7 @@ import datetime
 from django.test import TestCase
 
 from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter
-from voter.management.commands.voter_process import process_files
-
+from voter.management.commands.voter_process import process_files, get_file_lines, diff_dicts
 
 file_trackers_data = [
     {"id": 1,
@@ -44,7 +43,28 @@ def create_file_trackers():
         ]
 
 
-class VoterProcessTest(TestCase):
+def load_sorted_parsed_csv(filename, ModelClass):
+    raw_rows = list(get_file_lines(filename))
+    if ModelClass == NCVoter:
+        sorted_rows = sorted(raw_rows, key=lambda k: k['ncid'])
+    if ModelClass == NCVHis:
+        sorted_rows = sorted(raw_rows, key=lambda k: (k['ncid'], k['election_desc']))
+    return [ModelClass.parse_row(row) for row in sorted_rows]
+
+
+def query_csv_data_in_model(ModelClass):
+    if ModelClass == NCVoter:
+        order_by_attrs = ('ncid',)
+    else:
+        order_by_attrs = ('ncid', 'election_desc')
+    query_results = list(ModelClass.objects.order_by(*order_by_attrs).values())
+    return [
+        {k: v for k, v in row.items() if v != '' and k != 'id' and v != None}
+        for row in query_results
+    ]
+
+
+class VoterProcessChangeTrackerTest(TestCase):
 
     def setUp(self):
         self.file_trackers = create_file_trackers()
@@ -80,10 +100,19 @@ class VoterProcessTest(TestCase):
                            'mail_addr1': '123 SESAME ST',
                            'res_street_address': '123 SESAME ST'})
 
+
+class VoterProcessIntegrationTest(TestCase):
+
+    def setUp(self):
+        self.file_trackers = create_file_trackers()
+
     def test_process_changes_integration(self):
-        change_tallies = process_files(create_changes_only=False)
+        process_files(create_changes_only=False)
         self.assertEquals(NCVoter.objects.count(), 9)
         self.assertEquals(NCVHis.objects.count(), 9)
-        #TODO: Check NCVoter and NCVHis instance values against latest values in *_2.txt files
-        #print(NCVoter.objects.all().order_by().reverse().values()[:3])
-
+        latest_ncvoter_file_data = load_sorted_parsed_csv("voter/test_data/ncvoter_2.txt", NCVoter)
+        latest_ncvhis_file_data = load_sorted_parsed_csv("voter/test_data/ncvhis_2.txt", NCVHis)
+        latest_ncvoter_db_data = query_csv_data_in_model(NCVoter)
+        latest_ncvhis_db_data = query_csv_data_in_model(NCVHis)
+        self.assertEquals(latest_ncvoter_file_data, latest_ncvoter_db_data)
+        self.assertEquals(latest_ncvhis_file_data, latest_ncvhis_db_data)

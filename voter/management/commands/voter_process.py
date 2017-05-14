@@ -3,6 +3,7 @@ from django.db import transaction
 from django.forms.models import model_to_dict
 
 import csv
+import codecs
 import hashlib
 
 from bencode import bencode
@@ -36,7 +37,7 @@ def find_md5(row_data):
 
 
 def get_file_lines(filename):
-    with open(filename, 'r') as f:
+    with codecs.open(filename, "r", encoding='utf-8', errors='ignore') as f:
         reader = csv.DictReader(f, delimiter='\t')
         for row in reader:
             non_empty_row = {k: v for k, v in row.items()

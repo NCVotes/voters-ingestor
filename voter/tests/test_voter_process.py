@@ -33,7 +33,22 @@ file_trackers_data = [
      "data_file_kind": "NCVHis",
      "created": datetime.datetime(2017, 5, 1, 1, 51, 18, 154276, tzinfo=datetime.timezone.utc),
      "change_tracker_processed": False,
-     "updates_processed": False},]
+     "updates_processed": False},
+    {"id": 5,
+     "etag": "ab476ee500a0421dfab629e8dc464f2a-61",
+     "filename": "voter/test_data/ncvoter_3.txt",
+     "data_file_kind": "NCVoter",
+     "created": datetime.datetime(2017, 5, 2, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
+     "change_tracker_processed": False,
+     "updates_processed": False},
+    {"id": 6,
+     "etag": "6dacd80ba773b1295103e268a753f47e-61",
+     "filename": "voter/test_data/ncvhis_3.txt",
+     "data_file_kind": "NCVHis",
+     "created": datetime.datetime(2017, 5, 2, 1, 51, 18, 154276, tzinfo=datetime.timezone.utc),
+     "change_tracker_processed": False,
+     "updates_processed": False},
+    ]
 
 
 def create_file_trackers():
@@ -66,6 +81,8 @@ def query_csv_data_in_model(ModelClass):
 
 class VoterProcessChangeTrackerTest(TestCase):
 
+    maxDiff = None
+
     def setUp(self):
         self.file_trackers = create_file_trackers()
 
@@ -77,13 +94,23 @@ class VoterProcessChangeTrackerTest(TestCase):
                              'added': 8, 'ignored': 0, 'modified': 0},
                             {'filename': "voter/test_data/ncvoter_2.txt",
                              'file_tracker_id': 3,
-                             'added': 1, 'ignored': 7, 'modified': 1}],
+                             'added': 1, 'ignored': 7, 'modified': 1},
+                            {'added': 0,
+                             'file_tracker_id': 5,
+                             'filename': 'voter/test_data/ncvoter_3.txt',
+                             'ignored': 9,
+                             'modified': 0},],
                            [{'filename': "voter/test_data/ncvhis_1.txt",
                              'file_tracker_id': 2,
                              'added': 8, 'ignored': 0, 'modified': 0},
                             {'filename': "voter/test_data/ncvhis_2.txt",
                              'file_tracker_id': 4,
-                             'added': 1, 'ignored': 7, 'modified': 1}]])
+                             'added': 1, 'ignored': 7, 'modified': 1},
+                            {'added': 0,
+                             'file_tracker_id': 6,
+                             'filename': 'voter/test_data/ncvhis_3.txt',
+                             'ignored': 9,
+                             'modified': 0}]])
 
     def test_change_tracker_modified_values(self):
         process_files(create_changes_only=True)
@@ -102,6 +129,8 @@ class VoterProcessChangeTrackerTest(TestCase):
 
 
 class VoterProcessIntegrationTest(TestCase):
+
+    maxDiff = None
 
     def setUp(self):
         self.file_trackers = create_file_trackers()

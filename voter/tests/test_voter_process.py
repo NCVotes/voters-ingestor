@@ -44,7 +44,7 @@ def create_file_trackers():
         ]
 
 
-class Simple(TestCase):
+class VoterProcessTest(TestCase):
 
     def setUp(self):
         self.file_trackers = create_file_trackers()
@@ -52,21 +52,21 @@ class Simple(TestCase):
     def test_change_tracker_tallies(self):
         change_tallies = process_files(create_changes_only=True)
         self.assertEquals(change_tallies,
-                          [[{'filename': "voter/test_data/ncvhis_1.txt",
-                             'file_tracker_id': 2,
-                             'added': 8, 'ignored': 0, 'modified': 0},
-                            {'filename': "voter/test_data/ncvhis_2.txt",
-                             'file_tracker_id': 4,
-                             'added': 1, 'ignored': 7, 'modified': 1}],
-                           [{'filename': "voter/test_data/ncvoter_1.txt",
+                          [[{'filename': "voter/test_data/ncvoter_1.txt",
                              'file_tracker_id': 1,
                              'added': 8, 'ignored': 0, 'modified': 0},
                             {'filename': "voter/test_data/ncvoter_2.txt",
                              'file_tracker_id': 3,
+                             'added': 1, 'ignored': 7, 'modified': 1}],
+                           [{'filename': "voter/test_data/ncvhis_1.txt",
+                             'file_tracker_id': 2,
+                             'added': 8, 'ignored': 0, 'modified': 0},
+                            {'filename': "voter/test_data/ncvhis_2.txt",
+                             'file_tracker_id': 4,
                              'added': 1, 'ignored': 7, 'modified': 1}]])
 
     def test_change_tracker_modified_values(self):
-        change_tallies = process_files(create_changes_only=True)
+        process_files(create_changes_only=True)
         ncvhis_modifieds = ChangeTracker.objects.filter(
             model_name=FileTracker.DATA_FILE_KIND_NCVHIS, op_code=ChangeTracker.OP_CODE_MODIFY)
         ncvoter_modifieds = ChangeTracker.objects.filter(

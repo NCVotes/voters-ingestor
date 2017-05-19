@@ -84,13 +84,13 @@ class NCVoter(models.Model):
         row['county_id'] = county_id
         birth_age = int(row['birth_age'])
         row['birth_age'] = birth_age
-        drivers_lic_str = row['drivers_lic']
+        drivers_lic_str = row.get('drivers_lic', '')
         drivers_lic = (drivers_lic_str == 'Y' or drivers_lic_str == 'y')
         row['drivers_lic'] = drivers_lic
         registr_dt_str = row['registr_dt']
         registr_dt = datetime.strptime(registr_dt_str, '%m/%d/%Y')
         row['registr_dt'] = registr_dt.date()
-        confidential_ind_str = row['confidential_ind']
+        confidential_ind_str = row.get('confidential_ind', '')
         row['confidential_ind'] = (confidential_ind_str == "Y")
         return row
 

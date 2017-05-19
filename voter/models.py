@@ -6,6 +6,11 @@ from django.core.serializers.json import DjangoJSONEncoder
 
 
 class FileTracker(models.Model):
+
+    class Meta:
+        verbose_name = "File Tracker"
+        verbose_name_plural = "File Tracking"
+
     DATA_FILE_KIND_NCVOTER = 'NCVoter'
     DATA_FILE_KIND_NCVHIS = 'NCVHis'
     DATA_FILE_KIND_CHOICES = [
@@ -21,6 +26,11 @@ class FileTracker(models.Model):
 
 
 class ChangeTracker(models.Model):
+
+    class Meta:
+        verbose_name = "Change Tracker"
+        verbose_name_plural = "Change Tracking"
+
     OP_CODE_ADD = 'A'
     OP_CODE_MODIFY = 'M'
     OP_CODE_DELETE = 'D'
@@ -39,6 +49,10 @@ class ChangeTracker(models.Model):
 
 
 class NCVHis(models.Model):
+
+    class Meta:
+        verbose_name = "NC Voter History"
+        verbose_name_plural = "NC Voter Histories"
 
     @staticmethod
     def parse_row(row):
@@ -77,6 +91,10 @@ class NCVHis(models.Model):
 
 
 class NCVoter(models.Model):
+
+    class Meta:
+        verbose_name = "NC Voter"
+        verbose_name_plural = "NC Voters"
 
     @staticmethod
     def parse_row(row):

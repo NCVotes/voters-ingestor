@@ -131,6 +131,7 @@ class NCVoter(models.Model):
     voter_status_desc = models.CharField('voter_status_desc', max_length=25)
     reason_cd = models.CharField('reason_cd', max_length=2)
     voter_status_reason_desc = models.CharField('voter_status_reason_desc', max_length=60)
+    # FIXME: Migrate to BooleanField
     absent_ind = models.CharField('absent_ind', max_length=1)
     name_prefx_cd = models.CharField('name_prefx_cd', max_length=4)
     last_name = models.CharField('last_name', max_length=25)
@@ -306,3 +307,70 @@ RACE_CODES = {
     'A': 'ASIAN',
     'M': 'TWO or MORE RACES',
 }
+
+GENDER_CODES = {
+    'M': 'M',
+    'F': 'F',
+}
+
+STATE_ABBREVS = [
+    ('AL', 'Alabama'),
+    ('AK', 'Alaska'),
+    ('AS', 'American Samoa'),
+    ('AZ', 'Arizona'),
+    ('AR', 'Arkansas'),
+    ('CA', 'California'),
+    ('CO', 'Colorado'),
+    ('CT', 'Connecticut'),
+    ('DE', 'Delaware'),
+    ('DC', 'District of Columbia'),
+    ('FM', 'Federated States of Micronesia'),
+    ('FL', 'Florida'),
+    ('GA', 'Georgia'),
+    ('GU', 'Guam'),
+    ('HI', 'Hawaii'),
+    ('ID', 'Idaho'),
+    ('IL', 'Illinois'),
+    ('IN', 'Indiana'),
+    ('IA', 'Iowa'),
+    ('KS', 'Kansas'),
+    ('KY', 'Kentucky'),
+    ('LA', 'Louisiana'),
+    ('ME', 'Maine'),
+    ('MH', 'Marshall Islands'),
+    ('MD', 'Maryland'),
+    ('MA', 'Massachusetts'),
+    ('MI', 'Michigan'),
+    ('MN', 'Minnesota'),
+    ('MS', 'Mississippi'),
+    ('MO', 'Missouri'),
+    ('MT', 'Montana'),
+    ('NE', 'Nebraska'),
+    ('NV', 'Nevada'),
+    ('NH', 'New Hampshire'),
+    ('NJ', 'New Jersey'),
+    ('NM', 'New Mexico'),
+    ('NY', 'New York'),
+    ('NC', 'North Carolina'),
+    ('ND', 'North Dakota'),
+    ('MP', 'Northern Mariana Islands'),
+    ('OH', 'Ohio'),
+    ('OK', 'Oklahoma'),
+    ('OR', 'Oregon'),
+    ('PW', 'Palau'),
+    ('PA', 'Pennsylvania'),
+    ('PR', 'Puerto Rico'),
+    ('RI', 'Rhode Island'),
+    ('SC', 'South Carolina'),
+    ('SD', 'South Dakota'),
+    ('TN', 'Tennessee'),
+    ('TX', 'Texas'),
+    ('UT', 'Utah'),
+    ('VT', 'Vermont'),
+    ('VI', 'Virgin Islands'),
+    ('VA', 'Virginia'),
+    ('WA', 'Washington'),
+    ('WV', 'West Virginia'),
+    ('WI', 'Wisconsin'),
+    ('WY', 'Wyoming'),
+]

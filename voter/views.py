@@ -19,3 +19,4 @@ class FileTrackerViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = FileTracker.objects.all()
     serializer_class = FileTrackerSerializer
     filter_class = FileTrackerFilterSet
+    order = ('created',)

@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ROOT_DIR = os.path.dirname(BASE_DIR)
+ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
 STATIC_ROOT = os.path.join(ROOT_DIR, 'public', 'static')
 
 # SECURITY: This secret key is for dev only. Production secret key is in ansible vault and loaded via environment variable

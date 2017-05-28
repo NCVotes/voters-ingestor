@@ -5,7 +5,7 @@ from ncvoter.settings import *
 
 DEBUG = False
 SECRET_KEY = os.environ['SECRET_KEY']
-DOMAIN = os.enviorn['DOMAIN']
+DOMAIN = os.environ['DOMAIN']
 ALLOWED_HOSTS = [DOMAIN]
 
 

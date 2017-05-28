@@ -12,14 +12,11 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_DIR = os.path.dirname(BASE_DIR)
+STATIC_ROOT = os.path.join(ROOT_DIR, '/public/static')
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
+# SECURITY: This secret key is for dev only. Production secret key is in ansible vault and loaded via environment variable
 SECRET_KEY = '&vp7)rox!ck7t^6@%8g%p+u==6r=lqt@d^__cbo7xj1uparp-3'
 
 # SECURITY WARNING: don't run with debug turned on in production!

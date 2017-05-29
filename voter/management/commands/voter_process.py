@@ -11,6 +11,8 @@ from bencode import bencode
 from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter
 
 
+BULK_CREATE_AMOUNT = 3000
+
 def merge_dicts(x, y):
     """Given two dicts `x` and `y`, merge them into a new dict as a shallow
     copy and return it."""
@@ -73,9 +75,8 @@ def create_changes(output, file_tracker):
     added_tally = 0
     modified_tally = 0
     ignored_tally = 0
+    unwritten_rows = []
     for index, row in enumerate(get_file_lines(file_tracker.filename)):
-        if output:
-            print(".", end='')
         hash_val = find_md5(row)
         model_class, change_tracker_instance = find_model_and_existing_instance(file_tracker, row)
         if model_class is None:
@@ -87,21 +88,32 @@ def create_changes(output, file_tracker):
             continue
         parsed_row = model_class.parse_row(row)
         if change_tracker_instance is None:
-            ChangeTracker.objects.create(
-                ncid=row['ncid'], election_desc=row.get('election_desc', ''),
-                md5_hash=hash_val, file_tracker=file_tracker,
-                model_name=file_tracker.data_file_kind,
-                op_code=ChangeTracker.OP_CODE_ADD, data=row)
+            change_tracker_data = row
+            change_tracker_op_code = ChangeTracker.OP_CODE_ADD
             added_tally += 1
         else:
             existing_data = model_class.parse_existing(change_tracker_instance.data)
-            data_diff = diff_dicts(existing_data, parsed_row)
-            ChangeTracker.objects.create(
-                ncid=row['ncid'], election_desc=row.get('election_desc', ''),
-                md5_hash=hash_val, file_tracker=file_tracker,
-                model_name=file_tracker.data_file_kind,
-                op_code=ChangeTracker.OP_CODE_MODIFY, data=data_diff)
+            change_tracker_data = diff_dicts(existing_data, parsed_row)
+            change_tracker_op_code = ChangeTracker.OP_CODE_MODIFY
             modified_tally += 1
+        change_tracker_values = {
+            'ncid': row['ncid'],
+            'election_desc': row.get('election_desc', ''),
+            'md5_hash': hash_val,
+            'file_tracker': file_tracker,
+            'model_name': file_tracker.data_file_kind,
+            'op_code': change_tracker_op_code,
+            'data': change_tracker_data
+        }
+        unwritten_rows.append(ChangeTracker(**change_tracker_values))
+        if len(unwritten_rows) >= BULK_CREATE_AMOUNT:
+            if output:
+                print(".", end='', flush=True)
+            ChangeTracker.objects.bulk_create(unwritten_rows)
+            unwritten_rows = []
+    if len(unwritten_rows) > 0:
+        ChangeTracker.objects.bulk_create(unwritten_rows)
+        unwritten_rows = []
     file_tracker.change_tracker_processed = True
     file_tracker.save()
     return (added_tally, modified_tally, ignored_tally)
@@ -111,9 +123,11 @@ def create_changes(output, file_tracker):
 def process_changes(output, file_tracker):
     if output:
         print("Processing updates for file {0}".format(file_tracker.filename))
-    for change_tracker in file_tracker.changes.iterator():
-        if output:
-            print(".", end='')
+    unwritten_ncvoters = []
+    unwritten_ncvhiss = []
+    for index, change_tracker in enumerate(file_tracker.changes.iterator()):
+        if output and index % BULK_CREATE_AMOUNT == 0:
+            print(".", end='', flush=True)
         ModelClass = None
         if change_tracker.model_name == FileTracker.DATA_FILE_KIND_NCVOTER:
             ModelClass = NCVoter
@@ -134,9 +148,11 @@ def process_changes(output, file_tracker):
                     nc_voter = None
             if nc_voter is not None:
                 # TODO: Investigate if this works against real data
-                ModelClass.objects.create(merge_dicts({"voter": nc_voter}, **data))
+                data['voter'] = nc_voter
+            if ModelClass == NCVoter:
+                unwritten_ncvoters.append(NCVoter(**data))
             else:
-                ModelClass.objects.create(**data)
+                unwritten_ncvhiss.append(NCVHis(**data))
         if change_tracker.op_code == ChangeTracker.OP_CODE_MODIFY:
             if ModelClass == NCVHis:
                 query_data = {
@@ -149,6 +165,18 @@ def process_changes(output, file_tracker):
                 }
             ModelClass.objects.filter(**query_data) \
                 .update(**data)
+        if len(unwritten_ncvoters) >= BULK_CREATE_AMOUNT:
+            NCVoter.objects.bulk_create(unwritten_ncvoters)
+            unwritten_ncvoters = []
+        if len(unwritten_ncvhiss) >= BULK_CREATE_AMOUNT:
+            NCVHis.objects.bulk_create(unwritten_ncvhiss)
+            unwritten_ncvhiss = []
+    if len(unwritten_ncvoters) >= 0:
+        NCVoter.objects.bulk_create(unwritten_ncvoters)
+        unwritten_ncvoters = []
+    if len(unwritten_ncvhiss) >= 0:
+        NCVHis.objects.bulk_create(unwritten_ncvhiss)
+        unwritten_ncvhiss = []
     file_tracker.updates_processed = True
     file_tracker.save()
 

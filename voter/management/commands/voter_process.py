@@ -209,7 +209,11 @@ def process_file(output, create_changes_only, data_file_label, data_file_kind, c
         file_tracker.change_tracker_processed = True
         file_tracker.save()
     if not create_changes_only:
-        for file_tracker in file_trackers:
+        file_tracker_filter_data['change_tracker_processed'] = True
+        file_tracker_filter_data['updates_processed'] = False
+        unprocessed_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
+            .order_by('created')
+        for file_tracker in unprocessed_file_trackers:
             process_changes(output, file_tracker)
     return results
 

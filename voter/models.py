@@ -20,6 +20,7 @@ class FileTracker(models.Model):
     etag = models.TextField('etag')
     filename = models.TextField('filename')
     data_file_kind = models.CharField('Data file kind', max_length=7, choices=DATA_FILE_KIND_CHOICES)
+    county_num = models.IntegerField(null=True)
     created = models.DateTimeField()
     change_tracker_processed = models.BooleanField('change tracker processed', default=False)
     updates_processed = models.BooleanField('updates processed', default=False)

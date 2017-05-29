@@ -10,8 +10,10 @@ import requests
 from voter.models import FileTracker
 
 
-NCVOTER_ZIP_URL = "http://dl.ncsbe.gov.s3.amazonaws.com/data/ncvoter_Statewide.zip"
-NCVHIS_ZIP_URL = "http://dl.ncsbe.gov.s3.amazonaws.com/data/ncvhis_Statewide.zip"
+NCVOTER_ZIP_URL_BASE = "http://dl.ncsbe.gov.s3.amazonaws.com/data/ncvoter"
+NCVHIS_ZIP_URL_BASE = "http://dl.ncsbe.gov.s3.amazonaws.com/data/ncvhis"
+NCVOTER_ZIP_URL = NCVOTER_ZIP_URL_BASE + "_Statewide.zip"
+NCVHIS_ZIP_URL = NCVHIS_ZIP_URL_BASE + "_Statewide.zip"
 NCVOTER_DOWNLOAD_PATH = "downloads/ncvoter"
 NCVHIS_DOWNLOAD_PATH = "downloads/ncvhis"
 
@@ -59,13 +61,13 @@ def attempt_fetch_and_write_new_zip(url, base_path):
     etag, resp = get_etag_and_zip_stream(url)
     now = datetime.now(timezone.utc)
     target_folder = derive_target_folder(base_path, now)
-    target_filename = os.path.join(target_folder, "data.zip")
+    target_filename = os.path.join(target_folder, url.split('/')[-1])
     f_track = FileTracker.objects.filter(etag=etag).first()
     if f_track:
         status_code = FETCH_STATUS_CODES.CODE_NOTHING_TO_DO
     else:
         if resp.status_code == 200:
-            os.makedirs(target_folder)
+            os.makedirs(target_folder, exist_ok=True)
             write_success = write_stream(resp, target_filename)
             if write_success:
                 status_code = FETCH_STATUS_CODES.CODE_OK
@@ -79,14 +81,14 @@ def attempt_fetch_and_write_new_zip(url, base_path):
             'target_filename': target_filename}
 
 
-def process_new_zip(url, base_path, label):
+def process_new_zip(url, base_path, label, county_num):
     print("Fetching {0}".format(label))
     fetch_status_code, target_filename, created_time, etag = pluck(
         attempt_fetch_and_write_new_zip(url, base_path),
         'status_code', 'target_filename', 'created_time', 'etag')
     if fetch_status_code == FETCH_STATUS_CODES.CODE_OK:
         print("Fetched {0} successfully to {1}".format(label, target_filename))
-        print("Extracting {0}".format(label))
+        print("Extracting {0}".format(target_filename))
         unzip_success = extract_and_remove_file(target_filename)
         if unzip_success:
             target_dir = os.path.dirname(target_filename)
@@ -99,8 +101,10 @@ def process_new_zip(url, base_path, label):
                 data_file_kind = FileTracker.DATA_FILE_KIND_NCVOTER
             else:
                 data_file_kind = FileTracker.DATA_FILE_KIND_NCVHIS
-            ft = FileTracker.objects.create(etag=etag, filename=result_filename,
-                                            created=created_time, data_file_kind=data_file_kind)
+            ft = FileTracker.objects.create(
+                etag=etag, filename=result_filename,
+                county_num=county_num, created=created_time,
+                data_file_kind=data_file_kind)
             if not ft:
                 return FETCH_STATUS_CODES.CODE_DB_FAILURE
         else:
@@ -119,11 +123,35 @@ def process_new_zip(url, base_path, label):
 class Command(BaseCommand):
     help = "Fetches and processes voter and voter history data from NCSBE.gov"
 
-    def fetch_zips(self):
-        status_1 = process_new_zip(NCVOTER_ZIP_URL, NCVOTER_DOWNLOAD_PATH, "ncvoter")
-        status_2 = process_new_zip(NCVHIS_ZIP_URL, NCVHIS_DOWNLOAD_PATH, "ncvhis")
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--bycounty',
+            action='store_true',
+            dest='bycounty',
+            default=False,
+            help='Fetch per county files rather than statewide',)
+
+    def fetch_state_zips(self):
+        status_1 = process_new_zip(NCVOTER_ZIP_URL, NCVOTER_DOWNLOAD_PATH, "ncvoter", None)
+        status_2 = process_new_zip(NCVHIS_ZIP_URL, NCVHIS_DOWNLOAD_PATH, "ncvhis", None)
         return status_1, status_2
+
+    def fetch_county_zips(self):
+        statuses = []
+        for county_num in range(1, 101):
+            ncvoter_zip_url = NCVOTER_ZIP_URL_BASE + str(county_num) + ".zip"
+            ncvhis_zip_url = NCVHIS_ZIP_URL_BASE + str(county_num) + ".zip"
+            result = process_new_zip(ncvoter_zip_url,
+                NCVOTER_DOWNLOAD_PATH, "ncvoter", county_num)
+            statuses.append(result)
+            result = process_new_zip(ncvhis_zip_url,
+                NCVHIS_DOWNLOAD_PATH, "ncvhis", county_num)
+            statuses.append(result)
+        return statuses
 
     def handle(self, *args, **options):
         print("Fetching zip files...")
-        status_1, status_2 = self.fetch_zips()
+        if not options['bycounty']:
+            status_1, status_2 = self.fetch_state_zips()
+        else:
+            self.fetch_county_zips()

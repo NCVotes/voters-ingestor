@@ -111,6 +111,9 @@ class NCVoter(models.Model):
         row['registr_dt'] = registr_dt.date()
         confidential_ind_str = row.get('confidential_ind', '')
         row['confidential_ind'] = (confidential_ind_str == "Y")
+        raw_birth_year = row.get('birth_year')
+        if raw_birth_year:
+            row['birth_year'] = int(raw_birth_year)
         return row
 
     @staticmethod
@@ -123,6 +126,7 @@ class NCVoter(models.Model):
     ncid = models.CharField('ncid', max_length=12, unique=True)
     county_id = models.SmallIntegerField()
     birth_age = models.IntegerField()
+    birth_year = models.IntegerField(blank=True)
     confidential_ind = models.BooleanField()
     birth_state = models.CharField('birth state', max_length=2)
     age = models.TextField()
@@ -138,6 +142,7 @@ class NCVoter(models.Model):
     last_name = models.CharField('last_name', max_length=25)
     middle_name = models.CharField('middle_name', max_length=25)
     first_name = models.CharField('first_name', max_length=20)
+    name_suffix_lbl = models.CharField('name_suffix_lbl', max_length=30)
     midl_name = models.CharField('midl_name', max_length=20)
     name_sufx_cd = models.CharField('name_sufx_cd', max_length=3)
     res_street_address = models.CharField('res_street_address', max_length=63)

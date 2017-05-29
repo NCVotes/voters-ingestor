@@ -153,14 +153,19 @@ def process_changes(output, file_tracker):
     file_tracker.save()
 
 
-def process_file(output, create_changes_only, data_file_label, data_file_kind):
+def process_file(output, create_changes_only, data_file_label, data_file_kind, county_num=None):
     results = []
     if output:
         print("Processing {0} file...".format(data_file_label))
-    unprocessed_file_trackers = FileTracker.objects.filter(
-        change_tracker_processed=False, data_file_kind=data_file_kind) \
+    file_tracker_filter_data = {
+        'change_tracker_processed': False,
+        'data_file_kind': data_file_kind
+    }
+    if county_num:
+        file_tracker_filter_data['county_num'] = county_num
+    file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
         .order_by('created')
-    for file_tracker in unprocessed_file_trackers:
+    for file_tracker in file_trackers:
         added, modified, ignored = create_changes(output, file_tracker)
         results.append(
             {'filename': file_tracker.filename,
@@ -173,22 +178,20 @@ def process_file(output, create_changes_only, data_file_label, data_file_kind):
             print("Added records: {0}".format(added))
             print("Modified records: {0}".format(modified))
             print("Ignored records: {0}".format(ignored))
+        file_tracker.change_tracker_processed = True
+        file_tracker.save()
     if not create_changes_only:
-        unupdated_file_trackers = FileTracker.objects.filter(
-            change_tracker_processed=True, updates_processed=False,
-            data_file_kind=data_file_kind) \
-            .order_by('created')
-        for file_tracker in unupdated_file_trackers:
+        for file_tracker in file_trackers:
             process_changes(output, file_tracker)
     return results
 
 
-def process_files(output=False, create_changes_only=False):
+def process_files(output=False, create_changes_only=False, county_num=None):
     file_label_kind_listing = [("NCVoter", FileTracker.DATA_FILE_KIND_NCVOTER),
                                ("NCVHis", FileTracker.DATA_FILE_KIND_NCVHIS)]
     change_results = [
         process_file(output, create_changes_only,
-                     data_file_label, data_file_kind)
+                     data_file_label, data_file_kind, county_num)
         for data_file_label, data_file_kind in file_label_kind_listing
         ]
     # TODO: Add FK's from NCVoter to NCVHis once both are processed
@@ -198,5 +201,13 @@ def process_files(output=False, create_changes_only=False):
 class Command(BaseCommand):
     help = "Processes voter data to save into the database"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '-c', '--county',
+            dest='county',
+            type=int,
+            help='The county number of the per-county file you want to process (Processes only this county, as opposed to all files)',)
+
     def handle(self, *args, **options):
-        process_files(output=True, create_changes_only=False)
+        county_num = options.get('county')
+        process_files(output=True, create_changes_only=False, county_num=county_num)

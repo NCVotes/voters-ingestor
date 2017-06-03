@@ -12,9 +12,7 @@ class FileTracker(models.Model):
         verbose_name_plural = "File Tracking"
 
     DATA_FILE_KIND_NCVOTER = 'NCVoter'
-    DATA_FILE_KIND_NCVHIS = 'NCVHis'
     DATA_FILE_KIND_CHOICES = [
-        (DATA_FILE_KIND_NCVHIS, 'NCVHis file'),
         (DATA_FILE_KIND_NCVOTER, 'NCVoter file'),
     ]
     etag = models.TextField('etag')
@@ -34,11 +32,9 @@ class ChangeTracker(models.Model):
 
     OP_CODE_ADD = 'A'
     OP_CODE_MODIFY = 'M'
-    OP_CODE_DELETE = 'D'
     OP_CODE_CHOICES = [
         (OP_CODE_ADD, 'Add'),
         (OP_CODE_MODIFY, 'Modify'),
-        (OP_CODE_DELETE, 'Delete'),
     ]
     op_code = models.CharField('Operation Code', max_length=1, choices=OP_CODE_CHOICES)
     model_name = models.CharField('Model Name', max_length=20, choices=FileTracker.DATA_FILE_KIND_CHOICES)

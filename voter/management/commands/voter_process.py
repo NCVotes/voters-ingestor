@@ -119,10 +119,6 @@ def create_changes(output, file_tracker):
     file_tracker.save()
     return (added_tally, modified_tally, ignored_tally)
 
-    if len(unwritten_ncvhiss) >= 0:
-        NCVHis.objects.bulk_create(unwritten_ncvhiss)
-        unwritten_ncvhiss = []
-
 
 @transaction.atomic
 def process_changes(output, file_tracker):

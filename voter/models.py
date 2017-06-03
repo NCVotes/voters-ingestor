@@ -12,7 +12,9 @@ class FileTracker(models.Model):
         verbose_name_plural = "File Tracking"
 
     DATA_FILE_KIND_NCVOTER = 'NCVoter'
+    DATA_FILE_KIND_NCVHIS = 'NCVHis'
     DATA_FILE_KIND_CHOICES = [
+        (DATA_FILE_KIND_NCVHIS, 'NCVHis file'),
         (DATA_FILE_KIND_NCVOTER, 'NCVoter file'),
     ]
     etag = models.TextField('etag')

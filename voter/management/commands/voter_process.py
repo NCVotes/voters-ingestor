@@ -144,6 +144,45 @@ def process_changes(output, file_tracker):
     file_tracker.save()
 
 
+@transaction.atomic
+def load_ncvhis(output, file_tracker):
+    if output:
+        print("Processing NCVHis data from file {0}".format(file_tracker.filename))
+    added_tally = 0
+    ignored_tally = 0
+    unwritten_rows = []
+    for index, row in enumerate(get_file_lines(file_tracker.filename)):
+        ncid = row['ncid']
+        election_desc = row['election_desc']
+        try:
+            existing_ncvhis = NCVHis.objects.get(ncid=ncid, election_desc=election_desc)
+        except NCVHis.DoesNotExist:
+            existing_ncvhis = None
+        if existing_ncvhis is None:
+            added_tally += 1
+            parsed_row = NCVHis.parse_row(row)
+            unwritten_rows.append(NCVHis(**parsed_row))
+        else:
+            ignored_tally += 1
+            continue
+        if len(unwritten_rows) >= BULK_CREATE_AMOUNT:
+            if output:
+                print(".", end='', flush=True)
+            NCVHis.objects.bulk_create(unwritten_rows)
+            unwritten_rows = []
+    if len(unwritten_rows) > 0:
+        NCVHis.objects.bulk_create(unwritten_rows)
+        unwritten_rows = []
+    file_tracker.change_tracker_processed = True
+    file_tracker.updates_processed = True
+    file_tracker.save()
+    if output:
+        print("NCVHis loading completed:")
+        print("Added records: {0}".format(added_tally))
+        print("Ignored records: {0}".format(ignored_tally))
+    return (added_tally, 0, ignored_tally)
+
+
 def process_files(output, county_num=None):
     results = []
     if output:
@@ -154,9 +193,9 @@ def process_files(output, county_num=None):
     }
     if county_num:
         file_tracker_filter_data['county_num'] = county_num
-    file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
+    ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
         .order_by('created')
-    for file_tracker in file_trackers:
+    for file_tracker in ncvoter_file_trackers:
         added, modified, ignored = create_changes(output, file_tracker)
         results.append(
             {'filename': file_tracker.filename,
@@ -173,11 +212,23 @@ def process_files(output, county_num=None):
         file_tracker.save()
     file_tracker_filter_data['change_tracker_processed'] = True
     file_tracker_filter_data['updates_processed'] = False
-    unprocessed_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
+    unprocessed_ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
         .order_by('created')
-    for file_tracker in unprocessed_file_trackers:
+    for file_tracker in unprocessed_ncvoter_file_trackers:
         process_changes(output, file_tracker)
-    return results
+    ncvhis_filter_data = {
+        'change_tracker_processed': False,
+        'updates_processed': False,
+        'data_file_kind': FileTracker.DATA_FILE_KIND_NCVHIS,
+    }
+    if county_num:
+        ncvhis_filter_data['county_num'] = county_num
+    unloaded_ncvhis_file_trackers = FileTracker.objects.filter(**ncvhis_filter_data) \
+        .order_by('created')
+    ncvhis_results = []
+    for file_tracker in unloaded_ncvhis_file_trackers:
+        ncvhis_results.append(load_ncvhis(output, file_tracker))
+    return results, ncvhis_results
 
 
 class Command(BaseCommand):

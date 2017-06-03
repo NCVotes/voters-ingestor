@@ -148,7 +148,7 @@ def process_changes(output, file_tracker):
     file_tracker.save()
 
 
-def process_file(output, create_changes_only, county_num=None):
+def process_file(output, county_num=None):
     results = []
     if output:
         print("Processing NCVoter file...")
@@ -175,13 +175,12 @@ def process_file(output, create_changes_only, county_num=None):
             print("Ignored records: {0}".format(ignored))
         file_tracker.change_tracker_processed = True
         file_tracker.save()
-    if not create_changes_only:
-        file_tracker_filter_data['change_tracker_processed'] = True
-        file_tracker_filter_data['updates_processed'] = False
-        unprocessed_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
-            .order_by('created')
-        for file_tracker in unprocessed_file_trackers:
-            process_changes(output, file_tracker)
+    file_tracker_filter_data['change_tracker_processed'] = True
+    file_tracker_filter_data['updates_processed'] = False
+    unprocessed_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
+        .order_by('created')
+    for file_tracker in unprocessed_file_trackers:
+        process_changes(output, file_tracker)
     return results
 
 
@@ -197,4 +196,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         county_num = options.get('county')
-        process_file(output=True, create_changes_only=False, county_num=county_num)
+        process_file(output=True, county_num=county_num)

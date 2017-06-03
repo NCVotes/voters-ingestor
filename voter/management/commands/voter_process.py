@@ -148,7 +148,7 @@ def process_changes(output, file_tracker):
     file_tracker.save()
 
 
-def process_file(output, county_num=None):
+def process_files(output, county_num=None):
     results = []
     if output:
         print("Processing NCVoter file...")
@@ -196,4 +196,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         county_num = options.get('county')
-        process_file(output=True, county_num=county_num)
+        process_files(output=True, county_num=county_num)

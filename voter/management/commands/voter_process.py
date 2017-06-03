@@ -5,6 +5,7 @@ from django.forms.models import model_to_dict
 import csv
 import codecs
 import hashlib
+import os
 
 from bencode import bencode
 
@@ -231,6 +232,17 @@ def process_files(output, county_num=None):
     return results, ncvhis_results
 
 
+def remove_processed_files(output=True):
+    if output:
+        print("Deleting processed files")
+    processed_file_trackers = FileTracker.objects.filter(updates_processed=True).order_by('created')
+    for file_tracker in processed_file_trackers:
+        try:
+            os.remove(file_tracker.filename)
+        except FileNotFoundError:
+            pass
+
+
 class Command(BaseCommand):
     help = "Processes voter data to save into the database"
 
@@ -244,3 +256,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         county_num = options.get('county')
         process_files(output=True, county_num=county_num)
+        remove_processed_files(output=True)

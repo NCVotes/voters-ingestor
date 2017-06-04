@@ -155,13 +155,15 @@ def load_ncvhis(output, file_tracker):
     for index, row in enumerate(get_file_lines(file_tracker.filename)):
         ncid = row['ncid']
         election_desc = row['election_desc']
-        try:
-            existing_ncvhis = NCVHis.objects.get(ncid=ncid, election_desc=election_desc)
-        except NCVHis.DoesNotExist:
-            existing_ncvhis = None
-        if existing_ncvhis is None:
+        existing_ncvhis = NCVHis.objects.filter(ncid=ncid, election_desc=election_desc).exists()
+        if not existing_ncvhis:
             added_tally += 1
             parsed_row = NCVHis.parse_row(row)
+            try:
+                corresponding_ncvoter = NCVoter.objects.get(ncid=ncid)
+            except NCVoter.DoesNotExist:
+                corresponding_ncvoter = None
+            parsed_row['voter'] = corresponding_ncvoter
             unwritten_rows.append(NCVHis(**parsed_row))
         else:
             ignored_tally += 1
@@ -235,7 +237,8 @@ def process_files(output, county_num=None):
 def remove_processed_files(output=True):
     if output:
         print("Deleting processed files")
-    processed_file_trackers = FileTracker.objects.filter(updates_processed=True).order_by('created')
+    processed_file_trackers = FileTracker.objects.filter(updates_processed=True) \
+        .order_by('created')
     for file_tracker in processed_file_trackers:
         try:
             os.remove(file_tracker.filename)

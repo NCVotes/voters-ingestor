@@ -49,7 +49,7 @@ def get_file_lines(filename):
             yield non_empty_row
 
 
-def find_model_and_existing_instance(file_tracker, row):
+def find_model_and_existing_instance(file_tracker, row, initial):
     data_file_kind = file_tracker.data_file_kind
     if data_file_kind == FileTracker.DATA_FILE_KIND_NCVOTER:
         model_class = NCVoter
@@ -63,15 +63,18 @@ def find_model_and_existing_instance(file_tracker, row):
     else:
         print("Unknown file format, aborting processing of {0}".format(file_tracker.filename))
         return None, None
-    try:
-        instance = ChangeTracker.objects.filter(**query_data).latest('file_tracker__created')
-    except ChangeTracker.DoesNotExist:
+    if not initial:
+        try:
+            instance = ChangeTracker.objects.filter(**query_data).latest('file_tracker__created')
+        except ChangeTracker.DoesNotExist:
+            instance = None
+    else:
         instance = None
     return model_class, instance
 
 
 @transaction.atomic
-def create_changes(output, file_tracker):
+def create_changes(output, initial, file_tracker):
     if output:
         print("Processing change tracking for file {0}".format(file_tracker.filename))
     added_tally = 0
@@ -80,7 +83,7 @@ def create_changes(output, file_tracker):
     unwritten_rows = []
     for index, row in enumerate(get_file_lines(file_tracker.filename)):
         hash_val = find_md5(row)
-        model_class, change_tracker_instance = find_model_and_existing_instance(file_tracker, row)
+        model_class, change_tracker_instance = find_model_and_existing_instance(file_tracker, row, initial)
         if model_class is None:
             # Can't determine file type, cancel processing
             return
@@ -146,7 +149,7 @@ def process_changes(output, file_tracker):
 
 
 @transaction.atomic
-def load_ncvhis(output, file_tracker):
+def load_ncvhis(output, initial, file_tracker):
     if output:
         print("Processing NCVHis data from file {0}".format(file_tracker.filename))
     added_tally = 0
@@ -155,7 +158,10 @@ def load_ncvhis(output, file_tracker):
     for index, row in enumerate(get_file_lines(file_tracker.filename)):
         ncid = row['ncid']
         election_desc = row['election_desc']
-        existing_ncvhis = NCVHis.objects.filter(ncid=ncid, election_desc=election_desc).exists()
+        if not initial:
+            existing_ncvhis = NCVHis.objects.filter(ncid=ncid, election_desc=election_desc).exists()
+        else:
+            existing_ncvhis = False
         if not existing_ncvhis:
             added_tally += 1
             parsed_row = NCVHis.parse_row(row)
@@ -186,7 +192,7 @@ def load_ncvhis(output, file_tracker):
     return (added_tally, 0, ignored_tally)
 
 
-def process_files(output, county_num=None):
+def process_files(output, county_num=None, initial=False):
     results = []
     if output:
         print("Processing NCVoter file...")
@@ -199,7 +205,7 @@ def process_files(output, county_num=None):
     ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
         .order_by('created')
     for file_tracker in ncvoter_file_trackers:
-        added, modified, ignored = create_changes(output, file_tracker)
+        added, modified, ignored = create_changes(output, initial, file_tracker)
         results.append(
             {'filename': file_tracker.filename,
              'file_tracker_id': file_tracker.id,
@@ -230,7 +236,7 @@ def process_files(output, county_num=None):
         .order_by('created')
     ncvhis_results = []
     for file_tracker in unloaded_ncvhis_file_trackers:
-        ncvhis_results.append(load_ncvhis(output, file_tracker))
+        ncvhis_results.append(load_ncvhis(output, initial, file_tracker))
     return results, ncvhis_results
 
 
@@ -251,12 +257,19 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '-c', '--county',
-            dest='county',
-            type=int,
-            help='The county number of the per-county file you want to process (Processes only this county, as opposed to all files)',)
+                '-c', '--county',
+                dest='county',
+                type=int,
+                help='The county number of the per-county file you want to process (Processes only this county, as opposed to all files)',)
+        parser.add_argument(
+                '--initial',
+                dest='initial',
+                action='store_true',
+                default=False,
+                help='For initial load of data, skips checking if rows of data already exist for optimization.')
 
     def handle(self, *args, **options):
         county_num = options.get('county')
-        process_files(output=True, county_num=county_num)
+        initial = options.get('initial')
+        process_files(output=True, county_num=county_num, initial=initial)
         remove_processed_files(output=True)

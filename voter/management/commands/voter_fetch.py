@@ -102,7 +102,7 @@ def process_new_zip(url, base_path, label, county_num):
             else:
                 data_file_kind = FileTracker.DATA_FILE_KIND_NCVHIS
             ft = FileTracker.objects.create(
-                etag=etag, filename=result_filename,
+                etag=etag, filename=target_filename[:-3] + 'txt',
                 county_num=county_num, created=created_time,
                 data_file_kind=data_file_kind)
             if not ft:

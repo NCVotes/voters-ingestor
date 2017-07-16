@@ -42,7 +42,7 @@ class ChangeTracker(models.Model):
     model_name = models.CharField('Model Name', max_length=20, choices=FileTracker.DATA_FILE_KIND_CHOICES)
     md5_hash = models.CharField('MD5 Hash Value', max_length=32)
     data = JSONField(encoder=DjangoJSONEncoder)
-    ncid = models.CharField('ncid', max_length=12)
+    ncid = models.CharField('ncid', max_length=12, db_index=True)
     election_desc = models.CharField('election_desc', max_length=230, blank=True)
     file_tracker = models.ForeignKey('FileTracker', related_name='changes')
 
@@ -71,13 +71,13 @@ class NCVHis(models.Model):
         row['election_lbl'] = election_lbl_dt.date()
         return row
 
-    ncid = models.CharField('ncid', max_length=12)
+    ncid = models.CharField('ncid', max_length=12, db_index=True)
     voter = models.ForeignKey('NCVoter', on_delete=models.CASCADE, related_name="histories", to_field='ncid', null=True)
-    county_id = models.SmallIntegerField('county_id')
+    county_id = models.SmallIntegerField('county_id', db_index=True)
     county_desc = models.CharField('county_desc', max_length=60, blank=True)
     voter_reg_num = models.CharField('voter_reg_num', max_length=12, blank=True)
     election_lbl = models.DateField( max_length=10, blank=True)
-    election_desc = models.CharField('election_desc', max_length=230, blank=True)
+    election_desc = models.CharField('election_desc', max_length=230, blank=True, db_index=True)
     voting_method = models.CharField('voting_method', max_length=32, blank=True)
     voted_party_cd = models.CharField('voted_party_cd', max_length=3, blank=True)
     voted_party_desc = models.CharField('voted_party_desc', max_length=60, blank=True)
@@ -121,8 +121,8 @@ class NCVoter(models.Model):
         row['registr_dt'] = registr_dt.date()
         return row
 
-    ncid = models.CharField('ncid', max_length=12, unique=True)
-    county_id = models.SmallIntegerField()
+    ncid = models.CharField('ncid', max_length=12, unique=True, db_index=True)
+    county_id = models.SmallIntegerField(db_index=True)
     birth_age = models.IntegerField()
     birth_year = models.IntegerField(null=True)
     confidential_ind = models.BooleanField()

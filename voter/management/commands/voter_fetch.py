@@ -25,7 +25,7 @@ FETCH_STATUS_CODES = Enum("FETCH_STATUS_CODES",
 
 
 def derive_target_folder(base_path, now):
-    now_str = now.strftime("%Y-%m-%dT%H:%M:%S")
+    now_str = now.strftime("%Y-%m-%dT%H:%M:%S:%s")
     return os.path.join(base_path, now_str)
 
 

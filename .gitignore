@@ -1,0 +1,4 @@
+__pycache__/
+*.py[cod]
+ncvoter/downloads/
+deployment/.vault_pass

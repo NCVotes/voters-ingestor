@@ -66,9 +66,10 @@ class NCVHis(models.Model):
 
     @staticmethod
     def parse_existing(row):
-        election_lbl_str = row['election_lbl']
-        election_lbl_dt = datetime.strptime(election_lbl_str, '%Y-%m-%d')
-        row['election_lbl'] = election_lbl_dt.date()
+        election_lbl_str = row.get('election_lbl')
+        if election_lbl_str:
+            election_lbl_dt = datetime.strptime(election_lbl_str, '%Y-%m-%d')
+            row['election_lbl'] = election_lbl_dt.date()
         return row
 
     ncid = models.CharField('ncid', max_length=12, db_index=True)
@@ -116,9 +117,10 @@ class NCVoter(models.Model):
 
     @staticmethod
     def parse_existing(row):
-        registr_dt_str = row['registr_dt']
-        registr_dt = datetime.strptime(registr_dt_str, '%Y-%m-%d')
-        row['registr_dt'] = registr_dt.date()
+        registr_dt_str = row.get('registr_dt')
+        if registr_dt_str:
+            registr_dt = datetime.strptime(registr_dt_str, '%Y-%m-%d')
+            row['registr_dt'] = registr_dt.date()
         return row
 
     ncid = models.CharField('ncid', max_length=12, unique=True, db_index=True)

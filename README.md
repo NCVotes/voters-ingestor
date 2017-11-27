@@ -32,3 +32,5 @@ any files not already downloaded. Any previously downloaded files that match are
 
 To process and load the data for any existing downloaded files run `python manage.py voter_process`. This
 process can take a very long time, especially for the initial import of the files.
+
+Note: make sure that only one `voter_process` is running at any time. Otherwise, conflicts between the processes would result in unexpected behaviors such as issue https://github.com/NCVotes/voters-ingestor/issues/4

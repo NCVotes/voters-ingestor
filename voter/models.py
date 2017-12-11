@@ -46,6 +46,7 @@ class ChangeTracker(models.Model):
     ncid = models.CharField('ncid', max_length=12, db_index=True)
     election_desc = models.CharField('election_desc', max_length=230, blank=True)
     file_tracker = models.ForeignKey('FileTracker', on_delete=models.CASCADE, related_name='changes')
+    snapshot_dt = models.DateTimeField()
 
 
 class NCVHis(models.Model):

@@ -24,6 +24,7 @@ class FileTracker(models.Model):
     created = models.DateTimeField()
     change_tracker_processed = models.BooleanField('change tracker processed', default=False)
     updates_processed = models.BooleanField('updates processed', default=False)
+    change_tracker_processing = models.BooleanField('processing changes', default=False)
 
 
 class ChangeTracker(models.Model):
@@ -199,6 +200,29 @@ class NCVoter(models.Model):
     dist_2_desc = models.CharField('dist_2_desc', max_length=60)
     vtd_abbrv = models.CharField('vtd_abbrv', max_length=6)
     vtd_desc = models.CharField('vtd_desc', max_length=60)
+    house_num = models.CharField('vtd_desc', max_length=10)
+    half_code = models.CharField('vtd_desc', max_length=1)
+    street_dir = models.CharField('vtd_desc', max_length=2)
+    street_name = models.CharField('vtd_desc', max_length=30)
+    street_type_cd = models.CharField('vtd_desc', max_length=4)
+    street_sufx_cd = models.CharField('vtd_desc', max_length=4)
+    unit_designator  = models.CharField('vtd_desc', max_length=4)
+    unit_num  = models.CharField('vtd_desc', max_length=7)
+    area_cd = models.CharField('vtd_desc', max_length=3)
+    phone_num = models.CharField('vtd_desc', max_length=7)
+    race_desc = models.CharField('vtd_desc', max_length=35)
+    ethnic_desc = models.CharField('vtd_desc', max_length=30)
+    party_desc = models.CharField('vtd_desc', max_length=12)
+    sex_code = models.CharField('vtd_desc', max_length=1)
+    sex = models.CharField('vtd_desc', max_length=6)
+    cong_dist_desc  = models.CharField('vtd_desc', max_length=30)
+    super_court_desc  = models.CharField('vtd_desc', max_length=30)
+    judic_dist_desc = models.CharField('vtd_desc', max_length=30)
+    NC_senate_desc = models.CharField('vtd_desc', max_length=30)
+    NC_house_desc = models.CharField('vtd_desc', max_length=30)
+    cancellation_dt = models.CharField('vtd_desc', max_length=10)
+    load_dt = models.CharField('vtd_desc', max_length=10)
+    age_group = models.CharField('vtd_desc', max_length=35)
 
 
 COUNTY_CODES = {

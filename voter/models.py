@@ -45,7 +45,7 @@ class ChangeTracker(models.Model):
     data = JSONField(encoder=DjangoJSONEncoder)
     ncid = models.CharField('ncid', max_length=12, db_index=True)
     election_desc = models.CharField('election_desc', max_length=230, blank=True)
-    file_tracker = models.ForeignKey('FileTracker', related_name='changes')
+    file_tracker = models.ForeignKey('FileTracker', on_delete=models.CASCADE, related_name='changes')
 
 
 class NCVHis(models.Model):

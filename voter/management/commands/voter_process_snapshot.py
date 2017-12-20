@@ -10,6 +10,7 @@ import os
 from datetime import datetime
 from bencode import bencode
 import pytz
+import time
 
 from voter.models import FileTracker, ChangeTracker, NCVoter
 
@@ -126,26 +127,28 @@ def track_changes(file_tracker, output):
 
 
 def process_files(output):
-    results = []
     if output:
         print("Processing NCVoter file...")
 
-    if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists()
-        print("Another parser is processing the files. Restart me later!")
-        return
+    while True:
+        if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists()
+            print("Another parser is processing the files. Restart me later!")
+            return
 
-    file_tracker_filter_data = {
-        'file_status': FileTracker.UNPROCESSED,
-        'data_file_kind': FileTracker.DATA_FILE_KIND_NCVOTER
-    }
-    ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data).order_by('created')
-    for file_tracker in ncvoter_file_trackers:
-        added, modified, ignored = track_changes(output, file_tracker)
-        if output:
-            print("Change tracking completed for {}:".format(file_tracker.filename))
-            print("Added records: {0}".format(added))
-            print("Modified records: {0}".format(modified))
-            print("Ignored records: {0}".format(ignored))
+        file_tracker_filter_data = {
+            'file_status': FileTracker.UNPROCESSED,
+            'data_file_kind': FileTracker.DATA_FILE_KIND_NCVOTER
+        }
+        ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data).order_by('created')
+        for file_tracker in ncvoter_file_trackers:
+            added, modified, ignored = track_changes(output, file_tracker)
+            if output:
+                print("Change tracking completed for {}:".format(file_tracker.filename))
+                print("Added records: {0}".format(added))
+                print("Modified records: {0}".format(modified))
+                print("Ignored records: {0}".format(ignored))
+
+        time.sleep(3600)
 
     return
 

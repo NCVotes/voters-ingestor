@@ -131,7 +131,7 @@ def process_files(output):
         print("Processing NCVoter file...")
 
     while True:
-        if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists()
+        if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
             print("Another parser is processing the files. Restart me later!")
             return
 

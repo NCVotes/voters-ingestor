@@ -121,7 +121,7 @@ def track_changes(file_tracker, output):
 
     file_tracker.file_status = FileTracker.PROCESSED
     file_tracker.save()
-    # remove_files(file_tracker)
+    remove_files(file_tracker)
     return (added_tally, modified_tally, ignored_tally)
 
 
@@ -152,7 +152,7 @@ def process_files(output):
 
 def remove_files(file_tracker,output=True):
     if output:
-        print("Deleting processed files")
+        print("Deleting processed file {}".format(file_tracker.filename))
     try:
         os.remove(file_tracker.filename)
     except FileNotFoundError:

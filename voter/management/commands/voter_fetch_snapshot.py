@@ -14,7 +14,7 @@ from voter.models import FileTracker
 NCVOTER_ZIP_URL_BASE = "https://s3.amazonaws.com/dl.ncsbe.gov/data/Snapshots/"
 NCVOTER_DOWNLOAD_PATH = "downloads/ncvoter"
 NCVoter_snapshots=[]
-for l in open('voter/management/commands/snapshots.txt'):
+for l in open('voter/snapshots.txt'):
     NCVoter_snapshots.append(NCVOTER_ZIP_URL_BASE + l.strip())
 
 

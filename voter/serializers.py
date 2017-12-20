@@ -7,8 +7,7 @@ class FileTrackerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileTracker
-        fields = ('created', 'data_file_kind', 'change_tracker_processed',
-                  'updates_processed',)
+        fields = ('created', 'data_file_kind', 'file_status',)
 
 
 class NCVHisSerializer(serializers.ModelSerializer):

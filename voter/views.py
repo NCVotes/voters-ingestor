@@ -12,8 +12,7 @@ class FileTrackerFilterSet(django_filters.FilterSet):
 
     class Meta:
         model = FileTracker
-        fields = ('created', 'data_file_kind', 'change_tracker_processed',
-                  'updates_processed',)
+        fields = ('created', 'data_file_kind', 'file_status',)
 
 
 class FileTrackerViewSet(viewsets.ReadOnlyModelViewSet):

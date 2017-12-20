@@ -22,14 +22,14 @@ class FileTracker(models.Model):
     UNPROCESSED=0
     PROCESSING=1
     PROCESSED=2
-    STATUS_CHOICES=[(UNPROCESSED, 'Unprocessed'), (PROCESSIGNG,'Processing'), (PROCESSED, 'Processed')]
+    STATUS_CHOICES=[(UNPROCESSED, 'Unprocessed'), (PROCESSING,'Processing'), (PROCESSED, 'Processed')]
 
     etag = models.TextField('etag')
     filename = models.TextField('filename')
     data_file_kind = models.CharField('Data file kind', max_length=7, choices=DATA_FILE_KIND_CHOICES)
     county_num = models.IntegerField(null=True)
     created = models.DateTimeField()
-    file_status = models.SmallIntegerField('file status', default=0, choices=STATUS_CHOICES)
+    file_status = models.SmallIntegerField('file status', default=UNPROCESSED, choices=STATUS_CHOICES)
 
 
 class ChangeTracker(models.Model):

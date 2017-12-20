@@ -7,8 +7,7 @@ from voter.models import FileTracker, ChangeTracker, NCVoter, NCVHis
 class FileTrackerAdmin(admin.ModelAdmin):
     ordering = ('created',)
     readonly_fields = ('etag', 'filename', 'data_file_kind', 'created')
-    list_display = ('created', 'data_file_kind', 'change_tracker_processed',
-                    'updates_processed')
+    list_display = ('created', 'data_file_kind', 'file_status')
 
 
 @admin.register(ChangeTracker)

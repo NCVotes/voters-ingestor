@@ -1,5 +1,5 @@
 from datetime import datetime
-
+import pytz
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
@@ -131,8 +131,8 @@ class NCVoter(models.Model):
 
         snapshot_dt = row.get('snapshot_dt')
         if snapshot_dt:
-            snapshot_dt = datetime.strptime(registr_dt_str, '%Y-%m-%d %H:%M:%S')
-            row['snapshot_dt'] = snapshot_dt.date()
+            snapshot_dt = datetime.strptime(snapshot_dt, '%Y-%m-%d %H:%M:%S').replace(tzinfo=pytz.timezone('US/Eastern'))
+            row['snapshot_dt'] = snapshot_dt
 
         return row
 

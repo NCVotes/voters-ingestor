@@ -93,8 +93,9 @@ def find_existing_instance(file_tracker, row):
 
 @transaction.atomic
 def track_changes(file_tracker, output):
-    file_tracker.file_status=FileTracker.PROCESSING
-    file_tracker.save()
+    with transaction.atomic():
+        file_tracker.file_status=FileTracker.PROCESSING
+        file_tracker.save()
     if output:
         print("Tracking changes for file {0}".format(file_tracker.filename))
     added_tally = 0

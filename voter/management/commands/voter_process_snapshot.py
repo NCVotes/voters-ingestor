@@ -59,7 +59,7 @@ def get_file_lines(filename):
                 if len(l)!=len(header):
                     raise Exception("Number of fields still doesn't match header.")
                 non_empty_row = {header[i]: l[i].strip() for i in range(len(header)) if not l[i].strip() == ''}
-            else len(l)<len(header):
+            else:
                 print("Less fields found than header. Tell me the indices of the header that shall be ignored: (separated by space)")
                 print(list(zip_longest(range(len(l)), header, l)))
                 x=input()

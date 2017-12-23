@@ -11,6 +11,7 @@ from datetime import datetime
 from bencode import bencode
 import pytz
 import time
+from itertools import zip_longest
 
 from voter.models import FileTracker, ChangeTracker, NCVoter
 
@@ -46,9 +47,28 @@ def get_file_lines(filename):
         header = [i.strip().lower() for i in header]
         for row in f:
             l = row.split('\t')
-            if len(l)!=len(header):
-                raise
-            non_empty_row = {header[i]: l[i].strip() for i in range(len(header)) if not l[i].strip() == ''}
+            if len(l)==len(header):
+                non_empty_row = {header[i]: l[i].strip() for i in range(len(header)) if not l[i].strip() == ''}
+            elif len(l)>len(header):
+                print("Extra fields found. Tell me the indices of the field that shall be ignored: (separated by space)")
+                print(list(zip_longest(range(len(l)), l, header)))
+                x=input()
+                x=[int(i.strip()) for i in x.split()]
+                x=set(x)
+                l=[l[i] for i in range(len(l)) if i not in x]
+                if len(l)!=len(header):
+                    raise Exception("Number of fields still doesn't match header.")
+                non_empty_row = {header[i]: l[i].strip() for i in range(len(header)) if not l[i].strip() == ''}
+            else len(l)<len(header):
+                print("Less fields found than header. Tell me the indices of the header that shall be ignored: (separated by space)")
+                print(list(zip_longest(range(len(l)), header, l)))
+                x=input()
+                x=[int(i.strip()) for i in x.split()]
+                x=set(x)
+                header2=[header[i] for i in range(len(header)) if i not in x]
+                if len(l)!=len(header2):
+                    raise Exception("Number of fields still doesn't match header.")
+                non_empty_row = {header2[i]: l[i].strip() for i in range(len(header2)) if not l[i].strip() == ''}
             yield non_empty_row
 
 
@@ -73,7 +93,7 @@ def find_existing_instance(file_tracker, row):
 
 @transaction.atomic
 def track_changes(file_tracker, output):
-    file_tracker.file_status=FileTracker.Processing
+    file_tracker.file_status=FileTracker.PROCESSING
     file_tracker.save()
     if output:
         print("Tracking changes for file {0}".format(file_tracker.filename))
@@ -96,7 +116,7 @@ def track_changes(file_tracker, output):
             continue
         parsed_row = NCVoter.parse_row(row)
         snapshot_dt = parsed_row.get('snapshot_dt')
-        del parse_row['snapshot_dt']
+        del parsed_row['snapshot_dt']
         if change_tracker_instance is None:
             change_tracker_data = parsed_row
             change_tracker_op_code = ChangeTracker.OP_CODE_ADD
@@ -141,7 +161,7 @@ def process_files(output):
         }
         ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data).order_by('created')
         for file_tracker in ncvoter_file_trackers:
-            added, modified, ignored = track_changes(output, file_tracker)
+            added, modified, ignored = track_changes(file_tracker,output)
             if output:
                 print("Change tracking completed for {}:".format(file_tracker.filename))
                 print("Added records: {0}".format(added))

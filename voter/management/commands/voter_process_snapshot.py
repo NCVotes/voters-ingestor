@@ -90,12 +90,18 @@ def find_existing_instance(file_tracker, row):
 
     return ncid, voter_instance, change_instance
 
+@transaction.atomic
+def lock_file(file_tracker):
+    file_tracker.file_status=FileTracker.PROCESSING
+    file_tracker.save()
+
+@transaction.atomic
+def reset_file(file_tracker):
+    file_tracker.file_status=FileTracker.UNPROCESSED
+    file_tracker.save()
 
 @transaction.atomic
 def track_changes(file_tracker, output):
-    with transaction.atomic():
-        file_tracker.file_status=FileTracker.PROCESSING
-        file_tracker.save()
     if output:
         print("Tracking changes for file {0}".format(file_tracker.filename))
     added_tally = 0
@@ -162,7 +168,12 @@ def process_files(output):
         }
         ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data).order_by('created')
         for file_tracker in ncvoter_file_trackers:
-            added, modified, ignored = track_changes(file_tracker,output)
+            lock_file(file_tracker)
+            try:
+                added, modified, ignored = track_changes(file_tracker,output)
+            except:
+                reset_file(file_tracker)
+                raise Exception('Error processing file {}'.format(file_tracker.filename))
             if output:
                 print("Change tracking completed for {}:".format(file_tracker.filename))
                 print("Added records: {0}".format(added))

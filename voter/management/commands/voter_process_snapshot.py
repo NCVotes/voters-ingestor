@@ -55,8 +55,6 @@ def get_file_lines(filename):
             elif len(l)==len(header)+3:
                 x=set([45,46,47])
                 l=[l[i] for i in range(len(l)) if i not in x]
-                if len(l)!=len(header):
-                    raise Exception("Number of fields still doesn't match header.")
                 non_empty_row = {header[i]: l[i].strip() for i in range(len(header)) if not l[i].strip() == ''}
             elif len(l)>len(header):
                 print("Extra fields found. Tell me the indices of the field that shall be ignored: (separated by space)")
@@ -112,7 +110,7 @@ def reset_file(file_tracker):
 
 def track_changes(file_tracker, output):
     if output:
-        print("Tracking changes for file {0}".format(file_tracker.filename))
+        print("Tracking changes for file {0}".format(file_tracker.filename), flush=True)
     added_tally = 0
     modified_tally = 0
     ignored_tally = 0
@@ -124,8 +122,7 @@ def track_changes(file_tracker, output):
             if ncid is None:
                 continue
             if (change_tracker_instance is None) != (voter_instance is None):
-                print('Inconsistency: ncid {} is in one of the change and voter tables, but not in the other.'.format(ncid))
-                raise
+                raise Exception('Inconsistency: ncid {} is in one of the change and voter tables, but not in the other.'.format(ncid))
             hash_val = find_md5(row)
             if change_tracker_instance is not None and change_tracker_instance.md5_hash == hash_val:
                 # Nothing to do, data is up to date, move to next row
@@ -165,7 +162,7 @@ def track_changes(file_tracker, output):
 
 def process_files(output):
     if output:
-        print("Processing NCVoter file...")
+        print("Processing NCVoter file...", flush=True)
 
     while True:
         if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
@@ -188,7 +185,7 @@ def process_files(output):
                 print("Change tracking completed for {}:".format(file_tracker.filename))
                 print("Added records: {0}".format(added))
                 print("Modified records: {0}".format(modified))
-                print("Ignored records: {0}".format(ignored))
+                print("Ignored records: {0}".format(ignored), flush=True)
 
         time.sleep(3600)
 
@@ -197,7 +194,7 @@ def process_files(output):
 
 def remove_files(file_tracker,output=True):
     if output:
-        print("Deleting processed file {}".format(file_tracker.filename))
+        print("Deleting processed file {}".format(file_tracker.filename), flush=True)
     try:
         os.remove(file_tracker.filename)
     except FileNotFoundError:
@@ -205,7 +202,7 @@ def remove_files(file_tracker,output=True):
 
 
 class Command(BaseCommand):
-    help = "Process voter data to save into the database"
+    help = "Process voter snapshot files and save them into the database"
 
     def handle(self, *args, **options):
         process_files(output=True)

@@ -130,7 +130,8 @@ class NCVoter(models.Model):
 
         snapshot_dt = row.get('snapshot_dt')
         if snapshot_dt:
-            snapshot_dt = datetime.strptime(snapshot_dt, '%Y-%m-%d %H:%M:%S').replace(tzinfo=pytz.timezone('US/Eastern'))
+            snapshot_dt=snapshot_dt[:10]
+            snapshot_dt = datetime.strptime(snapshot_dt, '%Y-%m-%d').replace(tzinfo=pytz.timezone('US/Eastern'))
             row['snapshot_dt'] = snapshot_dt
 
         return row

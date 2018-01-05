@@ -117,9 +117,8 @@ class NCVoter(models.Model):
 
         registr_dt_str = row.get('registr_dt')
         if registr_dt_str:
-            if len(registr_dt_str)>19:
-                registr_dt_str=registr_dt_str[:19]
-            registr_dt = datetime.strptime(registr_dt_str, '%Y-%m-%d %H:%M:%S')
+            registr_dt_str=registr_dt_str[:10]
+            registr_dt = datetime.strptime(registr_dt_str, '%Y-%m-%d')
             row['registr_dt'] = registr_dt.date()
 
         confidential_ind_str = row.get('confidential_ind', '')

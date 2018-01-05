@@ -53,10 +53,12 @@ def get_file_lines(filename):
     encoding=detect_encoding(filename)
     with open(filename, "r", encoding=encoding, errors='ignore', newline='\n') as f:
         header = f.readline()
+        header = header.replace('\x00','')
         header = header.split('\t')
         header = [i.strip().lower() for i in header]
         for row in f:
-            l = row.split('\t')
+            l = row.replace('\x00','')
+            l = l.split('\t')
             if len(l)==len(header):
                 non_empty_row = {header[i]: l[i].strip() for i in range(len(header)) if not l[i].strip() == ''}
             elif len(l)==len(header)+1:

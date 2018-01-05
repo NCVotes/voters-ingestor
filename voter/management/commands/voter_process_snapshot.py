@@ -42,10 +42,11 @@ def find_md5(row_data):
 
 def detect_encoding(filename):
     detector = UniversalDetector()
-    for line in file(filename, 'rb'):
-         detector.feed(line)
-         if detector.done:
-             break
+    with open(filename, 'rb') as f:
+        for line in f:
+            detector.feed(line)
+            if detector.done:
+                break
     detector.close()
     return detector.result['encoding']
 

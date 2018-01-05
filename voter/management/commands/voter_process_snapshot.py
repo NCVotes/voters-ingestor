@@ -41,7 +41,7 @@ def find_md5(row_data):
 
 
 def get_file_lines(filename):
-    with open(filename, "r", encoding='utf-8', errors='replace', newline='\r\n') as f:
+    with open(filename, "r", encoding='utf-8', errors='ignore', newline='\n') as f:
         header = f.readline()
         header = header.split('\t')
         header = [i.strip().lower() for i in header]

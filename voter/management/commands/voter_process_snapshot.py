@@ -12,6 +12,7 @@ from bencode import bencode
 import pytz
 import time
 from itertools import zip_longest
+from chardet.universaldetector import UniversalDetector
 
 from voter.models import FileTracker, ChangeTracker, NCVoter
 
@@ -39,9 +40,18 @@ def find_md5(row_data):
     row_data_b = bytes(row_data_str, 'utf-8')
     return hashlib.md5(row_data_b).hexdigest()
 
+def detect_encoding(filename):
+    detector = UniversalDetector()
+    for line in file(filename, 'rb'):
+         detector.feed(line)
+         if detector.done:
+             break
+    detector.close()
+    return detector.result['encoding']
 
 def get_file_lines(filename):
-    with open(filename, "r", encoding='utf-8', errors='ignore', newline='\n') as f:
+    encoding=detect_encoding(filename)
+    with open(filename, "r", encoding=encoding, errors='ignore', newline='\n') as f:
         header = f.readline()
         header = header.split('\t')
         header = [i.strip().lower() for i in header]

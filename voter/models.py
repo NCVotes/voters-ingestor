@@ -105,15 +105,16 @@ class NCVoter(models.Model):
 
     @staticmethod
     def parse_row(row):
-        county_id = int(row['county_id'])
-        row['county_id'] = county_id
+        county_id = row.get('county_id')
+        if county_id:
+            row['county_id'] = int(county_id)
 
         birth_age = row.get('birth_age')
         if birth_age:
             row['birth_age'] = int(birth_age)
 
         drivers_lic_str = row.get('drivers_lic', '')
-        row['drivers_lic'] = (drivers_lic_str == 'Y' or drivers_lic_str == 'y')
+        row['drivers_lic'] = (drivers_lic_str.strip().upper() == 'Y')
 
         registr_dt_str = row.get('registr_dt')
         if registr_dt_str:
@@ -122,7 +123,7 @@ class NCVoter(models.Model):
             row['registr_dt'] = registr_dt.date()
 
         confidential_ind_str = row.get('confidential_ind', '')
-        row['confidential_ind'] = (confidential_ind_str == "Y")
+        row['confidential_ind'] = (confidential_ind_str.strip().upper() == "Y")
 
         raw_birth_year = row.get('birth_year')
         if raw_birth_year:
@@ -140,7 +141,7 @@ class NCVoter(models.Model):
     def parse_existing(row):
         existing_data = model_to_dict(row)
         del existing_data['id']
-        existing_data={k:v for k,v in existing_data.items() if v}
+        existing_data={k:v for k,v in existing_data.items() if (v is not None and v!='')}
         return existing_data
 
     ncid = models.TextField('ncid', unique=True, db_index=True)

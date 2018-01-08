@@ -16,6 +16,9 @@ from chardet.universaldetector import UniversalDetector
 
 from voter.models import FileTracker, ChangeTracker, NCVoter
 
+BULK_CREATE_AMOUNT=3000
+
+
 def merge_dicts(x, y):
     """Given two dicts `x` and `y`, merge them into a new dict as a shallow
     copy and return it."""
@@ -129,44 +132,85 @@ def track_changes(file_tracker, output):
     ignored_tally = 0
 
     file_date = datetime.strptime(file_tracker.filename.split('/')[-1].split('_')[-1][:-4],'%Y%m%d').replace(tzinfo=pytz.timezone('US/Eastern'))
+    voter_records=[]
+    change_records=[]
+    voter_updates=[]
+    processed_ncids=set()
     for index, row in enumerate(get_file_lines(file_tracker.filename)):
-        with transaction.atomic():
+        while True:
             ncid, voter_instance, change_tracker_instance = find_existing_instance(file_tracker, row)
-            if ncid is None:
+            if ncid in processed_ncids:
+                with transaction.atomic():
+                    if len(voter_records)+len(voter_updates)!=len(change_records):  #Debug code
+                        raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
+                    ChangeTracker.objects.bulk_create(change_records)
+                    if voter_records:
+                        NCVoter.objects.bulk_create(voter_records)
+                    for i in voter_updates:
+                        NCVoter.objects.filter(id=i[0]).update(**(i[1]))
+                change_records.clear()
+                voter_records.clear()
+                voter_updates.clear()
+                processed_ncids.clear()
                 continue
-            if (change_tracker_instance is None) != (voter_instance is None):
-                raise Exception('Inconsistency: ncid {} is in one of the change and voter tables, but not in the other.'.format(ncid))
-            hash_val = find_md5(row)
-            if change_tracker_instance is not None and change_tracker_instance.md5_hash == hash_val:
-                # Nothing to do, data is up to date, move to next row
-                ignored_tally += 1
-                continue
-            parsed_row = NCVoter.parse_row(row)
-            snapshot_dt = parsed_row.get('snapshot_dt')
-            del parsed_row['snapshot_dt']
-            if change_tracker_instance is None:
-                change_tracker_data = parsed_row
-                change_tracker_op_code = ChangeTracker.OP_CODE_ADD
-                NCVoter.objects.create(**parsed_row)
-                added_tally += 1
-            else:
-                existing_data = NCVoter.parse_existing(voter_instance)
-                change_tracker_data = diff_dicts(existing_data, parsed_row)
-                change_tracker_op_code = ChangeTracker.OP_CODE_MODIFY
-                NCVoter.objects.filter(id=voter_instance.id).update(**change_tracker_data)
-                modified_tally += 1
-            change_tracker_values = {
-                'ncid': row['ncid'],
-                'md5_hash': hash_val,
-                'file_tracker': file_tracker,
-                'op_code': change_tracker_op_code,
-                'data': change_tracker_data}
-            if snapshot_dt:
-                change_tracker_values['snapshot_dt']=snapshot_dt
-            else:
-                change_tracker_values['snapshot_dt']=file_date
-            ChangeTracker.objects.create(**change_tracker_values)
-
+            break
+        if ncid is None:
+            continue
+        if (change_tracker_instance is None) != (voter_instance is None):
+            raise Exception('Inconsistency: ncid {} is in one of the change and voter tables, but not in the other.'.format(ncid))
+        hash_val = find_md5(row)
+        if change_tracker_instance is not None and change_tracker_instance.md5_hash == hash_val:
+            # Nothing to do, data is up to date, move to next row
+            ignored_tally += 1
+            continue
+        parsed_row = NCVoter.parse_row(row)
+        snapshot_dt = parsed_row.get('snapshot_dt')
+        del parsed_row['snapshot_dt']
+        if change_tracker_instance is None:
+            change_tracker_data = parsed_row
+            change_tracker_op_code = ChangeTracker.OP_CODE_ADD
+            voter_records.append(NCVoter(**parsed_row))
+            added_tally += 1
+        else:
+            existing_data = NCVoter.parse_existing(voter_instance)
+            change_tracker_data = diff_dicts(existing_data, parsed_row)
+            change_tracker_op_code = ChangeTracker.OP_CODE_MODIFY
+            voter_updates.append((voter_instance.id, change_tracker_data))
+            modified_tally += 1
+        change_tracker_values = {
+            'ncid': row['ncid'],
+            'md5_hash': hash_val,
+            'file_tracker': file_tracker,
+            'op_code': change_tracker_op_code,
+            'data': change_tracker_data}
+        if snapshot_dt:
+            change_tracker_values['snapshot_dt']=snapshot_dt
+        else:
+            change_tracker_values['snapshot_dt']=file_date
+        change_records.append(ChangeTracker(**change_tracker_values))
+        processed_ncids.add(ncid)
+        if len(change_records)>BULK_CREATE_AMOUNT:
+            with transaction.atomic():
+                if len(voter_records)+len(voter_updates)!=len(change_records):  #Debug code
+                    raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
+                ChangeTracker.objects.bulk_create(change_records)
+                if voter_records:
+                    NCVoter.objects.bulk_create(voter_records)
+                for i in voter_updates:
+                    NCVoter.objects.filter(id=i[0]).update(**(i[1]))
+            change_records.clear()
+            voter_records.clear()
+            voter_updates.clear()
+            processed_ncids.clear()
+    if len(change_records)>0:
+        with transaction.atomic():
+            if len(voter_records)+len(voter_updates)!=len(change_records):  #Debug code
+                raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
+            ChangeTracker.objects.bulk_create(change_records)
+            if voter_records:
+                NCVoter.objects.bulk_create(voter_records)
+            for i in voter_updates:
+                NCVoter.objects.filter(id=i[0]).update(**(i[1]))
     file_tracker.file_status = FileTracker.PROCESSED
     file_tracker.save()
     remove_files(file_tracker)

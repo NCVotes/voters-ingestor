@@ -31,7 +31,7 @@ def diff_dicts(x, y):
     """Given dictionaries `x` and `y` returns a dictionairy with any key value
     pairs added or modified by `y` and any keys in `x` but not in `y` set to ''
     """
-    new_data = {k: y[k] for k in set(y) - set(x)}
+    new_data = {k: y[k] for k in y if k not in x}
     modified_data = {k: y[k] for k in y if k in x and y[k] != x[k]}
     deleted_data = {k: ('' if isinstance(x[k], str) else None) for k in x if k not in y}
     return merge_dicts(merge_dicts(new_data, modified_data), deleted_data)
@@ -84,7 +84,7 @@ def get_file_lines(filename):
                 non_empty_row = {header[i]: l[i].strip() for i in range(len(header)) if not l[i].strip() == ''}
             else:
                 print("Less fields found than header. Tell me the indices of the header that shall be ignored: (separated by space)")
-                print(list(zip_longest(range(len(l)), header, l)))
+                print(list(zip_longest(range(len(header)), header, l)))
                 x=input()
                 x=[int(i.strip()) for i in x.split()]
                 x=set(x)

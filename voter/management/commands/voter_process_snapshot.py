@@ -37,9 +37,13 @@ def diff_dicts(x, y):
     return merge_dicts(merge_dicts(new_data, modified_data), deleted_data)
 
 
-def find_md5(row_data):
+def find_md5(row_data,exclude=[]):
     "Given a dictionary of `row_data` returns the hex of its MD5 hash"
-    row_data_str = bencode(row_data)
+    row=row_data.copy()
+    for i in exclude:
+        if i in row:
+            del row[i]
+    row_data_str = bencode(row)
     row_data_b = bytes(row_data_str, 'utf-8')
     return hashlib.md5(row_data_b).hexdigest()
 
@@ -158,7 +162,7 @@ def track_changes(file_tracker, output):
             continue
         if (change_tracker_instance is None) != (voter_instance is None):
             raise Exception('Inconsistency: ncid {} is in one of the change and voter tables, but not in the other.'.format(ncid))
-        hash_val = find_md5(row)
+        hash_val = find_md5(row, exclude=['snapshot_dt'])
         if change_tracker_instance is not None and change_tracker_instance.md5_hash == hash_val:
             # Nothing to do, data is up to date, move to next row
             ignored_tally += 1

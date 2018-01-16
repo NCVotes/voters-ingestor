@@ -226,16 +226,15 @@ def process_files(output):
         print("Processing NCVoter file...", flush=True)
 
     while True:
-        if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
-            print("Another parser is processing the files. Restart me later!")
-            return
-
         file_tracker_filter_data = {
             'file_status': FileTracker.UNPROCESSED,
             'data_file_kind': FileTracker.DATA_FILE_KIND_NCVOTER
         }
         ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data).order_by('created')
         for file_tracker in ncvoter_file_trackers:
+            if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
+                print("Another parser is processing the files. Restart me later!")
+                return
             lock_file(file_tracker)
             try:
                 added, modified, ignored = track_changes(file_tracker,output)

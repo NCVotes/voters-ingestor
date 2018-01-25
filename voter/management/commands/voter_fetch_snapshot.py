@@ -3,21 +3,23 @@ import os
 from zipfile import ZipFile
 from enum import Enum
 import subprocess
-
+import time
 from django.core.management import BaseCommand
-
 import requests
+import botocore
+import boto3
+from collections import deque
 
 from voter.models import FileTracker
 
 
+
+s3client = boto3.client('s3')
+s3client.meta.events.register('choose-signer.s3.*', botocore.handlers.disable_signing)
+
+
 NCVOTER_ZIP_URL_BASE = "https://s3.amazonaws.com/dl.ncsbe.gov/data/Snapshots/"
 NCVOTER_DOWNLOAD_PATH = "downloads/ncvoter"
-NCVoter_snapshots=[]
-for l in open('voter/snapshots.txt'):
-    NCVoter_snapshots.append(NCVOTER_ZIP_URL_BASE + l.strip())
-
-
 
 pluck = lambda dict, *args: (dict[arg] for arg in args)
 
@@ -116,7 +118,8 @@ def process_new_zip(url, base_path, label):
         if fetch_status_code == FETCH_STATUS_CODES.CODE_WRITE_FAILURE:
             print("Unable to write file to {0}".format(target_filename))
         if fetch_status_code == FETCH_STATUS_CODES.CODE_NOTHING_TO_DO:
-            print("Resource at {0} contains no new information. Nothing to do.".format(url))
+            # print("Resource at {0} contains no new information. Nothing to do.".format(url))
+            pass
     return fetch_status_code
 
 
@@ -124,6 +127,22 @@ class Command(BaseCommand):
     help = "Fetch voter data from NCSBE.gov"
 
     def handle(self, *args, **options):
-        print("Fetching zip files...")
-        for NCVOTER_ZIP_URL in NCVoter_snapshots:
-            status_1 = process_new_zip(NCVOTER_ZIP_URL, NCVOTER_DOWNLOAD_PATH, "ncvoter")
+        print("Fetching voter files...")
+        while True:
+            objects = s3client.list_objects(Bucket='dl.ncsbe.gov',Prefix='data/Snapshots/')
+            filenames=[]
+            for i in objects['Contents']:
+                if i['Key'].split('/')[-1].endswith('.zip'):
+                    filenames.append(i['Key'].split('/')[-1])
+            filenames=sorted(filenames)
+            snapshots=deque()
+            for l in filenames:
+                snapshots.append(NCVOTER_ZIP_URL_BASE + l.strip())
+
+            while len(snapshots)>0:
+                if not FileTracker.objects.filter(file_status=FileTracker.UNPROCESSED).exists():
+                    url=snapshots.popleft()
+                    status_1 = process_new_zip(url, NCVOTER_DOWNLOAD_PATH, "ncvoter")
+                else:
+                    time.sleep(3600)
+            time.sleep(36000)

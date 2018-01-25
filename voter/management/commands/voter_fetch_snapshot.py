@@ -53,7 +53,7 @@ def extract_and_remove_file(filename):
     try:
         # with ZipFile(filename, "r") as z:
         #     z.extractall(os.path.dirname(filename))
-        subprocess.call(['./unar',filename,'-o',os.path.dirname(filename)])
+        subprocess.call(['unar',filename,'-o',os.path.dirname(filename)])
         os.remove(filename)
     except IOError:
         return False

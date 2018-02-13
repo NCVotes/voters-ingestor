@@ -85,13 +85,13 @@ def attempt_fetch_and_write_new_zip(url, base_path):
 
 
 def process_new_zip(url, base_path, label):
-    print("Fetching {0}".format(url))
+    print("Fetching {0}".format(url), flush=True)
     fetch_status_code, target_filename, created_time, etag = pluck(
         attempt_fetch_and_write_new_zip(url, base_path),
         'status_code', 'target_filename', 'created_time', 'etag')
     if fetch_status_code == FETCH_STATUS_CODES.CODE_OK:
-        print("Fetched {0} successfully to {1}".format(url, target_filename))
-        print("Extracting {0}".format(target_filename))
+        print("Fetched {0} successfully to {1}".format(url, target_filename), flush=True)
+        print("Extracting {0}".format(target_filename), flush=True)
         unzip_success = extract_and_remove_file(target_filename)
         if unzip_success:
             target_dir = os.path.dirname(target_filename)
@@ -99,24 +99,23 @@ def process_new_zip(url, base_path, label):
                 # Need to implement a warning system if there are multiple files
                 if filename.endswith(".txt"):
                     result_filename = os.path.join(target_dir, filename)
-                    print("Finished extracting to {0}".format(result_filename))
-                    print("Updating FileTracker table")
+                    print("Finished extracting to {0}".format(result_filename), flush=True)
                     data_file_kind = FileTracker.DATA_FILE_KIND_NCVOTER
-
                     ft = FileTracker.objects.create(
                         etag=etag, filename=result_filename,
                         county_num=None, created=created_time,
                         data_file_kind=data_file_kind)
                     if not ft:
                         return FETCH_STATUS_CODES.CODE_DB_FAILURE
+                    print("Updated FileTracker table", flush=True)
         else:
-            print("Unable to unzip {0}".format(target_filename))
+            print("Unable to unzip {0}".format(target_filename), flush=True)
             return FETCH_STATUS_CODES.CODE_WRITE_FAILURE
     else:
         if fetch_status_code == FETCH_STATUS_CODES.CODE_NET_FAILURE:
-            print("Unable to fetch file from {0}".format(url))
+            print("Unable to fetch file from {0}".format(url), flush=True)
         if fetch_status_code == FETCH_STATUS_CODES.CODE_WRITE_FAILURE:
-            print("Unable to write file to {0}".format(target_filename))
+            print("Unable to write file to {0}".format(target_filename), flush=True)
         if fetch_status_code == FETCH_STATUS_CODES.CODE_NOTHING_TO_DO:
             # print("Resource at {0} contains no new information. Nothing to do.".format(url))
             pass

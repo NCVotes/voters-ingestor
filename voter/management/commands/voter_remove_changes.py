@@ -3,7 +3,7 @@ from django.db import transaction
 from datetime import datetime
 from voter.models import FileTracker, ChangeTracker, NCVoter
 
-BULK_CREATE_AMOUNT=3000
+BULK_CREATE_AMOUNT=100
 
 @transaction.atomic
 def remove_changes(fileID):
@@ -37,8 +37,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             '--fileid',
-            type=int
-            help='Rebuild the voter table until file ID',)
+            type=int,
+            help='Rebuild the voter table until file ID')
 
     def handle(self, *args, **options):
         fileID=options['fileid']

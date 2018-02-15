@@ -2,15 +2,16 @@ from django.core.management import BaseCommand
 from django.db import transaction
 from datetime import datetime
 from voter.models import FileTracker, ChangeTracker, NCVoter
+from chunkator import chunkator
 
-BULK_CREATE_AMOUNT=100
+BULK_CREATE_AMOUNT=3000
 
 @transaction.atomic
 def remove_changes(fileID):
     print("Rebuiding voter table", flush=True)
     processed_ncids=set()
     rebuilt_records=[]
-    for row in ChangeTracker.objects.filter(file_tracker_id=fileID):
+    for row in chunkator(ChangeTracker.objects.filter(file_tracker_id=fileID), 1000):
         ncid=row['ncid']
         if ncid not in processed_ncids:
             data=dict()

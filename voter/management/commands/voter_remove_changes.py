@@ -11,22 +11,20 @@ def remove_changes(fileID):
     print("Rebuiding voter table", flush=True)
     processed_ncids=set()
     rebuilt_records=[]
-    for row in chunkator(ChangeTracker.objects.filter(file_tracker_id=fileID), 1000):
-        ncid=row['ncid']
+    for ncid in ChangeTracker.objects.filter(file_tracker_id=fileID).values_list('ncid',flat=True):
         if ncid not in processed_ncids:
             data=dict()
-            for change in ChangeTracker.objects.filter(ncid=ncid).order_by('snapshot_dt'):
-                if change['file_tracker_id']<fileID:
-                    data.update(change.data)
-            rebuilt_records.append(data)
+            for change in ChangeTracker.objects.filter(ncid=ncid,file_tracker_id__lt=fileID).order_by('snapshot_dt'):
+                data.update(change.data)
+            rebuilt_records.append((ncid,data))
             processed_ncids.add(ncid)
             if len(rebuilt_records)>BULK_CREATE_AMOUNT:
                 for i in rebuilt_records:
-                    NCVoter.objects.filter(ncid=i['ncid']).update(**i)
+                    NCVoter.objects.filter(ncid=i[0]).update(**(i[1]))
                 rebuilt_records.clear()
     if len(rebuilt_records)>0:
         for i in rebuilt_records:
-            NCVoter.objects.filter(ncid=i['ncid']).update(**i)
+            NCVoter.objects.filter(ncid=i[0]).update(**(i[1]))
         rebuilt_records.clear()
     print("Removing change trackers", flush=True)
     ChangeTracker.objects.filter(file_tracker_id=fileID).delete()

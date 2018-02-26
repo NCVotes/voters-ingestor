@@ -111,7 +111,6 @@ def get_file_lines(filename):
 def find_existing_instance(file_tracker, row):
     ncid=row.get('ncid','')
     if ncid=='':
-        print(row)
         return None, None, None
     try:
         voter_instance = NCVoter.objects.get(ncid=ncid)

@@ -74,9 +74,9 @@ WSGI_APPLICATION = 'ncvoter.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ncvotes',
-        'USER': '',
-        'PASSWORD': '',
+        'NAME': 'ncvoter',
+        'USER': 'ncvoter',
+        'PASSWORD': 'ncvoter',
         'HOST': '127.0.0.1',
         'PORT': '5432',
     }

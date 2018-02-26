@@ -103,7 +103,7 @@ class NCVoter(models.Model):
     class Meta:
         verbose_name = "NC Voter"
         verbose_name_plural = "NC Voters"
-        db_table = 'voter_ncvoter'
+        # db_table = 'voter_ncvoter'
 
     @staticmethod
     def parse_row(row):

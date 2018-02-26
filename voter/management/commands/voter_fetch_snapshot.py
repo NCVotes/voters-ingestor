@@ -129,15 +129,15 @@ class Command(BaseCommand):
         print("Fetching voter files...")
         while True:
             objects = s3client.list_objects(Bucket='dl.ncsbe.gov',Prefix='data/Snapshots/')
-            filenames=[]
+            filename_list=[]
             for i in objects['Contents']:
-                fn = i['Key'].split('/')[-1]
-                ok = fn.endswith('.zip')
+                filename = i['Key'].split('/')[-1]
+                ok = filename.endswith('.zip')
                 if ok:
-                    filenames.append(fn)
-            filenames=sorted(filenames)
+                    filename_list.append(fn)
+            filename_list=sorted(filename_list)
             snapshots=deque()
-            for l in filenames:
+            for l in filename_list:
                 snapshots.append(NCVOTER_ZIP_URL_BASE + l.strip())
 
             while len(snapshots)>0:

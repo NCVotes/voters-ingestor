@@ -9,3 +9,4 @@ Markdown>=2.6.8
 djangorestframework-csv>=2.0.0
 boto3
 chardet
+tqdm

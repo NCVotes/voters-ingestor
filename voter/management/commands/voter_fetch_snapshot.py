@@ -53,7 +53,7 @@ def extract_and_remove_file(filename):
     try:
         # with ZipFile(filename, "r") as z:
         #     z.extractall(os.path.dirname(filename))
-        subprocess.call(['unar',filename,'-o',os.path.dirname(filename)])
+        subprocess.call(['unzip', filename, '-d', os.path.dirname(filename)])
         os.remove(filename)
     except IOError:
         return False
@@ -131,8 +131,10 @@ class Command(BaseCommand):
             objects = s3client.list_objects(Bucket='dl.ncsbe.gov',Prefix='data/Snapshots/')
             filenames=[]
             for i in objects['Contents']:
-                if i['Key'].split('/')[-1].endswith('.zip'):
-                    filenames.append(i['Key'].split('/')[-1])
+                fn = i['Key'].split('/')[-1]
+                ok = fn.endswith('.zip')
+                if ok:
+                    filenames.append(fn)
             filenames=sorted(filenames)
             snapshots=deque()
             for l in filenames:
@@ -143,5 +145,7 @@ class Command(BaseCommand):
                     url=snapshots.popleft()
                     status_1 = process_new_zip(url, NCVOTER_DOWNLOAD_PATH, "ncvoter")
                 else:
+                    print("Sleep an hour...")
                     time.sleep(3600)
+            print("Sleep 10 hours...")
             time.sleep(36000)

@@ -30,6 +30,7 @@ class FileTracker(models.Model):
     county_num = models.IntegerField(null=True)
     created = models.DateTimeField()
     file_status = models.SmallIntegerField('file status', default=UNPROCESSED, choices=STATUS_CHOICES)
+    change_tracker_processed = models.BooleanField(null=False, blank=True, default=False)
 
 
 class ChangeTracker(models.Model):
@@ -102,6 +103,7 @@ class NCVoter(models.Model):
     class Meta:
         verbose_name = "NC Voter"
         verbose_name_plural = "NC Voters"
+        db_table = 'voter_ncvoter'
 
     @staticmethod
     def parse_row(row):

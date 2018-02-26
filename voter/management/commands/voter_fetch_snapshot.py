@@ -53,7 +53,7 @@ def extract_and_remove_file(filename):
     try:
         # with ZipFile(filename, "r") as z:
         #     z.extractall(os.path.dirname(filename))
-        subprocess.call(['unar',filename,'-o',os.path.dirname(filename)])
+        subprocess.call(['unzip', filename, '-d', os.path.dirname(filename)])
         os.remove(filename)
     except IOError:
         return False
@@ -129,13 +129,15 @@ class Command(BaseCommand):
         print("Fetching voter files...")
         while True:
             objects = s3client.list_objects(Bucket='dl.ncsbe.gov',Prefix='data/Snapshots/')
-            filenames=[]
+            filename_list=[]
             for i in objects['Contents']:
-                if i['Key'].split('/')[-1].endswith('.zip'):
-                    filenames.append(i['Key'].split('/')[-1])
-            filenames=sorted(filenames)
+                filename = i['Key'].split('/')[-1]
+                ok = filename.endswith('.zip')
+                if ok:
+                    filename_list.append(filename)
+            filename_list=sorted(filename_list)
             snapshots=deque()
-            for l in filenames:
+            for l in filename_list:
                 snapshots.append(NCVOTER_ZIP_URL_BASE + l.strip())
 
             while len(snapshots)>0:
@@ -143,5 +145,7 @@ class Command(BaseCommand):
                     url=snapshots.popleft()
                     status_1 = process_new_zip(url, NCVOTER_DOWNLOAD_PATH, "ncvoter")
                 else:
+                    print("Sleep an hour...")
                     time.sleep(3600)
+            print("Sleep 10 hours...")
             time.sleep(36000)

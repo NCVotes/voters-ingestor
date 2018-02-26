@@ -12,7 +12,9 @@ from bencode import bencode
 import pytz
 import time
 from itertools import zip_longest
+
 from chardet.universaldetector import UniversalDetector
+from tqdm import tqdm
 
 from voter.models import FileTracker, ChangeTracker, NCVoter
 
@@ -48,17 +50,24 @@ def find_md5(row_data,exclude=[]):
     return hashlib.md5(row_data_b).hexdigest()
 
 def detect_encoding(filename):
+    print("Detecting encoding for %s..." % filename)
     detector = UniversalDetector()
     with open(filename, 'rb') as f:
-        for line in f:
+        for line in tqdm(f):
             detector.feed(line)
             if detector.done:
                 break
     detector.close()
+    print("Encoding:", detector.result['encoding'])
     return detector.result['encoding']
 
 def get_file_lines(filename):
-    encoding=detect_encoding(filename)
+    # TODO: See if this can be resolved or optimized not to read the whole
+    # multi-gig file to detect the encoding. Maybe feed into detector as
+    # the file is processed?
+    # For now, this was taking way too long with no clear result.
+    # encoding = detect_encoding(filename)
+    encoding = 'utf-8'
     with open(filename, "r", encoding=encoding, errors='ignore', newline='\n') as f:
         header = f.readline()
         header = header.replace('\x00','')
@@ -134,13 +143,14 @@ def track_changes(file_tracker, output):
     added_tally = 0
     modified_tally = 0
     ignored_tally = 0
+    skip_tally = 0
 
-    file_date = datetime.strptime(file_tracker.filename.split('/')[-1].split('_')[-1][:-4],'%Y%m%d').replace(tzinfo=pytz.timezone('US/Eastern'))
+    file_date = datetime.strptime(file_tracker.filename.split('/')[-2].split('T', 1)[0], '%Y-%m-%d').replace(tzinfo=pytz.timezone('US/Eastern'))
     voter_records=[]
     change_records=[]
     voter_updates=[]
     processed_ncids=set()
-    for index, row in enumerate(get_file_lines(file_tracker.filename)):
+    for index, row in tqdm(enumerate(get_file_lines(file_tracker.filename))):
         while True:
             ncid, voter_instance, change_tracker_instance = find_existing_instance(file_tracker, row)
             if ncid in processed_ncids:
@@ -158,6 +168,7 @@ def track_changes(file_tracker, output):
                 continue
             break
         if ncid is None:
+            skip_tally += 1
             continue
         if (change_tracker_instance is None) != (voter_instance is None):
             raise Exception('Inconsistency: ncid {} is in one of the change and voter tables, but not in the other.'.format(ncid))
@@ -214,8 +225,9 @@ def track_changes(file_tracker, output):
             NCVoter.objects.filter(id=i[0]).update(**(i[1]))
     file_tracker.file_status = FileTracker.PROCESSED
     file_tracker.save()
+    # TODO: Add a way to skip this, if we want to re-run for testing without re-downloading
     remove_files(file_tracker)
-    return (added_tally, modified_tally, ignored_tally)
+    return (added_tally, modified_tally, ignored_tally, skip_tally)
 
 
 def process_files(output):
@@ -234,7 +246,7 @@ def process_files(output):
                 return
             lock_file(file_tracker)
             try:
-                added, modified, ignored = track_changes(file_tracker,output)
+                added, modified, ignored, skipped = track_changes(file_tracker,output)
             except:
                 reset_file(file_tracker)
                 raise Exception('Error processing file {}'.format(file_tracker.filename))
@@ -242,8 +254,10 @@ def process_files(output):
                 print("Change tracking completed for {}:".format(file_tracker.filename))
                 print("Added records: {0}".format(added))
                 print("Modified records: {0}".format(modified))
-                print("Ignored records: {0}".format(ignored), flush=True)
+                print("Skipped records: {0}".format(ignored))
+                print("Ignored records: {0}".format(skipped), flush=True)
 
+        print("Waiting for an hour to try again")
         time.sleep(3600)
 
     return

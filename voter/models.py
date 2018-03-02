@@ -19,10 +19,10 @@ class FileTracker(models.Model):
         (DATA_FILE_KIND_NCVOTER, 'NCVoter file'),
     ]
 
-    UNPROCESSED=0
-    PROCESSING=1
-    PROCESSED=2
-    STATUS_CHOICES=[(UNPROCESSED, 'Unprocessed'), (PROCESSING,'Processing'), (PROCESSED, 'Processed')]
+    UNPROCESSED = 0
+    PROCESSING = 1
+    PROCESSED = 2
+    STATUS_CHOICES = [(UNPROCESSED, 'Unprocessed'), (PROCESSING, 'Processing'), (PROCESSED, 'Processed')]
 
     etag = models.TextField('etag')
     filename = models.TextField('filename')
@@ -85,7 +85,7 @@ class NCVHis(models.Model):
     county_id = models.SmallIntegerField('county_id', db_index=True)
     county_desc = models.CharField('county_desc', max_length=60, blank=True)
     voter_reg_num = models.CharField('voter_reg_num', max_length=12, blank=True)
-    election_lbl = models.DateField( max_length=10, blank=True)
+    election_lbl = models.DateField(max_length=10, blank=True)
     election_desc = models.CharField('election_desc', max_length=230, blank=True, db_index=True)
     voting_method = models.CharField('voting_method', max_length=32, blank=True)
     voted_party_cd = models.CharField('voted_party_cd', max_length=3, blank=True)
@@ -120,7 +120,7 @@ class NCVoter(models.Model):
 
         registr_dt_str = row.get('registr_dt')
         if registr_dt_str:
-            registr_dt_str=registr_dt_str[:10]
+            registr_dt_str = registr_dt_str[:10]
             registr_dt = datetime.strptime(registr_dt_str, '%Y-%m-%d')
             row['registr_dt'] = registr_dt.date()
 
@@ -133,7 +133,7 @@ class NCVoter(models.Model):
 
         snapshot_dt = row.get('snapshot_dt')
         if snapshot_dt:
-            snapshot_dt=snapshot_dt[:10]
+            snapshot_dt = snapshot_dt[:10]
             snapshot_dt = datetime.strptime(snapshot_dt, '%Y-%m-%d').replace(tzinfo=pytz.timezone('US/Eastern'))
             row['snapshot_dt'] = snapshot_dt
 
@@ -143,7 +143,7 @@ class NCVoter(models.Model):
     def parse_existing(row):
         existing_data = model_to_dict(row)
         del existing_data['id']
-        existing_data={k:v for k,v in existing_data.items() if (v is not None and v!='')}
+        existing_data = {k: v for k, v in existing_data.items() if (v is not None and v != '')}
         return existing_data
 
     ncid = models.TextField('ncid', unique=True, db_index=True)
@@ -228,8 +228,8 @@ class NCVoter(models.Model):
     street_name = models.TextField()
     street_type_cd = models.TextField()
     street_sufx_cd = models.TextField()
-    unit_designator  = models.TextField()
-    unit_num  = models.TextField()
+    unit_designator = models.TextField()
+    unit_num = models.TextField()
     area_cd = models.TextField()
     phone_num = models.TextField()
     race_desc = models.TextField()
@@ -237,8 +237,8 @@ class NCVoter(models.Model):
     party_desc = models.TextField()
     sex_code = models.TextField()
     sex = models.TextField()
-    cong_dist_desc  = models.TextField()
-    super_court_desc  = models.TextField()
+    cong_dist_desc = models.TextField()
+    super_court_desc = models.TextField()
     judic_dist_desc = models.TextField()
     nc_senate_desc = models.TextField()
     nc_house_desc = models.TextField()

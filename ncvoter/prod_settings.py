@@ -1,6 +1,6 @@
 import os
 
-from ncvoter.settings import *
+from ncvoter.settings import *  # noqa: F403, F401
 
 
 DEBUG = False

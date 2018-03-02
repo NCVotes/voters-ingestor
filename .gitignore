@@ -2,3 +2,4 @@ __pycache__/
 *.py[cod]
 deployment/.vault_pass
 downloads
+.coverage

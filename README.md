@@ -1,5 +1,8 @@
 # NC Local Elections Data API
 
+[![Build
+Status](https://travis-ci.org/NCVotes/voters-ingestor.svg?branch=master)](https://travis-ci.org/NCVotes/voters-ingestor)
+
 ## Local Project Setup
 
 ### Requirements

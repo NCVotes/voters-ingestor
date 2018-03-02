@@ -1,0 +1,18 @@
+language: python
+
+python:
+  - 3.6
+
+services: postgresql
+
+cache: pip
+
+install:
+  - pip install -U pip
+  - pip install -r requirements/dev.txt
+
+before_script:
+  - createdb --encoding=UTF-8 ncvoter --username=postgres --owner=`whoami`
+
+script:
+  - bash run_tests.sh

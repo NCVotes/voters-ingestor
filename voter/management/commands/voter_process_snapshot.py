@@ -1,10 +1,7 @@
 from django.core.management import BaseCommand
 from django.db import transaction
-from django.forms.models import model_to_dict
 
 
-import csv
-import codecs
 import hashlib
 import os
 from datetime import datetime
@@ -18,7 +15,7 @@ from tqdm import tqdm
 
 from voter.models import FileTracker, ChangeTracker, NCVoter
 
-BULK_CREATE_AMOUNT=3000
+BULK_CREATE_AMOUNT = 3000
 
 
 def merge_dicts(x, y):
@@ -39,15 +36,16 @@ def diff_dicts(x, y):
     return merge_dicts(merge_dicts(new_data, modified_data), deleted_data)
 
 
-def find_md5(row_data,exclude=[]):
+def find_md5(row_data, exclude=[]):
     "Given a dictionary of `row_data` returns the hex of its MD5 hash"
-    row=row_data.copy()
+    row = row_data.copy()
     for i in exclude:
         if i in row:
             del row[i]
     row_data_str = bencode(row)
     row_data_b = bytes(row_data_str, 'utf-8')
     return hashlib.md5(row_data_b).hexdigest()
+
 
 def detect_encoding(filename):
     print("Detecting encoding for %s..." % filename)
@@ -61,6 +59,7 @@ def detect_encoding(filename):
     print("Encoding:", detector.result['encoding'])
     return detector.result['encoding']
 
+
 def get_file_lines(filename):
     # TODO: See if this can be resolved or optimized not to read the whole
     # multi-gig file to detect the encoding. Maybe feed into detector as
@@ -70,47 +69,47 @@ def get_file_lines(filename):
     encoding = 'utf-8'
     with open(filename, "r", encoding=encoding, errors='ignore', newline='\n') as f:
         header = f.readline()
-        header = header.replace('\x00','')
+        header = header.replace('\x00', '')
         header = header.split('\t')
         header = [i.strip().lower() for i in header]
         for row in f:
-            l = row.replace('\x00','')
-            l = l.split('\t')
-            if len(l)==len(header):
-                non_empty_row = {header[i]: l[i].strip() for i in range(len(header)) if not l[i].strip() == ''}
-            elif len(l)==len(header)+1:
-                del l[45]
-                non_empty_row = {header[i]: l[i].strip() for i in range(len(header)) if not l[i].strip() == ''}
-            elif len(l)==len(header)+3:
-                x=set([45,46,47])
-                l=[l[i] for i in range(len(l)) if i not in x]
-                non_empty_row = {header[i]: l[i].strip() for i in range(len(header)) if not l[i].strip() == ''}
-            elif len(l)>len(header):
+            line = row.replace('\x00', '')
+            line = line.split('\t')
+            if len(line) == len(header):
+                non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
+            elif len(line) == len(header)+1:
+                del line[45]
+                non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
+            elif len(line) == len(header)+3:
+                x = set([45, 46, 47])
+                line = [line[i] for i in range(len(line)) if i not in x]
+                non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
+            elif len(line) > len(header):
                 print("Extra fields found. Tell me the indices of the field that shall be ignored: (separated by space)")
-                print(list(zip_longest(range(len(l)), l, header)))
-                x=input()
-                x=[int(i.strip()) for i in x.split()]
-                x=set(x)
-                l=[l[i] for i in range(len(l)) if i not in x]
-                if len(l)!=len(header):
+                print(list(zip_longest(range(len(line)), line, header)))
+                x = input()
+                x = [int(i.strip()) for i in x.split()]
+                x = set(x)
+                line = [line[i] for i in range(len(line)) if i not in x]
+                if len(line) != len(header):
                     raise Exception("Number of fields still doesn't match header.")
-                non_empty_row = {header[i]: l[i].strip() for i in range(len(header)) if not l[i].strip() == ''}
+                non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
             else:
                 print("Less fields found than header. Tell me the indices of the header that shall be ignored: (separated by space)")
-                print(list(zip_longest(range(len(header)), header, l)))
-                x=input()
-                x=[int(i.strip()) for i in x.split()]
-                x=set(x)
-                header2=[header[i] for i in range(len(header)) if i not in x]
-                if len(l)!=len(header2):
+                print(list(zip_longest(range(len(header)), header, line)))
+                x = input()
+                x = [int(i.strip()) for i in x.split()]
+                x = set(x)
+                header2 = [header[i] for i in range(len(header)) if i not in x]
+                if len(line) != len(header2):
                     raise Exception("Number of fields still doesn't match header.")
-                non_empty_row = {header2[i]: l[i].strip() for i in range(len(header2)) if not l[i].strip() == ''}
+                non_empty_row = {header2[i]: line[i].strip() for i in range(len(header2)) if not line[i].strip() == ''}
             yield non_empty_row
 
 
 def find_existing_instance(file_tracker, row):
-    ncid=row.get('ncid','')
-    if ncid=='':
+    ncid = row.get('ncid', '')
+    if ncid == '':
         return None, None, None
     try:
         voter_instance = NCVoter.objects.get(ncid=ncid)
@@ -126,15 +125,18 @@ def find_existing_instance(file_tracker, row):
 
     return ncid, voter_instance, change_instance
 
+
 @transaction.atomic
 def lock_file(file_tracker):
-    file_tracker.file_status=FileTracker.PROCESSING
+    file_tracker.file_status = FileTracker.PROCESSING
     file_tracker.save()
+
 
 @transaction.atomic
 def reset_file(file_tracker):
-    file_tracker.file_status=FileTracker.UNPROCESSED
+    file_tracker.file_status = FileTracker.UNPROCESSED
     file_tracker.save()
+
 
 @transaction.atomic
 def track_changes(file_tracker, output):
@@ -146,15 +148,15 @@ def track_changes(file_tracker, output):
     skip_tally = 0
 
     file_date = datetime.strptime(file_tracker.filename.split('/')[-2].split('T', 1)[0], '%Y-%m-%d').replace(tzinfo=pytz.timezone('US/Eastern'))
-    voter_records=[]
-    change_records=[]
-    voter_updates=[]
-    processed_ncids=set()
+    voter_records = []
+    change_records = []
+    voter_updates = []
+    processed_ncids = set()
     for index, row in tqdm(enumerate(get_file_lines(file_tracker.filename))):
         while True:
             ncid, voter_instance, change_tracker_instance = find_existing_instance(file_tracker, row)
             if ncid in processed_ncids:
-                if len(voter_records)+len(voter_updates)!=len(change_records):  #Debug code
+                if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
                     raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
                 ChangeTracker.objects.bulk_create(change_records)
                 if voter_records:
@@ -198,13 +200,13 @@ def track_changes(file_tracker, output):
             'op_code': change_tracker_op_code,
             'data': change_tracker_data}
         if snapshot_dt:
-            change_tracker_values['snapshot_dt']=snapshot_dt
+            change_tracker_values['snapshot_dt'] = snapshot_dt
         else:
-            change_tracker_values['snapshot_dt']=file_date
+            change_tracker_values['snapshot_dt'] = file_date
         change_records.append(ChangeTracker(**change_tracker_values))
         processed_ncids.add(ncid)
-        if len(change_records)>BULK_CREATE_AMOUNT:
-            if len(voter_records)+len(voter_updates)!=len(change_records):  #Debug code
+        if len(change_records) > BULK_CREATE_AMOUNT:
+            if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
                 raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
             ChangeTracker.objects.bulk_create(change_records)
             if voter_records:
@@ -215,8 +217,8 @@ def track_changes(file_tracker, output):
             voter_records.clear()
             voter_updates.clear()
             processed_ncids.clear()
-    if len(change_records)>0:
-        if len(voter_records)+len(voter_updates)!=len(change_records):  #Debug code
+    if len(change_records) > 0:
+        if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
             raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
         ChangeTracker.objects.bulk_create(change_records)
         if voter_records:
@@ -246,8 +248,8 @@ def process_files(output):
                 return
             lock_file(file_tracker)
             try:
-                added, modified, ignored, skipped = track_changes(file_tracker,output)
-            except:
+                added, modified, ignored, skipped = track_changes(file_tracker, output)
+            except Exception:
                 reset_file(file_tracker)
                 raise Exception('Error processing file {}'.format(file_tracker.filename))
             if output:
@@ -263,7 +265,7 @@ def process_files(output):
     return
 
 
-def remove_files(file_tracker,output=True):
+def remove_files(file_tracker, output=True):
     if output:
         print("Deleting processed file {}".format(file_tracker.filename), flush=True)
     try:

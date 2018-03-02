@@ -3,7 +3,7 @@ import datetime
 from django.test import TestCase
 
 from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter
-from voter.management.commands.voter_process import process_files, get_file_lines, diff_dicts
+from voter.management.commands.voter_process import process_files, get_file_lines
 
 file_trackers_data = [
     {"id": 1,
@@ -74,7 +74,7 @@ def query_csv_data_in_model(ModelClass):
         order_by_attrs = ('ncid', 'election_desc')
     query_results = list(ModelClass.objects.order_by(*order_by_attrs).values())
     return [
-        {k: v for k, v in row.items() if v != '' and k != 'id' and v != None}
+        {k: v for k, v in row.items() if v != '' and k != 'id' and v is not None}
         for row in query_results
     ]
 

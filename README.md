@@ -29,6 +29,48 @@
 5. To create the initially empty database tables, run `python manage.py
    migrate` inside the ncvoter folder where manage.py is.
 
+### External Database Drive Tips
+
+Are you running the project with a database sitting on an external drive? Here
+are some tips for workflows that make this process easier.
+
+#### Creating an external database
+
+You can move only one database on your postgres instance to a different drive,
+but you can't stop and start single databases. This means simply moving the TABLESPACE
+would still leave you with problems when disconnecting the external drive.
+
+Instead, create a whole separate cluster and run a separate postgres instance *only*
+when working on this project.
+
+    pg_ctl -D /Volumes/Untitled/postgres initdb
+
+#### Starting and stopping an external database
+
+Because you are only running this instance of PG when working on this project, it
+will be best to run it in the foreground in one of your terminals. This will make it
+easier to remember its there and running, so that you can terminate it before
+disconnecting the drive.
+
+To run the external postgres in a terminal, using post 5455:
+
+    postgres -D /Volumes/Untitled/postgres/ -p 5455
+
+To stop the external postgres, simply terminate the command with Ctrl+C in the same terminal.
+
+Notice that we need to run this on a non-default port, so you'll need to set the appropriate
+port number you use in your django settings.
+
+#### Managing databases on the external instance
+
+Common commands like `createdb` and `dropdb` connect via default options, so they won't
+operate on your external instance. Simply use the `-p` option to any of them.
+
+    createdb -p 5455 ncvoter
+
+Of course, because the Postgres instance runs in the foreground, you'll need to leave it
+running in one terminal and run these commands in another.
+
 ## Fetching and Processing Data
 
 To fetch the voter data files run `python manage.py voter_fetch`. This will download, unzip and track

@@ -4,6 +4,7 @@ from zipfile import ZipFile
 from enum import Enum
 
 from django.core.management import BaseCommand
+from django.conf import settings
 
 import requests
 
@@ -14,9 +15,6 @@ NCVOTER_ZIP_URL_BASE = "http://dl.ncsbe.gov.s3.amazonaws.com/data/ncvoter"
 NCVHIS_ZIP_URL_BASE = "http://dl.ncsbe.gov.s3.amazonaws.com/data/ncvhis"
 NCVOTER_ZIP_URL = NCVOTER_ZIP_URL_BASE + "_Statewide.zip"
 NCVHIS_ZIP_URL = NCVHIS_ZIP_URL_BASE + "_Statewide.zip"
-NCVOTER_DOWNLOAD_PATH = "downloads/ncvoter"
-NCVHIS_DOWNLOAD_PATH = "downloads/ncvhis"
-
 
 FETCH_STATUS_CODES = Enum("FETCH_STATUS_CODES",
                           "CODE_OK CODE_NET_FAILURE CODE_WRITE_FAILURE CODE_NOTHING_TO_DO CODE_DB_FAILURE")
@@ -125,8 +123,8 @@ class Command(BaseCommand):
             help='Fetch per county files rather than statewide',)
 
     def fetch_state_zips(self):
-        status_1 = process_new_zip(NCVOTER_ZIP_URL, NCVOTER_DOWNLOAD_PATH, "ncvoter", None)
-        status_2 = process_new_zip(NCVHIS_ZIP_URL, NCVHIS_DOWNLOAD_PATH, "ncvhis", None)
+        status_1 = process_new_zip(NCVOTER_ZIP_URL, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter", None)
+        status_2 = process_new_zip(NCVHIS_ZIP_URL, settings.NCVHIS_DOWNLOAD_PATH, "ncvhis", None)
         return status_1, status_2
 
     def fetch_county_zips(self):
@@ -135,10 +133,10 @@ class Command(BaseCommand):
             ncvoter_zip_url = NCVOTER_ZIP_URL_BASE + str(county_num) + ".zip"
             ncvhis_zip_url = NCVHIS_ZIP_URL_BASE + str(county_num) + ".zip"
             result = process_new_zip(ncvoter_zip_url,
-                                     NCVOTER_DOWNLOAD_PATH, "ncvoter", county_num)
+                                     settings.NCVOTER_DOWNLOAD_PATH, "ncvoter", county_num)
             statuses.append(result)
             result = process_new_zip(ncvhis_zip_url,
-                                     NCVHIS_DOWNLOAD_PATH, "ncvhis", county_num)
+                                     settings.NCVHIS_DOWNLOAD_PATH, "ncvhis", county_num)
             statuses.append(result)
         return statuses
 

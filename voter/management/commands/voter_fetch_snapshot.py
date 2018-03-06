@@ -3,7 +3,10 @@ import os
 from enum import Enum
 import subprocess
 import time
+
 from django.core.management import BaseCommand
+from django.conf import settings
+
 import requests
 import botocore
 import boto3
@@ -16,7 +19,6 @@ s3client.meta.events.register('choose-signer.s3.*', botocore.handlers.disable_si
 
 
 NCVOTER_ZIP_URL_BASE = "https://s3.amazonaws.com/dl.ncsbe.gov/data/Snapshots/"
-NCVOTER_DOWNLOAD_PATH = "downloads/ncvoter"
 
 FETCH_STATUS_CODES = Enum("FETCH_STATUS_CODES",
                           "CODE_OK CODE_NET_FAILURE CODE_WRITE_FAILURE CODE_NOTHING_TO_DO CODE_DB_FAILURE")
@@ -133,7 +135,7 @@ class Command(BaseCommand):
             while len(snapshots) > 0:
                 if not FileTracker.objects.filter(file_status=FileTracker.UNPROCESSED).exists():
                     url = snapshots.popleft()
-                    process_new_zip(url, NCVOTER_DOWNLOAD_PATH, "ncvoter")
+                    process_new_zip(url, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter")
                 else:
                     print("Sleep an hour...")
                     time.sleep(3600)

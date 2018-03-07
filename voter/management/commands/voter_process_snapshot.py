@@ -1,10 +1,7 @@
 from django.core.management import BaseCommand
 from django.db import transaction
-from django.forms.models import model_to_dict
 
 
-import csv
-import codecs
 import hashlib
 import os
 from datetime import datetime
@@ -19,7 +16,7 @@ import ftfy
 
 from voter.models import FileTracker, ChangeTracker, NCVoter
 
-BULK_CREATE_AMOUNT=3000
+BULK_CREATE_AMOUNT = 3000
 
 
 def merge_dicts(x, y):
@@ -40,15 +37,16 @@ def diff_dicts(x, y):
     return merge_dicts(merge_dicts(new_data, modified_data), deleted_data)
 
 
-def find_md5(row_data,exclude=[]):
+def find_md5(row_data, exclude=[]):
     "Given a dictionary of `row_data` returns the hex of its MD5 hash"
-    row=row_data.copy()
+    row = row_data.copy()
     for i in exclude:
         if i in row:
             del row[i]
     row_data_str = bencode(row)
     row_data_b = bytes(row_data_str, 'utf-8')
     return hashlib.md5(row_data_b).hexdigest()
+
 
 def detect_encoding(filename):
     print("Detecting encoding for %s..." % filename)
@@ -60,6 +58,7 @@ def detect_encoding(filename):
 
             yield line.decode(detector.result['encoding'])
     # print("Encoding:", detector.result['encoding'])
+
 
 def get_file_lines(filename):
     lines = ftfy.fix_file(filename)
@@ -104,8 +103,8 @@ def get_file_lines(filename):
 
 
 def find_existing_instance(file_tracker, row):
-    ncid=row.get('ncid','')
-    if ncid=='':
+    ncid = row.get('ncid', '')
+    if ncid == '':
         return None, None, None
     try:
         voter_instance = NCVoter.objects.get(ncid=ncid)
@@ -121,17 +120,20 @@ def find_existing_instance(file_tracker, row):
 
     return ncid, voter_instance, change_instance
 
+
 @transaction.atomic
 def lock_file(file_tracker):
-    file_tracker.file_status=FileTracker.PROCESSING
+    file_tracker.file_status = FileTracker.PROCESSING
     file_tracker.save()
+
 
 @transaction.atomic
 def reset_file(file_tracker):
-    file_tracker.file_status=FileTracker.UNPROCESSED
+    file_tracker.file_status = FileTracker.UNPROCESSED
     file_tracker.save()
 
 
+@transaction.atomic
 def track_changes(file_tracker, output):
     if output:
         print("Tracking changes for file {0}".format(file_tracker.filename), flush=True)
@@ -141,22 +143,21 @@ def track_changes(file_tracker, output):
     skip_tally = 0
 
     file_date = datetime.strptime(file_tracker.filename.split('/')[-2].split('T', 1)[0], '%Y-%m-%d').replace(tzinfo=pytz.timezone('US/Eastern'))
-    voter_records=[]
-    change_records=[]
-    voter_updates=[]
-    processed_ncids=set()
+    voter_records = []
+    change_records = []
+    voter_updates = []
+    processed_ncids = set()
     for index, row in tqdm(enumerate(get_file_lines(file_tracker.filename))):
         while True:
             ncid, voter_instance, change_tracker_instance = find_existing_instance(file_tracker, row)
             if ncid in processed_ncids:
-                with transaction.atomic():
-                    if len(voter_records)+len(voter_updates)!=len(change_records):  #Debug code
-                        raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
-                    ChangeTracker.objects.bulk_create(change_records)
-                    if voter_records:
-                        NCVoter.objects.bulk_create(voter_records)
-                    for i in voter_updates:
-                        NCVoter.objects.filter(id=i[0]).update(**(i[1]))
+                if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
+                    raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
+                ChangeTracker.objects.bulk_create(change_records)
+                if voter_records:
+                    NCVoter.objects.bulk_create(voter_records)
+                for i in voter_updates:
+                    NCVoter.objects.filter(id=i[0]).update(**(i[1]))
                 change_records.clear()
                 voter_records.clear()
                 voter_updates.clear()
@@ -194,33 +195,31 @@ def track_changes(file_tracker, output):
             'op_code': change_tracker_op_code,
             'data': change_tracker_data}
         if snapshot_dt:
-            change_tracker_values['snapshot_dt']=snapshot_dt
+            change_tracker_values['snapshot_dt'] = snapshot_dt
         else:
-            change_tracker_values['snapshot_dt']=file_date
+            change_tracker_values['snapshot_dt'] = file_date
         change_records.append(ChangeTracker(**change_tracker_values))
         processed_ncids.add(ncid)
-        if len(change_records)>BULK_CREATE_AMOUNT:
-            with transaction.atomic():
-                if len(voter_records)+len(voter_updates)!=len(change_records):  #Debug code
-                    raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
-                ChangeTracker.objects.bulk_create(change_records)
-                if voter_records:
-                    NCVoter.objects.bulk_create(voter_records)
-                for i in voter_updates:
-                    NCVoter.objects.filter(id=i[0]).update(**(i[1]))
-            change_records.clear()
-            voter_records.clear()
-            voter_updates.clear()
-            processed_ncids.clear()
-    if len(change_records)>0:
-        with transaction.atomic():
-            if len(voter_records)+len(voter_updates)!=len(change_records):  #Debug code
+        if len(change_records) > BULK_CREATE_AMOUNT:
+            if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
                 raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
             ChangeTracker.objects.bulk_create(change_records)
             if voter_records:
                 NCVoter.objects.bulk_create(voter_records)
             for i in voter_updates:
                 NCVoter.objects.filter(id=i[0]).update(**(i[1]))
+            change_records.clear()
+            voter_records.clear()
+            voter_updates.clear()
+            processed_ncids.clear()
+    if len(change_records) > 0:
+        if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
+            raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
+        ChangeTracker.objects.bulk_create(change_records)
+        if voter_records:
+            NCVoter.objects.bulk_create(voter_records)
+        for i in voter_updates:
+            NCVoter.objects.filter(id=i[0]).update(**(i[1]))
     file_tracker.file_status = FileTracker.PROCESSED
     file_tracker.save()
     # TODO: Add a way to skip this, if we want to re-run for testing without re-downloading
@@ -244,8 +243,8 @@ def process_files(output):
                 return
             lock_file(file_tracker)
             try:
-                added, modified, ignored, skipped = track_changes(file_tracker,output)
-            except:
+                added, modified, ignored, skipped = track_changes(file_tracker, output)
+            except Exception:
                 reset_file(file_tracker)
                 raise Exception('Error processing file {}'.format(file_tracker.filename))
             if output:
@@ -261,7 +260,7 @@ def process_files(output):
     return
 
 
-def remove_files(file_tracker,output=True):
+def remove_files(file_tracker, output=True):
     if output:
         print("Deleting processed file {}".format(file_tracker.filename), flush=True)
     try:

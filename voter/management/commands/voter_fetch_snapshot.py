@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 import os
-from zipfile import ZipFile
 from enum import Enum
 import subprocess
 import time
@@ -13,16 +12,12 @@ from tqdm import tqdm
 
 from voter.models import FileTracker
 
-
-
 s3client = boto3.client('s3')
 s3client.meta.events.register('choose-signer.s3.*', botocore.handlers.disable_signing)
 
 
 NCVOTER_ZIP_URL_BASE = "https://s3.amazonaws.com/dl.ncsbe.gov/data/Snapshots/"
 NCVOTER_DOWNLOAD_PATH = "downloads/ncvoter"
-
-pluck = lambda dict, *args: (dict[arg] for arg in args)
 
 FETCH_STATUS_CODES = Enum("FETCH_STATUS_CODES",
                           "CODE_OK CODE_NET_FAILURE CODE_WRITE_FAILURE CODE_NOTHING_TO_DO CODE_DB_FAILURE")
@@ -80,17 +75,12 @@ def attempt_fetch_and_write_new_zip(url, base_path):
                 status_code = FETCH_STATUS_CODES.CODE_WRITE_FAILURE
         else:
             status_code = FETCH_STATUS_CODES.CODE_NET_FAILURE
-    return {'status_code': status_code,
-            'etag': etag,
-            'created_time': now,
-            'target_filename': target_filename}
+    return (status_code, etag, now, target_filename)
 
 
 def process_new_zip(url, base_path, label):
     print("Fetching {0}".format(url), flush=True)
-    fetch_status_code, target_filename, created_time, etag = pluck(
-        attempt_fetch_and_write_new_zip(url, base_path),
-        'status_code', 'target_filename', 'created_time', 'etag')
+    fetch_status_code, etag, created_time, target_filename = attempt_fetch_and_write_new_zip(url, base_path)
     if fetch_status_code == FETCH_STATUS_CODES.CODE_OK:
         print("Fetched {0} successfully to {1}".format(url, target_filename), flush=True)
         print("Extracting {0}".format(target_filename), flush=True)
@@ -130,22 +120,22 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         print("Fetching voter files...")
         while True:
-            objects = s3client.list_objects(Bucket='dl.ncsbe.gov',Prefix='data/Snapshots/')
-            filename_list=[]
+            objects = s3client.list_objects(Bucket='dl.ncsbe.gov', Prefix='data/Snapshots/')
+            filename_list = []
             for i in objects['Contents']:
                 filename = i['Key'].split('/')[-1]
                 ok = filename.endswith('.zip')
                 if ok:
                     filename_list.append(filename)
-            filename_list=sorted(filename_list)
-            snapshots=deque()
+            filename_list = sorted(filename_list)
+            snapshots = deque()
             for l in filename_list:
                 snapshots.append(NCVOTER_ZIP_URL_BASE + l.strip())
 
             while len(snapshots) > 0:
                 if not FileTracker.objects.filter(file_status=FileTracker.UNPROCESSED).exists():
                     url = snapshots.popleft()
-                    process_new_zip(url, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter")
+                    process_new_zip(url, NCVOTER_DOWNLOAD_PATH, "ncvoter")
                 else:
                     print("Sleep an hour...")
                     time.sleep(3600)

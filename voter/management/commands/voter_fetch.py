@@ -18,8 +18,6 @@ NCVOTER_DOWNLOAD_PATH = "downloads/ncvoter"
 NCVHIS_DOWNLOAD_PATH = "downloads/ncvhis"
 
 
-pluck = lambda dict, *args: (dict[arg] for arg in args)
-
 FETCH_STATUS_CODES = Enum("FETCH_STATUS_CODES",
                           "CODE_OK CODE_NET_FAILURE CODE_WRITE_FAILURE CODE_NOTHING_TO_DO CODE_DB_FAILURE")
 
@@ -75,17 +73,12 @@ def attempt_fetch_and_write_new_zip(url, base_path):
                 status_code = FETCH_STATUS_CODES.CODE_WRITE_FAILURE
         else:
             status_code = FETCH_STATUS_CODES.CODE_NET_FAILURE
-    return {'status_code': status_code,
-            'etag': etag,
-            'created_time': now,
-            'target_filename': target_filename}
+    return (status_code, etag, now, target_filename)
 
 
 def process_new_zip(url, base_path, label, county_num):
     print("Fetching {0}".format(label))
-    fetch_status_code, target_filename, created_time, etag = pluck(
-        attempt_fetch_and_write_new_zip(url, base_path),
-        'status_code', 'target_filename', 'created_time', 'etag')
+    fetch_status_code, etag, created_time, target_filename = attempt_fetch_and_write_new_zip(url, base_path)
     if fetch_status_code == FETCH_STATUS_CODES.CODE_OK:
         print("Fetched {0} successfully to {1}".format(label, target_filename))
         print("Extracting {0}".format(target_filename))
@@ -142,10 +135,10 @@ class Command(BaseCommand):
             ncvoter_zip_url = NCVOTER_ZIP_URL_BASE + str(county_num) + ".zip"
             ncvhis_zip_url = NCVHIS_ZIP_URL_BASE + str(county_num) + ".zip"
             result = process_new_zip(ncvoter_zip_url,
-                NCVOTER_DOWNLOAD_PATH, "ncvoter", county_num)
+                                     NCVOTER_DOWNLOAD_PATH, "ncvoter", county_num)
             statuses.append(result)
             result = process_new_zip(ncvhis_zip_url,
-                NCVHIS_DOWNLOAD_PATH, "ncvhis", county_num)
+                                     NCVHIS_DOWNLOAD_PATH, "ncvhis", county_num)
             statuses.append(result)
         return statuses
 

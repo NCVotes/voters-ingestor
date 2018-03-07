@@ -1,6 +1,5 @@
 from django.core.management import BaseCommand
 from django.db import transaction
-from django.forms.models import model_to_dict
 
 import csv
 import codecs

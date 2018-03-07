@@ -1,17 +1,21 @@
 # NC Local Elections Data API
 
-## Project Setup
+## Local Project Setup
 
-To setup the project for local development
+### Requirements
 
-1. Clone this repo with `git clone git@github.com:reesenewslab/ncvoter.git`
-2. Install Python 3.6 and pip
-3. Install Postgres (On Mac, you can use `brew install postgres`) . Current
-   version in this project is 9.6.2
-4. Create a virtualenv with Python 3.6.
-5. Activate the virtualenv and install requirements using
-   `pip install -r requirements.txt` (from this folder)
-6. While you can run `source setupdb.sh` to create and configure Postgres DB
+* Python >= 3.6
+* Postgres >= 9.6
+* pip >= 9.0.1
+* virtualenv >= 15.0.1
+
+### Set up
+
+1. Clone this repo with `git clone git@github.com:NCVotes/voters-ingestor.git`
+2. Create a virtualenv with Python 3.6.
+3. Activate the virtualenv and install local requirements using
+   `pip install -r requirements/dev.txt` (from this folder)
+4. While you can run `source setupdb.sh` to create and configure Postgres DB
    for the project, you may need to consider if the database can fit on the
    hard disk you're working with. By default, postgres will use the drive it is
    installed on.  If you intend to use an external or non-default drive, the
@@ -22,7 +26,7 @@ To setup the project for local development
    PostgreSQL storage, run `source setupdb.sh /Volumes/SEAGATE/ncvoter-db`.
    This script can be run at any later time, but any existing data will be
    deleted.
-7. To create the initially empty database tables, run `python manage.py
+5. To create the initially empty database tables, run `python manage.py
    migrate` inside the ncvoter folder where manage.py is.
 
 ## Fetching and Processing Data

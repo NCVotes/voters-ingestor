@@ -71,6 +71,12 @@ operate on your external instance. Simply use the `-p` option to any of them.
 Of course, because the Postgres instance runs in the foreground, you'll need to leave it
 running in one terminal and run these commands in another.
 
+#### Running Django commands easily
+
+A helper script is included to start up the external DB to run a manage.py command. Simply
+replace `./manage.py` with `./extmanage` to run a command with the DB running, and automatically
+clean up afterwards.
+
 ## Fetching and Processing Data
 
 To fetch the voter data files run `python manage.py voter_fetch`. This will download, unzip and track

@@ -48,20 +48,10 @@ def find_md5(row_data, exclude=[]):
     return hashlib.md5(row_data_b).hexdigest()
 
 
-def detect_encoding(filename):
-    print("Detecting encoding for %s..." % filename)
-    with open(filename, 'rb') as f:
-        for line in f:
-            detector = UniversalDetector()
-            detector.feed(line)
-            detector.close()
-
-            yield line.decode(detector.result['encoding'])
-    # print("Encoding:", detector.result['encoding'])
-
-
 def get_file_lines(filename):
+    # ftfy lets us iterate over lines while it corrects encoding problems
     lines = ftfy.fix_file(filename)
+    
     header = next(lines)
     header = header.replace('\x00', '')
     header = header.split('\t')

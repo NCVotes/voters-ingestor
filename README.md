@@ -15,6 +15,8 @@
 2. Create a virtualenv with Python 3.6.
 3. Activate the virtualenv and install local requirements using
    `pip install -r requirements/dev.txt` (from this folder)
+4. Copy `ncvoter/local_settings.example.py` to `ncvoter/local_settings.py` and
+   customize for your machine.
 4. While you can run `source setupdb.sh` to create and configure Postgres DB
    for the project, you may need to consider if the database can fit on the
    hard disk you're working with. By default, postgres will use the drive it is
@@ -43,7 +45,16 @@ would still leave you with problems when disconnecting the external drive.
 Instead, create a whole separate cluster and run a separate postgres instance *only*
 when working on this project.
 
-    pg_ctl -D /Volumes/Untitled/postgres initdb
+    pg_ctl -D /Volumes/CalvinNCVdb/postgres initdb
+
+Note for Ubuntu users: pg_ctl is not in your PATH by default on Ubuntu. You can
+add it yourself. Obviously, change the Postgres version to the version you have.
+
+    export PATH=PATH:/usr/lib/postgresql/9.6/bin/
+
+You can append this line to your .bashrc if you want it available all the time.
+
+    echo "export PATH=PATH:/usr/lib/postgresql/9.6/bin/" >> .bashrc
 
 #### Starting and stopping an external database
 
@@ -54,7 +65,7 @@ disconnecting the drive.
 
 To run the external postgres in a terminal, using post 5455:
 
-    postgres -D /Volumes/Untitled/postgres/ -p 5455
+    postgres -D /Volumes/CalvinNCVdb/postgres/ -p 5455
 
 To stop the external postgres, simply terminate the command with Ctrl+C in the same terminal.
 
@@ -74,7 +85,7 @@ running in one terminal and run these commands in another.
 #### Running Django commands easily
 
 A helper script is included to start up the external DB to run a manage.py command. Simply
-replace `./manage.py` with `./extmanage` to run a command with the DB running, and automatically
+replace `./manage.py` with `./extmanage.sh` to run a command with the DB running, and automatically
 clean up afterwards.
 
 ## Fetching and Processing Data

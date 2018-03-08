@@ -17,9 +17,6 @@ from voter.models import FileTracker
 s3client = boto3.client('s3')
 s3client.meta.events.register('choose-signer.s3.*', botocore.handlers.disable_signing)
 
-
-NCVOTER_ZIP_URL_BASE = "https://s3.amazonaws.com/dl.ncsbe.gov/data/Snapshots/"
-
 FETCH_STATUS_CODES = Enum("FETCH_STATUS_CODES",
                           "CODE_OK CODE_NET_FAILURE CODE_WRITE_FAILURE CODE_NOTHING_TO_DO CODE_DB_FAILURE")
 
@@ -130,7 +127,7 @@ class Command(BaseCommand):
             filename_list = sorted(filename_list)
             snapshots = deque()
             for l in filename_list:
-                snapshots.append(NCVOTER_ZIP_URL_BASE + l.strip())
+                snapshots.append(settings.NCVOTER_ZIP_URL_BASE + l.strip())
 
             while len(snapshots) > 0:
                 if not FileTracker.objects.filter(file_status=FileTracker.UNPROCESSED).exists():

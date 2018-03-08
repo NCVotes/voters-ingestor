@@ -3,3 +3,4 @@ __pycache__/
 deployment/.vault_pass
 downloads
 .coverage
+local_settings.py

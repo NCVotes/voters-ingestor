@@ -10,11 +10,8 @@ import requests
 
 from voter.models import FileTracker
 
-
-NCVOTER_ZIP_URL_BASE = "http://dl.ncsbe.gov.s3.amazonaws.com/data/ncvoter"
-NCVHIS_ZIP_URL_BASE = "http://dl.ncsbe.gov.s3.amazonaws.com/data/ncvhis"
-NCVOTER_ZIP_URL = NCVOTER_ZIP_URL_BASE + "_Statewide.zip"
-NCVHIS_ZIP_URL = NCVHIS_ZIP_URL_BASE + "_Statewide.zip"
+NCVOTER_ZIP_URL = settings.NCVOTER_ZIP_URL_BASE + "_Statewide.zip"
+NCVHIS_ZIP_URL = settings.NCVHIS_ZIP_URL_BASE + "_Statewide.zip"
 
 FETCH_STATUS_CODES = Enum("FETCH_STATUS_CODES",
                           "CODE_OK CODE_NET_FAILURE CODE_WRITE_FAILURE CODE_NOTHING_TO_DO CODE_DB_FAILURE")
@@ -130,8 +127,8 @@ class Command(BaseCommand):
     def fetch_county_zips(self):
         statuses = []
         for county_num in range(1, 101):
-            ncvoter_zip_url = NCVOTER_ZIP_URL_BASE + str(county_num) + ".zip"
-            ncvhis_zip_url = NCVHIS_ZIP_URL_BASE + str(county_num) + ".zip"
+            ncvoter_zip_url = settings.NCVOTER_ZIP_URL_BASE + str(county_num) + ".zip"
+            ncvhis_zip_url = settings.NCVHIS_ZIP_URL_BASE + str(county_num) + ".zip"
             result = process_new_zip(ncvoter_zip_url,
                                      settings.NCVOTER_DOWNLOAD_PATH, "ncvoter", county_num)
             statuses.append(result)

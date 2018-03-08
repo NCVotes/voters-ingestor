@@ -127,7 +127,7 @@ class Command(BaseCommand):
             filename_list = sorted(filename_list)
             snapshots = deque()
             for l in filename_list:
-                snapshots.append(settings.NCVOTER_ZIP_URL_BASE + l.strip())
+                snapshots.append(settings.NCVOTER_HISTORICAL_SNAPSHOT_URL + l.strip())
 
             while len(snapshots) > 0:
                 if not FileTracker.objects.filter(file_status=FileTracker.UNPROCESSED).exists():

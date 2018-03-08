@@ -117,5 +117,9 @@ REST_FRAMEWORK = {
 
 NCVOTER_DOWNLOAD_PATH = "downloads/ncvoter"
 NCVHIS_DOWNLOAD_PATH = "downloads/ncvhis"
-NCVOTER_ZIP_URL_BASE = "http://dl.ncsbe.gov.s3.amazonaws.com/data/ncvoter"
-NCVHIS_ZIP_URL_BASE = "http://dl.ncsbe.gov.s3.amazonaws.com/data/ncvhis"
+NCSBE_S3_URL_BASE = "https://s3.amazonaws.com/dl.ncsbe.gov/data/"
+NCVOTER_LATEST_STATEWIDE_URL = NCSBE_S3_URL_BASE + "ncvoter_Statewide.zip"
+NCVHIS_LATEST_STATEWIDE_URL = NCSBE_S3_URL_BASE + "ncvhis_Statewide.zip"
+NCVOTER_LATEST_COUNTY_URL_BASE = NCSBE_S3_URL_BASE + "ncvoter"
+NCVHIS_LATEST_COUNTY_URL_BASE = NCSBE_S3_URL_BASE + "ncvhis"
+NCVOTER_HISTORICAL_SNAPSHOT_URL = NCSBE_S3_URL_BASE + "Snapshots/"

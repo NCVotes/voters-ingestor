@@ -10,9 +10,6 @@ import requests
 
 from voter.models import FileTracker
 
-NCVOTER_ZIP_URL = settings.NCVOTER_ZIP_URL_BASE + "_Statewide.zip"
-NCVHIS_ZIP_URL = settings.NCVHIS_ZIP_URL_BASE + "_Statewide.zip"
-
 FETCH_STATUS_CODES = Enum("FETCH_STATUS_CODES",
                           "CODE_OK CODE_NET_FAILURE CODE_WRITE_FAILURE CODE_NOTHING_TO_DO CODE_DB_FAILURE")
 
@@ -120,15 +117,15 @@ class Command(BaseCommand):
             help='Fetch per county files rather than statewide',)
 
     def fetch_state_zips(self):
-        status_1 = process_new_zip(NCVOTER_ZIP_URL, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter", None)
-        status_2 = process_new_zip(NCVHIS_ZIP_URL, settings.NCVHIS_DOWNLOAD_PATH, "ncvhis", None)
+        status_1 = process_new_zip(settings.NCVOTER_LATEST_STATEWIDE_URL, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter", None)
+        status_2 = process_new_zip(settings.NCVHIS_LATEST_STATEWIDE_URL, settings.NCVHIS_DOWNLOAD_PATH, "ncvhis", None)
         return status_1, status_2
 
     def fetch_county_zips(self):
         statuses = []
         for county_num in range(1, 101):
-            ncvoter_zip_url = settings.NCVOTER_ZIP_URL_BASE + str(county_num) + ".zip"
-            ncvhis_zip_url = settings.NCVHIS_ZIP_URL_BASE + str(county_num) + ".zip"
+            ncvoter_zip_url = settings.NCVOTER_LATEST_COUNTY_URL_BASE + str(county_num) + ".zip"
+            ncvhis_zip_url = settings.NCVHIS_LATEST_COUNTY_URL_BASE + str(county_num) + ".zip"
             result = process_new_zip(ncvoter_zip_url,
                                      settings.NCVOTER_DOWNLOAD_PATH, "ncvoter", county_num)
             statuses.append(result)

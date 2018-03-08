@@ -11,6 +11,7 @@ import requests
 import botocore
 import boto3
 from collections import deque
+from tqdm import tqdm
 
 from voter.models import FileTracker
 
@@ -35,7 +36,9 @@ def get_etag_and_zip_stream(url):
 def write_stream(stream_response, filename):
     try:
         with open(filename, 'wb') as f:
-            for chunk in stream_response.iter_content(chunk_size=1024):
+            total = int(stream_response.headers['content-length'])/1024
+            for chunk in tqdm(stream_response.iter_content(chunk_size=1024), total=total):
+                
                 if chunk:
                     f.write(chunk)
     except IOError:

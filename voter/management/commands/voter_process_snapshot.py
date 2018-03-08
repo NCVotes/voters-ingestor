@@ -10,8 +10,8 @@ import pytz
 import time
 from itertools import zip_longest
 
-from chardet.universaldetector import UniversalDetector
 from tqdm import tqdm
+import ftfy
 
 from voter.models import FileTracker, ChangeTracker, NCVoter
 
@@ -47,64 +47,48 @@ def find_md5(row_data, exclude=[]):
     return hashlib.md5(row_data_b).hexdigest()
 
 
-def detect_encoding(filename):
-    print("Detecting encoding for %s..." % filename)
-    detector = UniversalDetector()
-    with open(filename, 'rb') as f:
-        for line in tqdm(f):
-            detector.feed(line)
-            if detector.done:
-                break
-    detector.close()
-    print("Encoding:", detector.result['encoding'])
-    return detector.result['encoding']
-
-
 def get_file_lines(filename):
-    # TODO: See if this can be resolved or optimized not to read the whole
-    # multi-gig file to detect the encoding. Maybe feed into detector as
-    # the file is processed?
-    # For now, this was taking way too long with no clear result.
-    # encoding = detect_encoding(filename)
-    encoding = 'utf-8'
-    with open(filename, "r", encoding=encoding, errors='ignore', newline='\n') as f:
-        header = f.readline()
-        header = header.replace('\x00', '')
-        header = header.split('\t')
-        header = [i.strip().lower() for i in header]
-        for row in f:
-            line = row.replace('\x00', '')
-            line = line.split('\t')
-            if len(line) == len(header):
-                non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
-            elif len(line) == len(header)+1:
-                del line[45]
-                non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
-            elif len(line) == len(header)+3:
-                x = set([45, 46, 47])
-                line = [line[i] for i in range(len(line)) if i not in x]
-                non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
-            elif len(line) > len(header):
-                print("Extra fields found. Tell me the indices of the field that shall be ignored: (separated by space)")
-                print(list(zip_longest(range(len(line)), line, header)))
-                x = input()
-                x = [int(i.strip()) for i in x.split()]
-                x = set(x)
-                line = [line[i] for i in range(len(line)) if i not in x]
-                if len(line) != len(header):
-                    raise Exception("Number of fields still doesn't match header.")
-                non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
-            else:
-                print("Less fields found than header. Tell me the indices of the header that shall be ignored: (separated by space)")
-                print(list(zip_longest(range(len(header)), header, line)))
-                x = input()
-                x = [int(i.strip()) for i in x.split()]
-                x = set(x)
-                header2 = [header[i] for i in range(len(header)) if i not in x]
-                if len(line) != len(header2):
-                    raise Exception("Number of fields still doesn't match header.")
-                non_empty_row = {header2[i]: line[i].strip() for i in range(len(header2)) if not line[i].strip() == ''}
-            yield non_empty_row
+    # ftfy lets us iterate over lines while it corrects encoding problems
+    lines = ftfy.fix_file(filename)
+
+    header = next(lines)
+    header = header.replace('\x00', '')
+    header = header.split('\t')
+    header = [i.strip().lower() for i in header]
+
+    for row in lines:
+        line = row.replace('\x00', '')
+        line = line.split('\t')
+        if len(line) == len(header):
+            non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
+        elif len(line) == len(header)+1:
+            del line[45]
+            non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
+        elif len(line) == len(header)+3:
+            x = set([45, 46, 47])
+            line = [line[i] for i in range(len(line)) if i not in x]
+            non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
+        elif len(line) > len(header):
+            print("Extra fields found. Tell me the indices of the field that shall be ignored: (separated by space)")
+            print(list(zip_longest(range(len(line)), line, header)))
+            x = input()
+            x = [int(i.strip()) for i in x.split()]
+            x = set(x)
+            line = [line[i] for i in range(len(line)) if i not in x]
+            if len(line) != len(header):
+                raise Exception("Number of fields still doesn't match header.")
+            non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
+        else:
+            print("Less fields found than header. Tell me the indices of the header that shall be ignored: (separated by space)")
+            print(list(zip_longest(range(len(header)), header, line)))
+            x = input()
+            x = [int(i.strip()) for i in x.split()]
+            x = set(x)
+            header2 = [header[i] for i in range(len(header)) if i not in x]
+            if len(line) != len(header2):
+                raise Exception("Number of fields still doesn't match header.")
+            non_empty_row = {header2[i]: line[i].strip() for i in range(len(header2)) if not line[i].strip() == ''}
+        yield non_empty_row
 
 
 def find_existing_instance(file_tracker, row):

@@ -43,18 +43,23 @@ but you can't stop and start single databases. This means simply moving the TABL
 would still leave you with problems when disconnecting the external drive.
 
 Instead, create a whole separate cluster and run a separate postgres instance *only*
-when working on this project.
+when working on this project. We'll set the PGDATA variable to point to your external
+volume. Make sure to add that variable to your .bashrc or your
+$VIRTUAL_ENV/bin/postactivate script. All of the other Postgres commands in these instructions
+assume that it has been set.
 
-    pg_ctl -D /Volumes/CalvinNCVdb/postgres initdb
+    export PGDATA=/Volumes/CalvinNCVdb/postgres
+    pg_ctl initdb
 
 Note for Ubuntu users: pg_ctl is not in your PATH by default on Ubuntu. You can
 add it yourself. Obviously, change the Postgres version to the version you have.
 
-    export PATH=PATH:/usr/lib/postgresql/9.6/bin/
+    export PATH=$PATH:/usr/lib/postgresql/9.6/bin/
 
-You can append this line to your .bashrc if you want it available all the time.
+You can append this line to your .bashrc (or $VIRTUAL_ENV/bin/postactivate) if you want it available
+all the time.
 
-    echo "export PATH=PATH:/usr/lib/postgresql/9.6/bin/" >> .bashrc
+    echo "export PATH=$PATH:/usr/lib/postgresql/9.6/bin/" >> .bashrc
 
 #### Starting and stopping an external database
 
@@ -65,7 +70,7 @@ disconnecting the drive.
 
 To run the external postgres in a terminal, using post 5455:
 
-    postgres -D /Volumes/CalvinNCVdb/postgres/ -p 5455
+    postgres -p 5455
 
 To stop the external postgres, simply terminate the command with Ctrl+C in the same terminal.
 

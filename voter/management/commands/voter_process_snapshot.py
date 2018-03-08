@@ -10,7 +10,6 @@ import pytz
 import time
 from itertools import zip_longest
 
-from chardet.universaldetector import UniversalDetector
 from tqdm import tqdm
 import ftfy
 
@@ -51,7 +50,7 @@ def find_md5(row_data, exclude=[]):
 def get_file_lines(filename):
     # ftfy lets us iterate over lines while it corrects encoding problems
     lines = ftfy.fix_file(filename)
-    
+
     header = next(lines)
     header = header.replace('\x00', '')
     header = header.split('\t')

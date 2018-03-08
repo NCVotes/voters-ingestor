@@ -38,7 +38,7 @@ def write_stream(stream_response, filename):
         with open(filename, 'wb') as f:
             total = int(stream_response.headers['content-length'])/1024
             for chunk in tqdm(stream_response.iter_content(chunk_size=1024), total=total):
-                
+
                 if chunk:
                     f.write(chunk)
     except IOError:

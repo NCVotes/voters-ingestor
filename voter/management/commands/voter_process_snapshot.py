@@ -15,7 +15,7 @@ import ftfy
 
 from voter.models import FileTracker, ChangeTracker, NCVoter
 
-BULK_CREATE_AMOUNT = 3000
+BULK_CREATE_AMOUNT = 500
 
 
 def merge_dicts(x, y):
@@ -168,7 +168,8 @@ def track_changes(file_tracker, output):
                 if voter_records:
                     NCVoter.objects.bulk_create(voter_records)
                 for i in voter_updates:
-                    NCVoter.objects.filter(id=i[0]).update(**(i[1]))
+                    data, fields = NCVoter.data_from_row(i[1])
+                    NCVoter.objects.filter(id=i[0]).update(data=data, **fields)
                 change_records.clear()
                 voter_records.clear()
                 voter_updates.clear()
@@ -191,7 +192,7 @@ def track_changes(file_tracker, output):
         if change_tracker_instance is None:
             change_tracker_data = parsed_row
             change_tracker_op_code = ChangeTracker.OP_CODE_ADD
-            voter_records.append(NCVoter(**parsed_row))
+            voter_records.append(NCVoter.from_row(parsed_row))
             added_tally += 1
         else:
             existing_data = NCVoter.parse_existing(voter_instance)
@@ -216,10 +217,9 @@ def track_changes(file_tracker, output):
                 raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
             ChangeTracker.objects.bulk_create(change_records)
             if voter_records:
-                print("Writing %s voter records" % len(voter_records))
                 NCVoter.objects.bulk_create(voter_records)
-            for i in voter_updates:
-                NCVoter.objects.filter(id=i[0]).update(**(i[1]))
+            # for i in voter_updates:
+            #     NCVoter.objects.filter(id=i[0]).update(**(i[1]))
             change_records.clear()
             voter_records.clear()
             voter_updates.clear()

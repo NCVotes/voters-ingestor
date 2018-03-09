@@ -9,8 +9,8 @@ from voter import views
 
 router = routers.DefaultRouter()
 
-router.register(r'files', views.FileTrackerViewSet)
-router.register(r'voters', views.NCVoterViewSet)
+# router.register(r'files', views.FileTrackerViewSet)
+# router.register(r'voters', views.NCVoterViewSet)
 
 
 urlpatterns = [

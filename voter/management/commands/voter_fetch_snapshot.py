@@ -104,6 +104,8 @@ def process_new_zip(url, base_path, label):
             print("Unable to unzip {0}".format(target_filename), flush=True)
             return FETCH_STATUS_CODES.CODE_WRITE_FAILURE
     else:
+        if fetch_status_code == FETCH_STATUS_CODES.CODE_NOTHING_TO_DO:
+            print("File already downloaded")
         if fetch_status_code == FETCH_STATUS_CODES.CODE_NET_FAILURE:
             print("Unable to fetch file from {0}".format(url), flush=True)
         if fetch_status_code == FETCH_STATUS_CODES.CODE_WRITE_FAILURE:
@@ -130,10 +132,11 @@ class Command(BaseCommand):
             filename_list = sorted(filename_list)
             snapshots = deque()
             for l in filename_list:
+                print(l)
                 snapshots.append(settings.NCVOTER_HISTORICAL_SNAPSHOT_URL + l.strip())
 
             while len(snapshots) > 0:
-                if not FileTracker.objects.filter(file_status=FileTracker.UNPROCESSED).exists():
+                if True:#not FileTracker.objects.filter(file_status=FileTracker.UNPROCESSED).exists():
                     url = snapshots.popleft()
                     process_new_zip(url, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter")
                 else:

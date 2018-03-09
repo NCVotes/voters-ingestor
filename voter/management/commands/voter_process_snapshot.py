@@ -49,14 +49,32 @@ def find_md5(row_data, exclude=[]):
 
 def get_file_lines(filename):
     # ftfy lets us iterate over lines while it corrects encoding problems
-    lines = ftfy.fix_file(filename)
+    # lines = ftfy.fix_file(open(filename))
 
+    # guess the number of lines
+    f = open(filename, 'rb')
+    chunk = f.read(1024*1024)
+    newlines_per_meg = chunk.count(b'\n')
+    file_megs = os.stat(filename).st_size / (1024*1024)
+    line_count = file_megs * newlines_per_meg
+
+    # UTF16 or (presumably) BOM-less UTF8
+    f.seek(0)
+    if f.read(2) == b'\xff\xfe':
+        encoding = 'utf16'
+    else:
+        encoding = 'latin1'
+
+    f = open(filename, encoding=encoding)
+    lines = iter(f)
     header = next(lines)
     header = header.replace('\x00', '')
     header = header.split('\t')
     header = [i.strip().lower() for i in header]
 
-    for row in lines:
+    counted = 0
+    for row in tqdm(lines, total=line_count):
+        counted += 1
         line = row.replace('\x00', '')
         line = line.split('\t')
         if len(line) == len(header):
@@ -89,6 +107,8 @@ def get_file_lines(filename):
                 raise Exception("Number of fields still doesn't match header.")
             non_empty_row = {header2[i]: line[i].strip() for i in range(len(header2)) if not line[i].strip() == ''}
         yield non_empty_row
+    
+    print("Decoded", counted, "lines from", filename)
 
 
 def find_existing_instance(file_tracker, row):
@@ -122,7 +142,7 @@ def reset_file(file_tracker):
     file_tracker.save()
 
 
-@transaction.atomic
+# @transaction.atomic
 def track_changes(file_tracker, output):
     if output:
         print("Tracking changes for file {0}".format(file_tracker.filename), flush=True)
@@ -130,6 +150,7 @@ def track_changes(file_tracker, output):
     modified_tally = 0
     ignored_tally = 0
     skip_tally = 0
+    total_lines = 0
 
     file_date = datetime.strptime(file_tracker.filename.split('/')[-2].split('T', 1)[0], '%Y-%m-%d').replace(tzinfo=pytz.timezone('US/Eastern'))
     voter_records = []
@@ -137,6 +158,7 @@ def track_changes(file_tracker, output):
     voter_updates = []
     processed_ncids = set()
     for index, row in tqdm(enumerate(get_file_lines(file_tracker.filename))):
+        total_lines += 1
         while True:
             ncid, voter_instance, change_tracker_instance = find_existing_instance(file_tracker, row)
             if ncid in processed_ncids:
@@ -194,6 +216,7 @@ def track_changes(file_tracker, output):
                 raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
             ChangeTracker.objects.bulk_create(change_records)
             if voter_records:
+                print("Writing %s voter records" % len(voter_records))
                 NCVoter.objects.bulk_create(voter_records)
             for i in voter_updates:
                 NCVoter.objects.filter(id=i[0]).update(**(i[1]))
@@ -212,7 +235,8 @@ def track_changes(file_tracker, output):
     file_tracker.file_status = FileTracker.PROCESSED
     file_tracker.save()
     # TODO: Add a way to skip this, if we want to re-run for testing without re-downloading
-    remove_files(file_tracker)
+    # remove_files(file_tracker)
+    print("Total lines processed:", total_lines)
     return (added_tally, modified_tally, ignored_tally, skip_tally)
 
 
@@ -225,7 +249,10 @@ def process_files(output):
             'file_status': FileTracker.UNPROCESSED,
             'data_file_kind': FileTracker.DATA_FILE_KIND_NCVOTER
         }
-        ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data).order_by('created')
+        # FOR TESTING
+        FileTracker.objects.all().update(file_status=0)
+        ncvoter_file_trackers = FileTracker.objects.all()#filter(**file_tracker_filter_data).order_by('created')
+        print(ncvoter_file_trackers.count(), "File Trackers")
         for file_tracker in ncvoter_file_trackers:
             if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
                 print("Another parser is processing the files. Restart me later!")
@@ -236,6 +263,9 @@ def process_files(output):
             except Exception:
                 reset_file(file_tracker)
                 raise Exception('Error processing file {}'.format(file_tracker.filename))
+            except:
+                reset_file(file_tracker)
+                raise
             if output:
                 print("Change tracking completed for {}:".format(file_tracker.filename))
                 print("Added records: {0}".format(added))

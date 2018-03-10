@@ -122,10 +122,14 @@ def find_existing_instance(file_tracker, row):
     except NCVoter.MultipleObjectsReturned:
         print('Multiple voter records found for ncid {}!'.format(ncid))
         return None, None, None
+    change_instance = None
     try:
-        change_instance = ChangeTracker.objects.filter(ncid=ncid).latest('snapshot_dt')
+        if voter_instance:
+            qs = ChangeTracker.objects.filter(voter__id=voter_instance.id)
+            if qs.exists():
+                qs.latest('snapshot_dt')
     except ChangeTracker.DoesNotExist:
-        change_instance = None
+        pass
 
     return ncid, voter_instance, change_instance
 
@@ -162,14 +166,17 @@ def track_changes(file_tracker, output):
         while True:
             ncid, voter_instance, change_tracker_instance = find_existing_instance(file_tracker, row)
             if ncid in processed_ncids:
-                if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
-                    raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
-                ChangeTracker.objects.bulk_create(change_records)
+                # if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
+                #     raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
                 if voter_records:
                     NCVoter.objects.bulk_create(voter_records)
-                for i in voter_updates:
-                    data, fields = NCVoter.data_from_row(i[1])
-                    NCVoter.objects.filter(id=i[0]).update(data=data, **fields)
+                for c in change_records:
+                    c.voter = c.voter
+                ChangeTracker.objects.bulk_create(change_records)
+                # assert set(v.ncid for v in voter_records) == set(c.data['ncid'] for c in change_records)
+                # for i in voter_updates:
+                #     data, fields = NCVoter.data_from_row(i[1])
+                #     NCVoter.objects.filter(id=i[0]).update(**fields)
                 change_records.clear()
                 voter_records.clear()
                 voter_updates.clear()
@@ -179,8 +186,8 @@ def track_changes(file_tracker, output):
         if ncid is None:
             skip_tally += 1
             continue
-        if (change_tracker_instance is None) != (voter_instance is None):
-            raise Exception('Inconsistency: ncid {} is in one of the change and voter tables, but not in the other.'.format(ncid))
+        # if (change_tracker_instance is None) != (voter_instance is None):
+        #     raise Exception('Inconsistency: ncid {} is in one of the change and voter tables, but not in the other.'.format(ncid))
         hash_val = find_md5(row, exclude=['snapshot_dt'])
         if change_tracker_instance is not None and change_tracker_instance.md5_hash == hash_val:
             # Nothing to do, data is up to date, move to next row
@@ -192,16 +199,20 @@ def track_changes(file_tracker, output):
         if change_tracker_instance is None:
             change_tracker_data = parsed_row
             change_tracker_op_code = ChangeTracker.OP_CODE_ADD
-            voter_records.append(NCVoter.from_row(parsed_row))
+            voter_instance = NCVoter.objects.filter(ncid=parsed_row['ncid']).first()
+            if not voter_instance:
+                voter_instance = NCVoter.from_row(parsed_row)
+                voter_records.append(voter_instance)
             added_tally += 1
-        else:
-            existing_data = NCVoter.parse_existing(voter_instance)
-            change_tracker_data = diff_dicts(existing_data, parsed_row)
-            change_tracker_op_code = ChangeTracker.OP_CODE_MODIFY
-            voter_updates.append((voter_instance.id, change_tracker_data))
-            modified_tally += 1
+        # else:
+        #     existing_data = NCVoter.parse_existing(voter_instance)
+        #     change_tracker_data = diff_dicts(existing_data, parsed_row)
+        #     change_tracker_op_code = ChangeTracker.OP_CODE_MODIFY
+        #     voter_updates.append((voter_instance.id, change_tracker_data))
+        #     modified_tally += 1
+        assert voter_instance
         change_tracker_values = {
-            'ncid': row['ncid'],
+            'voter': voter_instance,
             'md5_hash': hash_val,
             'file_tracker': file_tracker,
             'op_code': change_tracker_op_code,
@@ -213,20 +224,23 @@ def track_changes(file_tracker, output):
         change_records.append(ChangeTracker(**change_tracker_values))
         processed_ncids.add(ncid)
         if len(change_records) > BULK_CREATE_AMOUNT:
-            if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
-                raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
-            ChangeTracker.objects.bulk_create(change_records)
-            if voter_records:
-                NCVoter.objects.bulk_create(voter_records)
-            # for i in voter_updates:
-            #     NCVoter.objects.filter(id=i[0]).update(**(i[1]))
+            # if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
+            #     raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
+            with transaction.atomic():
+                if voter_records:
+                    NCVoter.objects.bulk_create(voter_records)
+                for c in change_records:
+                    c.voter = c.voter
+                ChangeTracker.objects.bulk_create(change_records)
+                # for i in voter_updates:
+                #     NCVoter.objects.filter(id=i[0]).update(**(i[1]))
             change_records.clear()
             voter_records.clear()
             voter_updates.clear()
             processed_ncids.clear()
     if len(change_records) > 0:
-        if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
-            raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
+        # if len(voter_records)+len(voter_updates) != len(change_records):  # Debug code
+        #     raise Exception("len(voter_records)+len(voter_updates)!=len(change_records)")
         ChangeTracker.objects.bulk_create(change_records)
         if voter_records:
             NCVoter.objects.bulk_create(voter_records)

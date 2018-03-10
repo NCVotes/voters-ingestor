@@ -49,10 +49,23 @@ class ChangeTracker(models.Model):
     model_name = models.CharField('Model Name', max_length=20, choices=FileTracker.DATA_FILE_KIND_CHOICES)
     md5_hash = models.CharField('MD5 Hash Value', max_length=32)
     data = JSONField(encoder=DjangoJSONEncoder)
-    ncid = models.CharField('ncid', max_length=12, db_index=True)
+    # ncid = models.CharField('ncid', max_length=12, db_index=True)
     election_desc = models.CharField('election_desc', max_length=230, blank=True)
     file_tracker = models.ForeignKey('FileTracker', on_delete=models.CASCADE, related_name='changes')
+    voter = models.ForeignKey('NCVoter', on_delete=models.CASCADE, related_name='changelog')
     snapshot_dt = models.DateTimeField()
+
+    @classmethod
+    def find_voter_changelog(cls, ncid):
+        return ChangeTracker.objects.filter(ncid=ncid).order_by(snapshot_dt)
+    
+    @classmethod
+    def build_voter_current(cls, ncid):
+        changelog = cls.find_voter_changelog(ncid)
+        data = {}
+        for change in changelog:
+            data.update(change.data)
+        return data
 
 
 class NCVHis(models.Model):
@@ -122,7 +135,7 @@ class NCVoter(models.Model):
         if registr_dt_str:
             registr_dt_str = registr_dt_str[:10]
             registr_dt = datetime.strptime(registr_dt_str, '%Y-%m-%d')
-            row['registr_dt'] = registr_dt.date()
+            row['registr_dt'] = registr_dt_str #registr_dt.date()
 
         confidential_ind_str = row.get('confidential_ind', '')
         row['confidential_ind'] = (confidential_ind_str.strip().upper() == "Y")
@@ -149,24 +162,24 @@ class NCVoter(models.Model):
     @classmethod
     def from_row(cls, row):
         ncid = row['ncid']
-        registr_dt = row.pop('registr_dt')
+        # registr_dt = row.pop('registr_dt')
         return cls(
             ncid=ncid,
-            registr_dt=registr_dt,
-            data=row,
+            # registr_dt=registr_dt,
+            # data=row,
         )
     
     @classmethod
     def data_from_row(cls, row):
         if 'ncid' in row:
             row.pop('ncid')
-        registr_dt = row.pop('registr_dt')
-        return row, {'registr_dt': registr_dt}
+        row['registr_dt'] = str(row['registr_dt'])
+        return row, {}
     
 
     ncid = models.TextField('ncid', unique=True, db_index=True)
-    registr_dt = models.DateField('registr_dt', null=False, blank=False)
-    data = JSONField()
+    # registr_dt = models.DateField('registr_dt', null=False, blank=False)
+    # data = JSONField()
 
     @property
     def __getattr__(self, name):

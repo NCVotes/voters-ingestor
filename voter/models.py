@@ -38,6 +38,7 @@ class ChangeTracker(models.Model):
     class Meta:
         verbose_name = "Change Tracker"
         verbose_name_plural = "Change Tracking"
+        ordering = ('snapshot_dt',)
 
     OP_CODE_ADD = 'A'
     OP_CODE_MODIFY = 'M'
@@ -51,6 +52,7 @@ class ChangeTracker(models.Model):
     data = JSONField(encoder=DjangoJSONEncoder)
     election_desc = models.CharField('election_desc', max_length=230, blank=True)
     file_tracker = models.ForeignKey('FileTracker', on_delete=models.CASCADE, related_name='changes')
+    file_lineno = models.IntegerField(blank=True, null=True)
     voter = models.ForeignKey('NCVoter', on_delete=models.CASCADE, related_name='changelog')
     snapshot_dt = models.DateTimeField()
 
@@ -139,6 +141,7 @@ class NCVoter(models.Model):
 
         return row
 
+    # Use build_current() instead now
     @staticmethod
     def parse_existing(row):
         existing_data = model_to_dict(row)

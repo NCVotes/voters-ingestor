@@ -256,16 +256,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-                '-c', '--county',
-                dest='county',
-                type=int,
-                help='The county number of the per-county file you want to process (Processes only this county, as opposed to all files)',)
+            '-c', '--county',
+            dest='county',
+            type=int,
+            help='The county number of the per-county file you want to process (Processes only this county, as opposed to all files)',)
         parser.add_argument(
-                '--initial',
-                dest='initial',
-                action='store_true',
-                default=False,
-                help='For initial load of data, skips checking if rows of data already exist for optimization.')
+            '--initial',
+            dest='initial',
+            action='store_true',
+            default=False,
+            help='For initial load of data, skips checking if rows of data already exist for optimization.')
 
     def handle(self, *args, **options):
         county_num = options.get('county')

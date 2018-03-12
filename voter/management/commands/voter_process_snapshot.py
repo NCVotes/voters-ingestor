@@ -147,14 +147,17 @@ def track_changes(file_tracker, output):
     voter_updates = []
     processed_ncids = set()
 
-    @transaction.atomic()
     def flush():
-        if voter_records:
-            NCVoter.objects.bulk_create(voter_records)
-        for c in change_records:
-            assert c.voter
-            c.voter = c.voter
-        ChangeTracker.objects.bulk_create(change_records)
+        with transaction.atomic():
+            if voter_records:
+                NCVoter.objects.bulk_create(voter_records)
+        with transaction.atomic():
+            for c in change_records:
+                assert c.voter
+                assert c.voter in voter_records
+                c.voter = c.voter
+                c.voter_id = c.voter.id
+            ChangeTracker.objects.bulk_create(change_records)
         change_records.clear()
         voter_records.clear()
         voter_updates.clear()
@@ -200,6 +203,7 @@ def track_changes(file_tracker, output):
             change_tracker_op_code = 'A'
             change_tracker_data = parsed_row
             voter_instance = NCVoter.from_row(parsed_row)
+            voter_records.append(voter_instance)
 
         # Queue the change up to be bulk inserted later
         change_records.append(ChangeTracker(
@@ -227,7 +231,8 @@ def track_changes(file_tracker, output):
 
     # TODO: Add a way to skip this, if we want to re-run for testing without re-downloading
     # remove_files(file_tracker)
-    print("Total lines processed:", total_lines)
+    if output:
+        print("Total lines processed:", total_lines)
     return (added_tally, modified_tally, ignored_tally, skip_tally)
 
 
@@ -235,37 +240,33 @@ def process_files(output):
     if output:
         print("Processing NCVoter file...", flush=True)
 
-    while True:
-        file_tracker_filter_data = {
-            'file_status': FileTracker.UNPROCESSED,
-            'data_file_kind': FileTracker.DATA_FILE_KIND_NCVOTER
-        }
-        # FOR TESTING
-        FileTracker.objects.all().update(file_status=0)
-        ncvoter_file_trackers = FileTracker.objects.all()#filter(**file_tracker_filter_data).order_by('created')
-        print(ncvoter_file_trackers.count(), "File Trackers")
-        for file_tracker in ncvoter_file_trackers:
-            if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
-                print("Another parser is processing the files. Restart me later!")
-                return
-            lock_file(file_tracker)
-            try:
-                added, modified, ignored, skipped = track_changes(file_tracker, output)
-            except Exception:
-                reset_file(file_tracker)
-                raise Exception('Error processing file {}'.format(file_tracker.filename))
-            except:
-                reset_file(file_tracker)
-                raise
-            if output:
-                print("Change tracking completed for {}:".format(file_tracker.filename))
-                print("Added records: {0}".format(added))
-                print("Modified records: {0}".format(modified))
-                print("Skipped records: {0}".format(ignored))
-                print("Ignored records: {0}".format(skipped), flush=True)
-
-        print("Waiting for an hour to try again")
-        time.sleep(3600)
+    file_tracker_filter_data = {
+        'file_status': FileTracker.UNPROCESSED,
+        'data_file_kind': FileTracker.DATA_FILE_KIND_NCVOTER
+    }
+    # FOR TESTING
+    FileTracker.objects.all().update(file_status=0)
+    ncvoter_file_trackers = FileTracker.objects.all()#filter(**file_tracker_filter_data).order_by('created')
+    print(ncvoter_file_trackers.count(), "File Trackers")
+    for file_tracker in ncvoter_file_trackers:
+        if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
+            print("Another parser is processing the files. Restart me later!")
+            return
+        lock_file(file_tracker)
+        try:
+            added, modified, ignored, skipped = track_changes(file_tracker, output)
+        except Exception:
+            reset_file(file_tracker)
+            raise Exception('Error processing file {}'.format(file_tracker.filename))
+        except:
+            reset_file(file_tracker)
+            raise
+        if output:
+            print("Change tracking completed for {}:".format(file_tracker.filename))
+            print("Added records: {0}".format(added))
+            print("Modified records: {0}".format(modified))
+            print("Skipped records: {0}".format(ignored))
+            print("Ignored records: {0}".format(skipped), flush=True)
 
     return
 

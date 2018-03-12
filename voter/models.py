@@ -123,8 +123,7 @@ class NCVoter(models.Model):
         registr_dt_str = row.get('registr_dt')
         if registr_dt_str:
             registr_dt_str = registr_dt_str[:10]
-            registr_dt = datetime.strptime(registr_dt_str, '%Y-%m-%d')
-            row['registr_dt'] = registr_dt_str #registr_dt.date()
+            row['registr_dt'] = registr_dt_str
 
         confidential_ind_str = row.get('confidential_ind', '')
         row['confidential_ind'] = (confidential_ind_str.strip().upper() == "Y")
@@ -148,11 +147,11 @@ class NCVoter(models.Model):
         del existing_data['id']
         existing_data = {k: v for k, v in existing_data.items() if (v is not None and v != '')}
         return existing_data
-    
+
     @classmethod
     def from_row(cls, row):
         return cls(ncid=row['ncid'])
-    
+
     @classmethod
     def data_from_row(cls, row):
         if 'ncid' in row:
@@ -166,7 +165,7 @@ class NCVoter(models.Model):
         for change in changelog:
             data.update(change.data)
         return data
-    
+
     ncid = models.TextField('ncid', unique=True, db_index=True)
 
 

@@ -6,32 +6,33 @@ from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter
 from voter.management.commands.voter_process_snapshot import process_files, get_file_lines
 
 file_trackers_data = [
-    {"id": 1,
-     "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
-     "filename": "voter/test_data/2010-10-31T00-00-00/snapshot_latin1.txt",
-     "data_file_kind": "NCVoter",
-     "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-     "change_tracker_processed": False,
-    },
-    {"id": 2,
-     "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
-     "filename": "voter/test_data/2010-10-31T00-00-00/snapshot_utf16.txt",
-     "data_file_kind": "NCVoter",
-     "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-     "change_tracker_processed": False,
-    },
-    {"id": 3,
-     "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
-     "filename": "voter/test_data/2011-10-31T00-00-00/snapshot.txt",
-     "data_file_kind": "NCVoter",
-     "created": datetime.datetime(2012, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-     "change_tracker_processed": False,
+    {
+        "id": 1,
+        "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
+        "filename": "voter/test_data/2010-10-31T00-00-00/snapshot_latin1.txt",
+        "data_file_kind": "NCVoter",
+        "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
+        "change_tracker_processed": False,
+    }, {
+        "id": 2,
+        "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
+        "filename": "voter/test_data/2010-10-31T00-00-00/snapshot_utf16.txt",
+        "data_file_kind": "NCVoter",
+        "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
+        "change_tracker_processed": False,
+    }, {
+        "id": 3,
+        "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
+        "filename": "voter/test_data/2011-10-31T00-00-00/snapshot.txt",
+        "data_file_kind": "NCVoter",
+        "created": datetime.datetime(2012, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
+        "change_tracker_processed": False,
     },
 ]
 
 
 def create_file_tracker(i):
-    FileTracker.objects.create(**file_trackers_data[i-1])
+    FileTracker.objects.create(**file_trackers_data[i - 1])
 
 
 def load_sorted_parsed_csv(filename, ModelClass):
@@ -56,7 +57,7 @@ def query_csv_data_in_model(ModelClass):
 
 
 class VoterProcessChangeTrackerTest(TestCase):
-    
+
     def tearDown(self):
         FileTracker.objects.all().delete()
 
@@ -71,7 +72,7 @@ class VoterProcessChangeTrackerTest(TestCase):
         # Can find the first person from the snapshot
         c = ChangeTracker.objects.filter(data__last_name="THOMPSON", data__first_name="JESSICA").first()
         self.assert_(c)
-    
+
     def test_can_consume_utf16(self):
         create_file_tracker(2)
         process_files(output=False)
@@ -100,14 +101,11 @@ class VoterProcessChangeTrackerTest(TestCase):
         modifications = ChangeTracker.objects.filter(op_code='M')
         self.assertEquals(modifications.count(), 6)
 
-        for c in modifications:
-            print(c.voter.ncid, c.data)
-    
     def test_records_merge(self):
         self.load_two_snapshots()
 
         voter = NCVoter.objects.get(ncid="AS2035")
         data = voter.build_current()
 
-        self.assertEqual(data["first_name"], 'PATRICIA')
-        self.assertEqual(data["last_name"], 'WILSON')
+        self.assertEqual(data["first_name"], 'VON')
+        self.assertEqual(data["last_name"], 'LANGSTON')

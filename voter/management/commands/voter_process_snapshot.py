@@ -4,14 +4,11 @@ from django.db import transaction
 
 import hashlib
 import os
-from datetime import datetime
 from bencode import bencode
-import pytz
-import time
+
 from itertools import zip_longest
 
 from tqdm import tqdm
-import ftfy
 
 from voter.models import FileTracker, ChangeTracker, NCVoter
 
@@ -48,14 +45,11 @@ def find_md5(row_data, exclude=[]):
 
 
 def get_file_lines(filename):
-    # ftfy lets us iterate over lines while it corrects encoding problems
-    # lines = ftfy.fix_file(open(filename))
-
     # guess the number of lines
     f = open(filename, 'rb')
-    chunk = f.read(1024*1024)
+    chunk = f.read(1024 * 1024)
     newlines_per_meg = chunk.count(b'\n')
-    file_megs = os.stat(filename).st_size / (1024*1024)
+    file_megs = os.stat(filename).st_size / (1024 * 1024)
     line_count = file_megs * newlines_per_meg
 
     # UTF16 or (presumably) BOM-less UTF8
@@ -79,10 +73,10 @@ def get_file_lines(filename):
         line = line.split('\t')
         if len(line) == len(header):
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
-        elif len(line) == len(header)+1:
+        elif len(line) == len(header) + 1:
             del line[45]
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
-        elif len(line) == len(header)+3:
+        elif len(line) == len(header) + 3:
             x = set([45, 46, 47])
             line = [line[i] for i in range(len(line)) if i not in x]
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
@@ -107,7 +101,7 @@ def get_file_lines(filename):
                 raise Exception("Number of fields still doesn't match header.")
             non_empty_row = {header2[i]: line[i].strip() for i in range(len(header2)) if not line[i].strip() == ''}
         yield non_empty_row
-    
+
     print("Decoded", counted, "lines from", filename)
 
 
@@ -142,7 +136,6 @@ def track_changes(file_tracker, output):
     skip_tally = 0
     total_lines = 0
 
-    file_date = datetime.strptime(file_tracker.filename.split('/')[-2].split('T', 1)[0], '%Y-%m-%d').replace(tzinfo=pytz.timezone('US/Eastern'))
     voter_records = []
     change_records = []
     voter_updates = []
@@ -171,7 +164,7 @@ def track_changes(file_tracker, output):
         if ncid in processed_ncids:
             flush()
         voter_instance = find_existing_instance(ncid)
-        
+
         # Skip rows that have no NCID in them :-(
         # TODO: Log these so we can come back and figure out what to do with them
         if ncid is None:
@@ -223,7 +216,7 @@ def track_changes(file_tracker, output):
     # Any left over records to flush that didn't hit the bulk amount?
     if change_records:
         flush()
-    
+
     # Mark the file as processed, we're done with it
     file_tracker.file_status = FileTracker.PROCESSED
     file_tracker.save()
@@ -245,7 +238,7 @@ def process_files(output):
     }
     # FOR TESTING
     FileTracker.objects.all().update(file_status=0)
-    ncvoter_file_trackers = FileTracker.objects.all()#filter(**file_tracker_filter_data).order_by('created')
+    ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data).order_by('created')
     print(ncvoter_file_trackers.count(), "File Trackers")
     for file_tracker in ncvoter_file_trackers:
         if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
@@ -257,7 +250,7 @@ def process_files(output):
         except Exception:
             reset_file(file_tracker)
             raise Exception('Error processing file {}'.format(file_tracker.filename))
-        except:
+        except BaseException:
             reset_file(file_tracker)
             raise
         if output:

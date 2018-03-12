@@ -1,10 +1,10 @@
-from rest_framework import viewsets
-import django_filters
+# from rest_framework import viewsets
+# import django_filters
 
-from voter.models import (
-    FileTracker, NCVoter, COUNTY_CODES, STATE_ABBREVS, RACE_CODES,
-    GENDER_CODES)
-from voter import serializers
+# from voter.models import (
+#     FileTracker, NCVoter, COUNTY_CODES, STATE_ABBREVS, RACE_CODES,
+#     GENDER_CODES)
+# from voter import serializers
 
 
 # class FileTrackerFilterSet(django_filters.FilterSet):

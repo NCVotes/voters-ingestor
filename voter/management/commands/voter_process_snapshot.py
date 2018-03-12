@@ -116,7 +116,8 @@ def find_existing_instance(ncid):
 
     Will prefetch all ChangeTracker instances related."""
 
-    return NCVoter.objects.filter(ncid=ncid).prefetch_related('changelog').first()
+    voter = NCVoter.objects.filter(ncid=ncid).prefetch_related('changelog').first()
+    return voter
 
 
 @transaction.atomic
@@ -153,8 +154,6 @@ def track_changes(file_tracker, output):
                 NCVoter.objects.bulk_create(voter_records)
         with transaction.atomic():
             for c in change_records:
-                assert c.voter
-                assert c.voter in voter_records
                 c.voter = c.voter
                 c.voter_id = c.voter.id
             ChangeTracker.objects.bulk_create(change_records)

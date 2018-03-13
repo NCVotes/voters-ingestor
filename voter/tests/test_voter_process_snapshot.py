@@ -2,7 +2,7 @@ import datetime
 
 from django.test import TestCase
 
-from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter
+from voter.models import FileTracker, BadLine, ChangeTracker, NCVHis, NCVoter
 from voter.management.commands.voter_process_snapshot import process_files, get_file_lines
 
 file_trackers_data = [
@@ -27,7 +27,14 @@ file_trackers_data = [
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2012, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
         "change_tracker_processed": False,
-    },
+    }, {
+        "id": 4,
+        "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
+        "filename": "voter/test_data/2010-10-31T00-00-00/bad_extra45.txt",
+        "data_file_kind": "NCVoter",
+        "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
+        "change_tracker_processed": False,
+    }
 ]
 
 
@@ -109,3 +116,16 @@ class VoterProcessChangeTrackerTest(TestCase):
 
         self.assertEqual(data["first_name"], 'VON')
         self.assertEqual(data["last_name"], 'LANGSTON')
+    
+    def test_extra_data_cell_45(self):
+        create_file_tracker(4)
+        process_files(output=False)
+
+        self.assertEquals(ChangeTracker.objects.count(), 19)
+        self.assertEquals(BadLine.objects.count(), 1)
+
+        badline = BadLine.objects.all().first()
+        self.assertEqual(badline.line_no, 19)
+        self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_extra45.txt")
+        self.assertEqual(badline.is_warning, True)
+        self.assertIn("(removing 45)", badline.message)

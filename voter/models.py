@@ -33,6 +33,34 @@ class FileTracker(models.Model):
     change_tracker_processed = models.BooleanField(null=False, blank=True, default=False)
 
 
+class BadLine(models.Model):
+    filename = models.CharField(max_length=255)
+    line_no = models.IntegerField()
+    line = models.TextField()
+    message = models.TextField()
+    is_warning = models.BooleanField(blank=True)
+
+    @classmethod
+    def error(cls, filename, line_no, line, message):
+        cls.objects.create(
+            filename = filename,
+            line_no = line_no,
+            line = line,
+            message = message,
+            is_warning = False,
+        )
+    
+    @classmethod
+    def warning(cls, filename, line_no, line, message):
+        cls.objects.create(
+            filename = filename,
+            line_no = line_no,
+            line = line,
+            message = message,
+            is_warning = True,
+        )
+
+
 class ChangeTracker(models.Model):
 
     class Meta:

@@ -10,7 +10,7 @@ from itertools import zip_longest
 
 from tqdm import tqdm
 
-from voter.models import FileTracker, ChangeTracker, NCVoter
+from voter.models import FileTracker, BadLine, ChangeTracker, NCVoter
 
 BULK_CREATE_AMOUNT = 500
 
@@ -56,29 +56,40 @@ def find_md5(row_data, exclude=[]):
 
 def tqdm_or_quiet(output):
     if output:
-        tqdm = globals()['tqdm']
+        tqdm = globals()['tqdm'] # noqa, E811
     else:
         def tqdm(x, **kw):
             """Pass-through progress bar, because we are in quiet mode."""
             return x
     return tqdm
 
-def get_file_lines(filename, output):
-    tqdm = tqdm_or_quiet(output)
 
-    # guess the number of lines and encoding
+def guess_total_lines(filename):
     with open(filename, 'rb') as f:
         chunk = f.read(1024 * 1024)
         newlines_per_meg = chunk.count(b'\n')
         file_megs = os.stat(filename).st_size / (1024 * 1024)
         approx_line_count = file_megs * newlines_per_meg
+        return approx_line_count
 
+
+def get_file_encoding(filename):
+    with open(filename, 'rb') as f:
         # UTF16 or latin1
         f.seek(0)
         if f.read(2) == b'\xff\xfe':
             encoding = 'utf16'
         else:
             encoding = 'latin1'
+        return encoding
+
+
+def get_file_lines(filename, output):
+    tqdm = tqdm_or_quiet(output) # noqa, F811
+
+    # guess the number of lines and encoding
+    approx_line_count = guess_total_lines(filename)
+    encoding = get_file_encoding(filename)
 
     f = open(filename, encoding=encoding)
     lines = iter(f)
@@ -92,36 +103,30 @@ def get_file_lines(filename, output):
         counted += 1
         line = row.replace('\x00', '')
         line = line.split('\t')
+
         if len(line) == len(header):
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
+
         elif len(line) == len(header) + 1:
+            BadLine.warning(filename, counted, row, "Line has an extra 1 cell than the headers we have. (removing 45)")
             del line[45]
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
+
         elif len(line) == len(header) + 3:
+            BadLine.warning(filename, counted, row, "Line has an extra 3 cells than the headers we have. (removing 45-47)")
             x = set([45, 46, 47])
             line = [line[i] for i in range(len(line)) if i not in x]
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
+
         elif len(line) > len(header):
-            print("Extra fields found. Tell me the indices of the field that shall be ignored: (separated by space)")
-            print(list(zip_longest(range(len(line)), line, header)))
-            x = input()
-            x = [int(i.strip()) for i in x.split()]
-            x = set(x)
-            line = [line[i] for i in range(len(line)) if i not in x]
-            if len(line) != len(header):
-                raise Exception("Number of fields still doesn't match header.")
-            non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
+            BadLine.error(filename, counted, row, "More cells in this line than we know what to do with.")
+            continue
+
         else:
-            print("Less fields found than header. Tell me the indices of the header that shall be ignored: (separated by space)")
-            print(list(zip_longest(range(len(header)), header, line)))
-            x = input()
-            x = [int(i.strip()) for i in x.split()]
-            x = set(x)
-            header2 = [header[i] for i in range(len(header)) if i not in x]
-            if len(line) != len(header2):
-                raise Exception("Number of fields still doesn't match header.")
-            non_empty_row = {header2[i]: line[i].strip() for i in range(len(header2)) if not line[i].strip() == ''}
-        yield non_empty_row
+            BadLine.error(filename, counted, row, "More cells in this line than we know what to do with.")
+            continue
+
+        yield counted, non_empty_row
 
     if output:
         print("Decoded", counted, "lines from", filename)
@@ -245,7 +250,7 @@ def track_changes(file_tracker, output):
         print("Tracking changes for file {0}".format(file_tracker.filename), flush=True)
     tqdm = tqdm_or_quiet(output)
 
-    for index, row in tqdm(enumerate(get_file_lines(file_tracker.filename, output))):
+    for index, row in tqdm(get_file_lines(file_tracker.filename, output)):
         total_lines += 1
 
         ncid, voter_instance = skip_or_voter(row)

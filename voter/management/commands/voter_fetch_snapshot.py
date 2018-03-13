@@ -36,7 +36,7 @@ def get_etag_and_zip_stream(url):
 def write_stream(stream_response, filename):
     try:
         with open(filename, 'wb') as f:
-            total = int(stream_response.headers['content-length'])/1024
+            total = int(stream_response.headers['content-length']) / 1024
             for chunk in tqdm(stream_response.iter_content(chunk_size=1024), total=total):
 
                 if chunk:
@@ -80,6 +80,7 @@ def attempt_fetch_and_write_new_zip(url, base_path):
 
 def process_new_zip(url, base_path, label):
     print("Fetching {0}".format(url), flush=True)
+
     fetch_status_code, etag, created_time, target_filename = attempt_fetch_and_write_new_zip(url, base_path)
     if fetch_status_code == FETCH_STATUS_CODES.CODE_OK:
         print("Fetched {0} successfully to {1}".format(url, target_filename), flush=True)
@@ -104,6 +105,8 @@ def process_new_zip(url, base_path, label):
             print("Unable to unzip {0}".format(target_filename), flush=True)
             return FETCH_STATUS_CODES.CODE_WRITE_FAILURE
     else:
+        if fetch_status_code == FETCH_STATUS_CODES.CODE_NOTHING_TO_DO:
+            print("File already downloaded")
         if fetch_status_code == FETCH_STATUS_CODES.CODE_NET_FAILURE:
             print("Unable to fetch file from {0}".format(url), flush=True)
         if fetch_status_code == FETCH_STATUS_CODES.CODE_WRITE_FAILURE:
@@ -130,6 +133,7 @@ class Command(BaseCommand):
             filename_list = sorted(filename_list)
             snapshots = deque()
             for l in filename_list:
+                print(l)
                 snapshots.append(settings.NCVOTER_HISTORICAL_SNAPSHOT_URL + l.strip())
 
             while len(snapshots) > 0:

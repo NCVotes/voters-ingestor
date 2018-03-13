@@ -12,9 +12,9 @@ class FileTrackerAdmin(admin.ModelAdmin):
 
 @admin.register(ChangeTracker)
 class ChangeTrackerAdmin(admin.ModelAdmin):
-    list_display = ('op_code', 'model_name', 'ncid', 'election_desc',)
+    list_display = ('op_code', 'model_name', 'voter', 'election_desc',)
     readonly_fields = ('op_code', 'model_name', 'md5_hash', 'file_tracker',
-                       'ncid', 'election_desc')
+                       'voter', 'election_desc')
 
 
 @admin.register(NCVHis)

@@ -45,19 +45,19 @@ def find_md5(row_data, exclude=[]):
 
 
 def get_file_lines(filename):
-    # guess the number of lines
-    f = open(filename, 'rb')
-    chunk = f.read(1024 * 1024)
-    newlines_per_meg = chunk.count(b'\n')
-    file_megs = os.stat(filename).st_size / (1024 * 1024)
-    line_count = file_megs * newlines_per_meg
+    # guess the number of lines and encoding
+    with open(filename, 'rb') as f:
+        chunk = f.read(1024 * 1024)
+        newlines_per_meg = chunk.count(b'\n')
+        file_megs = os.stat(filename).st_size / (1024 * 1024)
+        approx_line_count = file_megs * newlines_per_meg
 
-    # UTF16 or (presumably) BOM-less UTF8
-    f.seek(0)
-    if f.read(2) == b'\xff\xfe':
-        encoding = 'utf16'
-    else:
-        encoding = 'latin1'
+        # UTF16 or latin1
+        f.seek(0)
+        if f.read(2) == b'\xff\xfe':
+            encoding = 'utf16'
+        else:
+            encoding = 'latin1'
 
     f = open(filename, encoding=encoding)
     lines = iter(f)
@@ -67,7 +67,7 @@ def get_file_lines(filename):
     header = [i.strip().lower() for i in header]
 
     counted = 0
-    for row in tqdm(lines, total=line_count):
+    for row in tqdm(lines, total=approx_line_count):
         counted += 1
         line = row.replace('\x00', '')
         line = line.split('\t')
@@ -126,7 +126,6 @@ def reset_file(file_tracker):
     file_tracker.save()
 
 
-# @transaction.atomic
 def track_changes(file_tracker, output):
     if output:
         print("Tracking changes for file {0}".format(file_tracker.filename), flush=True)
@@ -146,6 +145,13 @@ def track_changes(file_tracker, output):
             if voter_records:
                 NCVoter.objects.bulk_create(voter_records)
         with transaction.atomic():
+            # This looks weird. Let me explain.
+            # All the unsaved ChangeTracker instances have references
+            # to the NCVoter instances from *before* the NCVoter instances
+            # were saved. So they do not know the voter instances now have
+            # IDs from being inserted. This re-sets the voter on the change
+            # object, ensuring it knows the ID of its voter and can be saved
+            # properly.
             for c in change_records:
                 c.voter = c.voter
                 c.voter_id = c.voter.id
@@ -187,12 +193,12 @@ def track_changes(file_tracker, output):
         # For modifying we only record a diff of data, otherwise all of it
         if voter_instance:
             modified_tally += 1
-            change_tracker_op_code = 'M'
+            change_tracker_op_code = ChangeTracker.OP_CODE_MODIFY
             existing_data = voter_instance.build_current()
             change_tracker_data = diff_dicts(existing_data, parsed_row)
         else:
             added_tally += 1
-            change_tracker_op_code = 'A'
+            change_tracker_op_code = ChangeTracker.OP_CODE_ADD
             change_tracker_data = parsed_row
             voter_instance = NCVoter.from_row(parsed_row)
             voter_records.append(voter_instance)

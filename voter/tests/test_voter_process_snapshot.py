@@ -138,7 +138,7 @@ class VoterProcessChangeTrackerTest(TestCase):
 
         self.assertEqual(data["first_name"], 'VON')
         self.assertEqual(data["last_name"], 'LANGSTON')
-    
+
     def test_extra_data_cell_45(self):
         create_file_tracker(4)
         process_files(output=False)
@@ -179,7 +179,7 @@ class VoterProcessChangeTrackerTest(TestCase):
         self.assertEqual(badline.is_warning, False)
         self.assertIn("More cells", badline.message)
 
-    def test_extra_data_cell_lots(self):
+    def test_extra_data_not_enough(self):
         create_file_tracker(7)
         process_files(output=False)
 
@@ -192,7 +192,7 @@ class VoterProcessChangeTrackerTest(TestCase):
         self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_not_enough.txt")
         self.assertEqual(badline.is_warning, False)
         self.assertIn("Less cells", badline.message)
-    
+
     def test_error_recording_change(self):
         with mock.patch("voter.management.commands.voter_process_snapshot.record_change") as rc:
             rc.side_effect = Exception("Something went terribly wrong.")

@@ -54,7 +54,7 @@ class BadLine(models.Model):
             message = message,
             is_warning = False,
         )
-    
+
     @classmethod
     def warning(cls, filename, line_no, line, message):
         cls.objects.create(

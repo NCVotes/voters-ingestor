@@ -8,10 +8,6 @@ import sys
 import traceback
 from bencode import bencode
 
-from itertools import zip_longest
-
-from tqdm import tqdm
-
 from voter.models import FileTracker, BadLine, ChangeTracker, NCVoter
 
 BULK_CREATE_AMOUNT = 500
@@ -58,7 +54,7 @@ def find_md5(row_data, exclude=[]):
 
 def tqdm_or_quiet(output):
     if output:
-        tqdm = globals()['tqdm'] # noqa, E811
+        from tqdm import tqdm
     else:
         def tqdm(x, **kw):
             """Pass-through progress bar, because we are in quiet mode."""

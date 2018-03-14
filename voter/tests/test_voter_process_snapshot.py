@@ -34,6 +34,27 @@ file_trackers_data = [
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
         "change_tracker_processed": False,
+    }, {
+        "id": 5,
+        "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
+        "filename": "voter/test_data/2010-10-31T00-00-00/bad_extra45_46_47.txt",
+        "data_file_kind": "NCVoter",
+        "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
+        "change_tracker_processed": False,
+    }, {
+        "id": 6,
+        "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
+        "filename": "voter/test_data/2010-10-31T00-00-00/bad_extra_lots.txt",
+        "data_file_kind": "NCVoter",
+        "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
+        "change_tracker_processed": False,
+    }, {
+        "id": 7,
+        "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
+        "filename": "voter/test_data/2010-10-31T00-00-00/bad_not_enough.txt",
+        "data_file_kind": "NCVoter",
+        "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
+        "change_tracker_processed": False,
     }
 ]
 
@@ -129,3 +150,44 @@ class VoterProcessChangeTrackerTest(TestCase):
         self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_extra45.txt")
         self.assertEqual(badline.is_warning, True)
         self.assertIn("(removing 45)", badline.message)
+
+    def test_extra_data_cell_45_46_47(self):
+        create_file_tracker(5)
+        process_files(output=False)
+
+        self.assertEquals(ChangeTracker.objects.count(), 19)
+        self.assertEquals(BadLine.objects.count(), 1)
+
+        badline = BadLine.objects.all().first()
+        self.assertEqual(badline.line_no, 19)
+        self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_extra45_46_47.txt")
+        self.assertEqual(badline.is_warning, True)
+        self.assertIn("(removing 45-47)", badline.message)
+
+    def test_extra_data_cell_lots(self):
+        create_file_tracker(6)
+        process_files(output=False)
+
+        # 18, because the bad line was an error and not processed
+        self.assertEquals(ChangeTracker.objects.count(), 18)
+        self.assertEquals(BadLine.objects.count(), 1)
+
+        badline = BadLine.objects.all().first()
+        self.assertEqual(badline.line_no, 19)
+        self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_extra_lots.txt")
+        self.assertEqual(badline.is_warning, False)
+        self.assertIn("More cells", badline.message)
+
+    def test_extra_data_cell_lots(self):
+        create_file_tracker(7)
+        process_files(output=False)
+
+        # 18, because the bad line was an error and not processed
+        self.assertEquals(ChangeTracker.objects.count(), 18)
+        self.assertEquals(BadLine.objects.count(), 1)
+
+        badline = BadLine.objects.all().first()
+        self.assertEqual(badline.line_no, 19)
+        self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_not_enough.txt")
+        self.assertEqual(badline.is_warning, False)
+        self.assertIn("Less cells", badline.message)

@@ -123,7 +123,7 @@ def get_file_lines(filename, output):
             continue
 
         else:
-            BadLine.error(filename, counted, row, "More cells in this line than we know what to do with.")
+            BadLine.error(filename, counted, row, "Less cells in this line than we need.")
             continue
 
         yield counted, non_empty_row

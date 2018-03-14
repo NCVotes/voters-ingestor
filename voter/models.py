@@ -40,6 +40,11 @@ class BadLine(models.Model):
     message = models.TextField()
     is_warning = models.BooleanField(blank=True)
 
+    class Meta:
+        unique_together = (
+            ('filename', 'line_no'),
+        )
+
     @classmethod
     def error(cls, filename, line_no, line, message):
         cls.objects.create(

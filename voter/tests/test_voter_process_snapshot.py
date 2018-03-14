@@ -1,4 +1,5 @@
 import datetime
+from unittest import mock
 
 from django.test import TestCase
 
@@ -191,3 +192,13 @@ class VoterProcessChangeTrackerTest(TestCase):
         self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_not_enough.txt")
         self.assertEqual(badline.is_warning, False)
         self.assertIn("Less cells", badline.message)
+    
+    def test_error_recording_change(self):
+        with mock.patch("voter.management.commands.voter_process_snapshot.record_change") as rc:
+            rc.side_effect = Exception("Something went terribly wrong.")
+            create_file_tracker(1)
+            process_files(output=False)
+        badline = BadLine.objects.all().first()
+
+        self.assertIn("Exception: Something went terribly wrong", badline.message)
+        self.assertIn("= record_change(", badline.message)

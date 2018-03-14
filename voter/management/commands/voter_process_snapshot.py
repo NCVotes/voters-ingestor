@@ -4,6 +4,8 @@ from django.db import transaction
 
 import hashlib
 import os
+import sys
+import traceback
 from bencode import bencode
 
 from itertools import zip_longest
@@ -192,7 +194,7 @@ def skip_or_voter(row):
     # TODO: Log these so we can come back and figure out what to do with them
     if ncid is None:
         skip_tally += 1
-        return None, None
+        raise ValueError("No NCID found in data")
 
     # Generate a hash value for the change set and skip this one if it matches
     # an existing change already recorded
@@ -205,8 +207,8 @@ def skip_or_voter(row):
 
 
 def record_change(file_tracker, row, voter_instance):
-    global added_tally
-    global modified_tally
+    added = 0
+    modified = 0
 
     parsed_row = NCVoter.parse_row(row)
     snapshot_dt = parsed_row.pop('snapshot_dt')
@@ -215,19 +217,18 @@ def record_change(file_tracker, row, voter_instance):
     # If there was no voter instance, this is an ADD otherwise a MODIFY
     # For modifying we only record a diff of data, otherwise all of it
     if voter_instance:
-        modified_tally += 1
+        modified = 1
         change_tracker_op_code = ChangeTracker.OP_CODE_MODIFY
         existing_data = voter_instance.build_current()
         change_tracker_data = diff_dicts(existing_data, parsed_row)
     else:
-        added_tally += 1
+        added = 1
         change_tracker_op_code = ChangeTracker.OP_CODE_ADD
         change_tracker_data = parsed_row
         voter_instance = NCVoter.from_row(parsed_row)
-        voter_records.append(voter_instance)
 
     # Queue the change up to be bulk inserted later
-    change_records.append(ChangeTracker(
+    change = ChangeTracker(
         voter = voter_instance,
         md5_hash = hash_val,
         snapshot_dt = snapshot_dt,
@@ -235,8 +236,9 @@ def record_change(file_tracker, row, voter_instance):
         file_lineno = total_lines,
         op_code = change_tracker_op_code,
         data = change_tracker_data,
-    ))
-    processed_ncids.add(voter_instance.ncid)
+    )
+
+    return (added, modified, voter_instance, change)
 
 
 def track_changes(file_tracker, output):
@@ -253,13 +255,28 @@ def track_changes(file_tracker, output):
     for index, row in tqdm(get_file_lines(file_tracker.filename, output)):
         total_lines += 1
 
-        ncid, voter_instance = skip_or_voter(row)
-        if not ncid:
+        try:
+            ncid, voter_instance = skip_or_voter(row)
+            if not ncid:
+                continue
+        except ValueError as e:
+            BadLine.error(file_tracker.filename, total_lines, str(row), e.args[0])
             continue
 
         # We're done skipping for various reasons, so lets move on to actually recording
         # new data. We start by parsing the the row data.
-        record_change(file_tracker, row, voter_instance)
+        try:
+            (added, modified, voter_instance, change) = record_change(file_tracker, row, voter_instance)
+        except Exception:
+            tb = ''.join(traceback.format_exception(*sys.exc_info()))
+            BadLine.error(file_tracker.filename, total_lines, str(row), tb)
+        else:
+            added_tally += added
+            modified_tally += modified
+            if added:
+                voter_records.append(voter_instance)
+            change_records.append(change)
+            processed_ncids.add(voter_instance.ncid)
 
         # When the number of queued chanegs hits a threshold, we insert them all in bulk
         if len(change_records) >= BULK_CREATE_AMOUNT:

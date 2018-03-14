@@ -128,7 +128,7 @@ def get_file_lines(filename, output):
             BadLine.error(filename, counted, row, "Less cells in this line than we need.")
             continue
 
-        yield counted, non_empty_row
+        yield counted, row, non_empty_row
 
     if output:
         print("Decoded", counted, "lines from", filename)
@@ -252,7 +252,7 @@ def track_changes(file_tracker, output):
         print("Tracking changes for file {0}".format(file_tracker.filename), flush=True)
     tqdm = tqdm_or_quiet(output)
 
-    for index, row in tqdm(get_file_lines(file_tracker.filename, output)):
+    for index, line, row in tqdm(get_file_lines(file_tracker.filename, output)):
         total_lines += 1
 
         try:
@@ -260,7 +260,7 @@ def track_changes(file_tracker, output):
             if not ncid:
                 continue
         except ValueError as e:
-            BadLine.error(file_tracker.filename, total_lines, str(row), e.args[0])
+            BadLine.error(file_tracker.filename, total_lines, line, e.args[0])
             continue
 
         # We're done skipping for various reasons, so lets move on to actually recording
@@ -269,7 +269,7 @@ def track_changes(file_tracker, output):
             (added, modified, voter_instance, change) = record_change(file_tracker, row, voter_instance)
         except Exception:
             tb = ''.join(traceback.format_exception(*sys.exc_info()))
-            BadLine.error(file_tracker.filename, total_lines, str(row), tb)
+            BadLine.error(file_tracker.filename, total_lines, line, tb)
         else:
             added_tally += added
             modified_tally += modified

@@ -4,7 +4,7 @@ from unittest import mock
 from django.test import TestCase
 
 from voter.models import FileTracker, BadLine, ChangeTracker, NCVHis, NCVoter
-from voter.management.commands.voter_process_snapshot import process_files, get_file_lines
+from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset
 
 file_trackers_data = [
     {
@@ -61,7 +61,7 @@ file_trackers_data = [
 
 
 def create_file_tracker(i):
-    FileTracker.objects.create(**file_trackers_data[i - 1])
+    return FileTracker.objects.create(**file_trackers_data[i - 1])
 
 
 def load_sorted_parsed_csv(filename, ModelClass):
@@ -86,9 +86,21 @@ def query_csv_data_in_model(ModelClass):
 
 
 class VoterProcessChangeTrackerTest(TestCase):
+    
+    def setUp(self):
+        reset()
 
     def tearDown(self):
         FileTracker.objects.all().delete()
+        NCVoter.objects.all().delete()
+        ChangeTracker.objects.all().delete()
+    
+    def load_two_snapshots(self):
+        create_file_tracker(1)
+        process_files(output=False)
+
+        create_file_tracker(3)
+        process_files(output=False)
 
     def test_can_consume_latin1(self):
         create_file_tracker(1)
@@ -113,13 +125,6 @@ class VoterProcessChangeTrackerTest(TestCase):
         # Can find the first person from the snapshot
         c = ChangeTracker.objects.filter(data__last_name="BUCKMAN", data__first_name="JOHN").first()
         self.assert_(c)
-
-    def load_two_snapshots(self):
-        create_file_tracker(1)
-        process_files(output=False)
-
-        create_file_tracker(3)
-        process_files(output=False)
 
     def test_records_modifications(self):
         self.load_two_snapshots()
@@ -194,11 +199,56 @@ class VoterProcessChangeTrackerTest(TestCase):
         self.assertIn("Less cells", badline.message)
 
     def test_error_recording_change(self):
-        with mock.patch("voter.management.commands.voter_process_snapshot.record_change") as rc:
-            rc.side_effect = Exception("Something went terribly wrong.")
+        with mock.patch("voter.management.commands.voter_process_snapshot.prepare_change") as pc:
+            pc.side_effect = Exception("Something went terribly wrong.")
             create_file_tracker(1)
             process_files(output=False)
         badline = BadLine.objects.all().first()
 
         self.assertIn("Exception: Something went terribly wrong", badline.message)
-        self.assertIn("= record_change(", badline.message)
+        self.assertIn("= prepare_change(", badline.message)
+
+    def test_flush_repeat_voter(self):
+        """If the same voter appears twice within the span of the bulk-insert cutoff, we need
+        to insert the previously seen data before continuing.
+        """
+
+        add = ChangeTracker(
+            voter = NCVoter(ncid="A1"),
+            md5_hash = "0000000000000000",
+            snapshot_dt = "2000-01-01",
+            file_tracker = create_file_tracker(1),
+            file_lineno = 1,
+            op_code = "A",
+            data = {"first_name": "Mary", "last_name": "Godwin"},
+        )
+
+        modify = ChangeTracker(
+            voter = NCVoter(ncid="A1"),
+            md5_hash = "0000000000000001",
+            snapshot_dt = "2001-01-01",
+            file_tracker = add.file_tracker,
+            file_lineno = 2,
+            op_code = "M",
+            data = {"first_name": "Mary", "last_name": "Shelley"},
+        )
+
+        with mock.patch("voter.management.commands.voter_process_snapshot.flush") as flush:
+            skip_or_voter({"ncid": add.voter.ncid})
+            record_change(add)
+            self.assertEqual(0, flush.call_count)
+
+            skip_or_voter({"ncid": modify.voter.ncid})
+            record_change(modify)
+            self.assertEqual(1, flush.call_count)
+    
+    def test_flush_at_bulk_limit(self):
+        create_file_tracker(1)
+
+        with mock.patch("voter.management.commands.voter_process_snapshot.BULK_CREATE_AMOUNT", 10) as _:  # noqa, F841
+            with mock.patch("voter.management.commands.voter_process_snapshot.flush") as flush:
+                flush.side_effect = reset  # minimal flush, no DB just reset the tracking variables
+
+                process_files(output=False)
+
+                self.assertEqual(2, flush.call_count)

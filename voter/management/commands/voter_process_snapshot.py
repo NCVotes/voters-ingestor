@@ -170,6 +170,10 @@ def flush():
             c.voter = c.voter
             c.voter_id = c.voter.id
         ChangeTracker.objects.bulk_create(change_records)
+    reset()
+
+
+def reset():
     change_records.clear()
     voter_records.clear()
     processed_ncids.clear()
@@ -202,10 +206,7 @@ def skip_or_voter(row):
     return ncid, voter_instance
 
 
-def record_change(file_tracker, row, voter_instance):
-    added = 0
-    modified = 0
-
+def prepare_change(file_tracker, row, voter_instance):
     parsed_row = NCVoter.parse_row(row)
     snapshot_dt = parsed_row.pop('snapshot_dt')
     hash_val = find_md5(row, exclude=['snapshot_dt'])
@@ -213,12 +214,10 @@ def record_change(file_tracker, row, voter_instance):
     # If there was no voter instance, this is an ADD otherwise a MODIFY
     # For modifying we only record a diff of data, otherwise all of it
     if voter_instance:
-        modified = 1
         change_tracker_op_code = ChangeTracker.OP_CODE_MODIFY
         existing_data = voter_instance.build_current()
         change_tracker_data = diff_dicts(existing_data, parsed_row)
     else:
-        added = 1
         change_tracker_op_code = ChangeTracker.OP_CODE_ADD
         change_tracker_data = parsed_row
         voter_instance = NCVoter.from_row(parsed_row)
@@ -234,7 +233,20 @@ def record_change(file_tracker, row, voter_instance):
         data = change_tracker_data,
     )
 
-    return (added, modified, voter_instance, change)
+    return change
+
+
+def record_change(change):
+    global added_tally
+    global modified_tally
+    
+    if change.voter.pk:
+        modified_tally += 1
+    else:
+        added_tally += 1
+        voter_records.append(change.voter)
+    change_records.append(change)
+    processed_ncids.add(change.voter.ncid)
 
 
 def track_changes(file_tracker, output):
@@ -262,17 +274,12 @@ def track_changes(file_tracker, output):
         # We're done skipping for various reasons, so lets move on to actually recording
         # new data. We start by parsing the the row data.
         try:
-            (added, modified, voter_instance, change) = record_change(file_tracker, row, voter_instance)
+            change = prepare_change(file_tracker, row, voter_instance)
         except Exception:
             tb = ''.join(traceback.format_exception(*sys.exc_info()))
             BadLine.error(file_tracker.filename, total_lines, line, tb)
         else:
-            added_tally += added
-            modified_tally += modified
-            if added:
-                voter_records.append(voter_instance)
-            change_records.append(change)
-            processed_ncids.add(voter_instance.ncid)
+            record_change(change)
 
         # When the number of queued chanegs hits a threshold, we insert them all in bulk
         if len(change_records) >= BULK_CREATE_AMOUNT:

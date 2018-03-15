@@ -241,7 +241,7 @@ class VoterProcessChangeTrackerTest(TestCase):
             skip_or_voter({"ncid": modify.voter.ncid})
             record_change(modify)
             self.assertEqual(1, flush.call_count)
-    
+
     def test_flush_at_bulk_limit(self):
         create_file_tracker(1)
 
@@ -252,3 +252,38 @@ class VoterProcessChangeTrackerTest(TestCase):
                 process_files(output=False)
 
                 self.assertEqual(2, flush.call_count)
+
+    def test_unhandled_exceptions_reset(self):
+        create_file_tracker(1)
+
+        with mock.patch("voter.management.commands.voter_process_snapshot.track_changes") as track_changes:
+            with mock.patch("voter.management.commands.voter_process_snapshot.reset_file") as reset_file:
+                track_changes.side_effect = ValueError("oh no")
+                self.assertRaises(Exception, process_files, output=False)
+                self.assertEqual(1, reset_file.call_count)
+
+    def test_unhandled_baseexceptions_reset(self):
+        create_file_tracker(1)
+
+        with mock.patch("voter.management.commands.voter_process_snapshot.track_changes") as track_changes:
+            with mock.patch("voter.management.commands.voter_process_snapshot.reset_file") as reset_file:
+                track_changes.side_effect = KeyboardInterrupt()
+                self.assertRaises(KeyboardInterrupt, process_files, output=False)
+                self.assertEqual(1, reset_file.call_count)
+
+    def test_skip_in_processing_files(self):
+        ft = create_file_tracker(1)
+        ft.file_status = FileTracker.PROCESSING
+        ft.save()
+
+        with mock.patch("voter.management.commands.voter_process_snapshot.track_changes") as track_changes:
+            with mock.patch("voter.management.commands.voter_process_snapshot.FileTracker.objects.filter") as filter:
+                track_changes.side_effect = lambda *a: (0, 1, 2, 3)
+
+                def filter_func(*a, **kw):
+                    return FileTracker.objects.all()
+
+                filter.side_effect = filter_func
+
+                process_files(output=False)
+                self.assertEqual(0, track_changes.call_count)

@@ -313,7 +313,8 @@ def process_files(output):
 
     for file_tracker in ncvoter_file_trackers:
         if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
-            print("Another parser is processing the files. Restart me later!")
+            if output:
+                print("Another parser is processing the files. Restart me later!")
             return
         lock_file(file_tracker)
         try:

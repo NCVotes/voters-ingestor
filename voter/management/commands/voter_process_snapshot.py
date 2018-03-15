@@ -239,7 +239,7 @@ def prepare_change(file_tracker, row, voter_instance):
 def record_change(change):
     global added_tally
     global modified_tally
-    
+
     if change.voter.pk:
         modified_tally += 1
     else:

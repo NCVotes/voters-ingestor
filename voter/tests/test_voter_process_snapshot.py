@@ -208,6 +208,14 @@ class VoterProcessChangeTrackerTest(TestCase):
         self.assertIn("Exception: Something went terribly wrong", badline.message)
         self.assertIn("= prepare_change(", badline.message)
 
+    def test_error_reprocessing_file_twice(self):
+        create_file_tracker(7)
+        
+        process_files(output=False)
+        process_files(output=False)
+
+        self.assertEqual(1, BadLine.objects.all().count())
+
     def test_flush_repeat_voter(self):
         """If the same voter appears twice within the span of the bulk-insert cutoff, we need
         to insert the previously seen data before continuing.

@@ -47,23 +47,35 @@ class BadLine(models.Model):
 
     @classmethod
     def error(cls, filename, line_no, line, message):
-        cls.objects.create(
+        props = {
+            'line': line,
+            'message': message,
+            'is_warning': False,
+        }
+        bl, new = cls.objects.get_or_create(
             filename = filename,
             line_no = line_no,
-            line = line,
-            message = message,
-            is_warning = False,
+            defaults = props,
         )
+        if not new:
+            bl.__dict__.update(props)
+            bl.save()
 
     @classmethod
     def warning(cls, filename, line_no, line, message):
-        cls.objects.create(
+        props = {
+            'line': line,
+            'message': message,
+            'is_warning': True,
+        }
+        bl, new = cls.objects.get_or_create(
             filename = filename,
             line_no = line_no,
-            line = line,
-            message = message,
-            is_warning = True,
+            defaults = props,
         )
+        if not new:
+            bl.__dict__.update(props)
+            bl.save()
 
 
 class ChangeTracker(models.Model):

@@ -210,7 +210,7 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def test_error_reprocessing_file_twice(self):
         create_file_tracker(7)
-        
+
         process_files(output=False)
         process_files(output=False)
 

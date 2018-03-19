@@ -90,11 +90,6 @@ class VoterProcessChangeTrackerTest(TestCase):
     def setUp(self):
         reset()
 
-    def tearDown(self):
-        FileTracker.objects.all().delete()
-        NCVoter.objects.all().delete()
-        ChangeTracker.objects.all().delete()
-
     def load_two_snapshots(self):
         create_file_tracker(1)
         process_files(output=False)

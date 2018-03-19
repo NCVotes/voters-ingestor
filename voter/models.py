@@ -184,7 +184,7 @@ class NCVoter(models.Model):
             snapshot_dt = datetime.strptime(snapshot_dt, '%Y-%m-%d').replace(tzinfo=pytz.timezone('US/Eastern'))
             parsed_row['snapshot_dt'] = snapshot_dt
 
-        return row
+        return parsed_row
 
     # Use build_current() instead now
     @staticmethod

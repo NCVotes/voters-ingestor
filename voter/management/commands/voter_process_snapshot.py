@@ -53,11 +53,12 @@ def find_md5(row_data, exclude=[]):
 
 
 def tqdm_or_quiet(output):
+    """Get our progress-bar generator OR a no-op if we're running in no-output mode."""
+
     if output:
         from tqdm import tqdm
     else:
         def tqdm(x, **kw):
-            """Pass-through progress bar, because we are in quiet mode."""
             return x
     return tqdm
 
@@ -72,6 +73,10 @@ def guess_total_lines(filename):
 
 
 def get_file_encoding(filename):
+    """We know how input data comes in latin1 and UTF-16 varieties, so we just
+    check for a standard UTF-16 BOM to detect which one.
+    """
+
     with open(filename, 'rb') as f:
         # UTF16 or latin1
         f.seek(0)
@@ -83,7 +88,7 @@ def get_file_encoding(filename):
 
 
 def get_file_lines(filename, output):
-    tqdm = tqdm_or_quiet(output) # noqa, F811
+    tqdm = tqdm_or_quiet(output)
 
     # guess the number of lines and encoding
     approx_line_count = guess_total_lines(filename)
@@ -184,15 +189,14 @@ def skip_or_voter(row):
     global ignored_tally
 
     # If we see a repeat, flushed queued data before continuing
-    # This prevents the same voter from appearing twice in a single bulkd insert
+    # This prevents the same voter from appearing twice in a single bulk insert
     ncid = row.get('ncid')
     if ncid in processed_ncids:
         flush()
     voter_instance = find_existing_instance(ncid)
 
     # Skip rows that have no NCID in them :-(
-    # TODO: Log these so we can come back and figure out what to do with them
-    if ncid is None:
+    if not ncid:
         skip_tally += 1
         raise ValueError("No NCID found in data")
 

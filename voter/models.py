@@ -33,6 +33,51 @@ class FileTracker(models.Model):
     change_tracker_processed = models.BooleanField(null=False, blank=True, default=False)
 
 
+class BadLine(models.Model):
+    filename = models.CharField(max_length=255)
+    line_no = models.IntegerField()
+    line = models.TextField()
+    message = models.TextField()
+    is_warning = models.BooleanField(blank=True)
+
+    class Meta:
+        unique_together = (
+            ('filename', 'line_no'),
+        )
+
+    @classmethod
+    def error(cls, filename, line_no, line, message):
+        props = {
+            'line': line,
+            'message': message,
+            'is_warning': False,
+        }
+        bl, new = cls.objects.get_or_create(
+            filename = filename,
+            line_no = line_no,
+            defaults = props,
+        )
+        if not new:
+            bl.__dict__.update(props)
+            bl.save()
+
+    @classmethod
+    def warning(cls, filename, line_no, line, message):
+        props = {
+            'line': line,
+            'message': message,
+            'is_warning': True,
+        }
+        bl, new = cls.objects.get_or_create(
+            filename = filename,
+            line_no = line_no,
+            defaults = props,
+        )
+        if not new:
+            bl.__dict__.update(props)
+            bl.save()
+
+
 class ChangeTracker(models.Model):
 
     class Meta:
@@ -109,36 +154,37 @@ class NCVoter(models.Model):
 
     @staticmethod
     def parse_row(row):
+        parsed_row = dict(row)
         county_id = row.get('county_id')
         if county_id:
-            row['county_id'] = int(county_id)
+            parsed_row['county_id'] = int(county_id)
 
         birth_age = row.get('birth_age')
         if birth_age:
-            row['birth_age'] = int(birth_age)
+            parsed_row['birth_age'] = int(birth_age)
 
         drivers_lic_str = row.get('drivers_lic', '')
-        row['drivers_lic'] = (drivers_lic_str.strip().upper() == 'Y')
+        parsed_row['drivers_lic'] = (drivers_lic_str.strip().upper() == 'Y')
 
         registr_dt_str = row.get('registr_dt')
         if registr_dt_str:
             registr_dt_str = registr_dt_str[:10]
-            row['registr_dt'] = registr_dt_str
+            parsed_row['registr_dt'] = registr_dt_str
 
         confidential_ind_str = row.get('confidential_ind', '')
-        row['confidential_ind'] = (confidential_ind_str.strip().upper() == "Y")
+        parsed_row['confidential_ind'] = (confidential_ind_str.strip().upper() == "Y")
 
         raw_birth_year = row.get('birth_year')
         if raw_birth_year:
-            row['birth_year'] = int(raw_birth_year)
+            parsed_row['birth_year'] = int(raw_birth_year)
 
         snapshot_dt = row.get('snapshot_dt')
         if snapshot_dt:
             snapshot_dt = snapshot_dt[:10]
             snapshot_dt = datetime.strptime(snapshot_dt, '%Y-%m-%d').replace(tzinfo=pytz.timezone('US/Eastern'))
-            row['snapshot_dt'] = snapshot_dt
+            parsed_row['snapshot_dt'] = snapshot_dt
 
-        return row
+        return parsed_row
 
     # Use build_current() instead now
     @staticmethod

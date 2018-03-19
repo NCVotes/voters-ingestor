@@ -264,8 +264,22 @@ def track_changes(file_tracker, output):
         print("Tracking changes for file {0}".format(file_tracker.filename), flush=True)
     tqdm = tqdm_or_quiet(output)
 
-    for index, line, row in tqdm(get_file_lines(file_tracker.filename, output)):
+    # Have we seen any lines, successful or failures, from this before?
+    prev_lines = ChangeTracker.objects.filter(file_tracker=file_tracker)
+    prev_errors = BadLine.objects.filter(filename=file_tracker.filename)
+
+    last_line = 0
+    if prev_lines.exists():
+        last_line = prev_lines.order_by('-file_lineno')[0].file_lineno
+    if prev_errors.exists():
+        last_line = max(last_line, prev_errors.order_by('-line_no')[0].line_no)
+
+    lines = get_file_lines(file_tracker.filename, output)
+
+    for index, line, row in tqdm(lines):
         total_lines += 1
+        if total_lines <= last_line:
+            continue
 
         try:
             ncid, voter_instance = skip_or_voter(row)

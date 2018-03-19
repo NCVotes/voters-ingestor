@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from voter.models import FileTracker, ChangeTracker, NCVoter, NCVHis
+from voter.models import FileTracker, ChangeTracker, BadLine, NCVoter, NCVHis
 
 
 @admin.register(FileTracker)
@@ -24,4 +24,9 @@ class NCVHis(admin.ModelAdmin):
 
 @admin.register(NCVoter)
 class NCVoter(admin.ModelAdmin):
+    pass
+
+
+@admin.register(BadLine)
+class BadLine(admin.ModelAdmin):
     pass

@@ -5,6 +5,7 @@ from django.test import TestCase
 
 from voter.models import FileTracker, BadLine, ChangeTracker, NCVHis, NCVoter
 from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset
+from voter.management.commands import voter_process_snapshot
 
 file_trackers_data = [
     {
@@ -89,6 +90,7 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def setUp(self):
         reset()
+        voter_process_snapshot.total_lines = 0
 
     def load_two_snapshots(self):
         create_file_tracker(1)
@@ -138,6 +140,36 @@ class VoterProcessChangeTrackerTest(TestCase):
 
         self.assertEqual(data["first_name"], 'VON')
         self.assertEqual(data["last_name"], 'LANGSTON')
+
+    def test_can_resume_from_last_line(self):
+        ft = create_file_tracker(1)
+        ChangeTracker.objects.create(
+            file_tracker=ft,
+            file_lineno=10,
+            data={},
+            op_code='A',
+            snapshot_dt=datetime.datetime.now(),
+            voter=NCVoter.objects.create(ncid="A1"),
+        )
+        process_files(output=False)
+
+        ncvoter_modifieds = ChangeTracker.objects.filter(op_code='A')
+        # 10 consumed, plus the one we made above
+        self.assertEquals(ncvoter_modifieds.count(), 9 + 1)
+
+    def test_can_resume_from_last_error(self):
+        ft = create_file_tracker(1)
+        BadLine.objects.create(
+            filename=ft.filename,
+            line_no=10,
+            message="oops",
+            line="data 1 2 3",
+            is_warning=False,
+        )
+        process_files(output=False)
+
+        ncvoter_modifieds = ChangeTracker.objects.filter(op_code='A')
+        self.assertEquals(ncvoter_modifieds.count(), 9)
 
     def test_extra_data_cell_45(self):
         create_file_tracker(4)

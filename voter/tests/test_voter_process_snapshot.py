@@ -94,14 +94,14 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def load_two_snapshots(self):
         create_file_tracker(1)
-        process_files(output=False)
+        process_files(quiet=True)
 
         create_file_tracker(3)
-        process_files(output=False)
+        process_files(quiet=True)
 
     def test_can_consume_latin1(self):
         create_file_tracker(1)
-        process_files(output=False)
+        process_files(quiet=True)
 
         # All inserted changes should be additions
         ncvoter_modifieds = ChangeTracker.objects.filter(op_code='A')
@@ -113,7 +113,7 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def test_can_consume_utf16(self):
         create_file_tracker(2)
-        process_files(output=False)
+        process_files(quiet=True)
 
         # All inserted changes should be additions
         ncvoter_modifieds = ChangeTracker.objects.filter(op_code='A')
@@ -151,7 +151,7 @@ class VoterProcessChangeTrackerTest(TestCase):
             snapshot_dt=datetime.datetime.now(),
             voter=NCVoter.objects.create(ncid="A1"),
         )
-        process_files(output=False)
+        process_files(quiet=True)
 
         ncvoter_modifieds = ChangeTracker.objects.filter(op_code='A')
         # 10 consumed, plus the one we made above
@@ -166,14 +166,14 @@ class VoterProcessChangeTrackerTest(TestCase):
             line="data 1 2 3",
             is_warning=False,
         )
-        process_files(output=False)
+        process_files(quiet=True)
 
         ncvoter_modifieds = ChangeTracker.objects.filter(op_code='A')
         self.assertEquals(ncvoter_modifieds.count(), 9)
 
     def test_extra_data_cell_45(self):
         create_file_tracker(4)
-        process_files(output=False)
+        process_files(quiet=True)
 
         self.assertEquals(ChangeTracker.objects.count(), 19)
         self.assertEquals(BadLine.objects.count(), 1)
@@ -186,7 +186,7 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def test_extra_data_cell_45_46_47(self):
         create_file_tracker(5)
-        process_files(output=False)
+        process_files(quiet=True)
 
         self.assertEquals(ChangeTracker.objects.count(), 19)
         self.assertEquals(BadLine.objects.count(), 1)
@@ -199,7 +199,7 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def test_extra_data_cell_lots(self):
         create_file_tracker(6)
-        process_files(output=False)
+        process_files(quiet=True)
 
         # 18, because the bad line was an error and not processed
         self.assertEquals(ChangeTracker.objects.count(), 18)
@@ -213,7 +213,7 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def test_extra_data_not_enough(self):
         create_file_tracker(7)
-        process_files(output=False)
+        process_files(quiet=True)
 
         # 18, because the bad line was an error and not processed
         self.assertEquals(ChangeTracker.objects.count(), 18)
@@ -229,7 +229,7 @@ class VoterProcessChangeTrackerTest(TestCase):
         with mock.patch("voter.management.commands.voter_process_snapshot.prepare_change") as pc:
             pc.side_effect = Exception("Something went terribly wrong.")
             create_file_tracker(1)
-            process_files(output=False)
+            process_files(quiet=True)
         badline = BadLine.objects.all().first()
 
         self.assertIn("Exception: Something went terribly wrong", badline.message)
@@ -238,8 +238,8 @@ class VoterProcessChangeTrackerTest(TestCase):
     def test_error_reprocessing_file_twice(self):
         create_file_tracker(7)
 
-        process_files(output=False)
-        process_files(output=False)
+        process_files(quiet=True)
+        process_files(quiet=True)
 
         self.assertEqual(1, BadLine.objects.all().count())
 
@@ -284,7 +284,7 @@ class VoterProcessChangeTrackerTest(TestCase):
             with mock.patch("voter.management.commands.voter_process_snapshot.flush") as flush:
                 flush.side_effect = reset  # minimal flush, no DB just reset the tracking variables
 
-                process_files(output=False)
+                process_files(quiet=True)
 
                 self.assertEqual(2, flush.call_count)
 
@@ -294,7 +294,7 @@ class VoterProcessChangeTrackerTest(TestCase):
         with mock.patch("voter.management.commands.voter_process_snapshot.track_changes") as track_changes:
             with mock.patch("voter.management.commands.voter_process_snapshot.reset_file") as reset_file:
                 track_changes.side_effect = ValueError("oh no")
-                self.assertRaises(Exception, process_files, output=False)
+                self.assertRaises(Exception, process_files, quiet=True)
                 self.assertEqual(1, reset_file.call_count)
 
     def test_unhandled_baseexceptions_reset(self):
@@ -303,7 +303,7 @@ class VoterProcessChangeTrackerTest(TestCase):
         with mock.patch("voter.management.commands.voter_process_snapshot.track_changes") as track_changes:
             with mock.patch("voter.management.commands.voter_process_snapshot.reset_file") as reset_file:
                 track_changes.side_effect = KeyboardInterrupt()
-                self.assertRaises(KeyboardInterrupt, process_files, output=False)
+                process_files(quiet=True)
                 self.assertEqual(1, reset_file.call_count)
 
     def test_skip_in_processing_files(self):
@@ -320,5 +320,5 @@ class VoterProcessChangeTrackerTest(TestCase):
 
                 filter.side_effect = filter_func
 
-                process_files(output=False)
+                process_files(quiet=True)
                 self.assertEqual(0, track_changes.call_count)

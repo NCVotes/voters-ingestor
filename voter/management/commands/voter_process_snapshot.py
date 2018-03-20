@@ -265,14 +265,14 @@ def track_changes(file_tracker, output):
     tqdm = tqdm_or_quiet(output)
 
     # Have we seen any lines, successful or failures, from this before?
-    prev_lines = ChangeTracker.objects.filter(file_tracker=file_tracker)
-    prev_errors = BadLine.objects.filter(filename=file_tracker.filename)
+    prev_line = ChangeTracker.objects.filter(file_tracker=file_tracker).order_by('file_lineno').last()
+    prev_error = BadLine.objects.filter(filename=file_tracker.filename).order_by('line_no').last()
 
     last_line = 0
-    if prev_lines.exists():
-        last_line = prev_lines.order_by('-file_lineno')[0].file_lineno
-    if prev_errors.exists():
-        last_line = max(last_line, prev_errors.order_by('-line_no')[0].line_no)
+    if prev_line:
+        last_line = prev_line.file_lineno
+    if prev_error:
+        last_line = max(last_line, prev_error.line_no)
 
     lines = get_file_lines(file_tracker.filename, output)
 

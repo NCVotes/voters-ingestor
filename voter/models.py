@@ -37,7 +37,7 @@ class BadLine(models.Model):
     filename = models.CharField(max_length=255)
     line_no = models.IntegerField()
     line = models.TextField()
-    message = models.TextField()
+    message = models.TextField(db_index=True)
     is_warning = models.BooleanField(blank=True)
 
     class Meta:
@@ -97,7 +97,7 @@ class ChangeTracker(models.Model):
     data = JSONField(encoder=DjangoJSONEncoder)
     election_desc = models.CharField('election_desc', max_length=230, blank=True)
     file_tracker = models.ForeignKey('FileTracker', on_delete=models.CASCADE, related_name='changes')
-    file_lineno = models.IntegerField(blank=True, null=True)
+    file_lineno = models.IntegerField(db_index=True)
     voter = models.ForeignKey('NCVoter', on_delete=models.CASCADE, related_name='changelog')
     snapshot_dt = models.DateTimeField()
 

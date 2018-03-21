@@ -343,6 +343,9 @@ def process_files(**options):
         except Exception:
             reset_file(file_tracker)
             raise Exception('Error processing file {}'.format(file_tracker.filename))
+        # In the case of a canceling exception like pressing Ctrl+C to terminate,
+        # reset the in-progress tracker and then let the task end. Don't re-raise, because
+        # that can mess up any current transaction.
         except BaseException:
             reset_file(file_tracker)
             return

@@ -318,14 +318,17 @@ def track_changes(file_tracker, output):
     return (added_tally, modified_tally, ignored_tally, skip_tally)
 
 
-def process_files(output):
+def process_files(**options):
+    output = not options.get('quiet')
     if output:
         print("Processing NCVoter file...", flush=True)
 
     file_tracker_filter_data = {
-        'file_status': FileTracker.UNPROCESSED,
         'data_file_kind': FileTracker.DATA_FILE_KIND_NCVOTER
     }
+
+    if not options.get('resume'):
+        file_tracker_filter_data['file_status'] = FileTracker.UNPROCESSED
 
     ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data).order_by('created')
 
@@ -342,7 +345,7 @@ def process_files(output):
             raise Exception('Error processing file {}'.format(file_tracker.filename))
         except BaseException:
             reset_file(file_tracker)
-            raise
+            return
         if output:
             print("Change tracking completed for {}:".format(file_tracker.filename))
             print("Added records: {0}".format(added))
@@ -365,5 +368,19 @@ def remove_files(file_tracker, output=True):
 class Command(BaseCommand):
     help = "Process voter snapshot files and save them into the database"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--resume',
+            action='store_true',
+            dest='resume',
+            help='Resume seemingly in-progress file imports',
+        )
+        parser.add_argument(
+            '--quiet',
+            action='store_true',
+            dest='quiet',
+            help='Do not output updates or progress while running',
+        )
+
     def handle(self, *args, **options):
-        process_files(output=True)
+        process_files(**options)

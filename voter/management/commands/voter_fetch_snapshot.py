@@ -141,8 +141,7 @@ class Command(BaseCommand):
                     url = snapshots.popleft()
                     process_new_zip(url, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter")
                 else:
-                    # print("Sleep an hour...")
-                    # time.sleep(3600)
-                    print("On to the next one...")
+                    print("Sleep an hour...")
+                    time.sleep(3600)
             print("Sleep 10 hours...")
             time.sleep(36000)

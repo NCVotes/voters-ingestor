@@ -1,0 +1,5 @@
+---
+- hosts: queue
+  become: yes
+  roles:
+    - tequila-rabbitmq

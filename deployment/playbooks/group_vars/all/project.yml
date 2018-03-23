@@ -1,0 +1,27 @@
+---
+project_name: ncvoter
+python_version: 3.5
+pg_version: 9.6
+gunicorn_version: 19.7.1
+
+repo:
+  url: "{{ repo_url|default('git@github.com:NCVotes/voters-ingestor.git') }}"
+  branch: "{{ repo_branch|default('master') }}"
+
+requirements_file: "{{ source_dir }}/requirements/production.txt"
+project_settings: "ncvoter.prod_settings"
+
+app_minions: "{{ groups['web'] | union(groups['worker']) }}"
+
+nodejs_version: "6.x"
+nodejs_install_npm_user: "{{ project_name }}"
+nodejs_package_json_path: "{{ source_dir }}"
+
+github_deploy_key: "{{ SECRET_GITHUB_DEPLOY_KEY|default('') }}"
+# db_host: per environment
+db_name: 'ncvoter_{{ env_name }}'
+db_user: 'ncvoter'
+db_password: "{{ SECRET_DB_PASSWORD }}"
+secret_key: "{{ SECRET_KEY }}"
+
+broker_password: "{{ SECRET_BROKER_PASSWORD }}"

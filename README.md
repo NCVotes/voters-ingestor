@@ -7,7 +7,7 @@ Status](https://travis-ci.org/NCVotes/voters-ingestor.svg?branch=master)](https:
 
 ### Requirements
 
-* Python >= 3.6
+* Python >= 3.5
 * Postgres >= 9.6
 * pip >= 9.0.1
 * virtualenv >= 15.0.1
@@ -105,3 +105,12 @@ To process and load the data for any existing downloaded files run `python manag
 process can take a very long time, especially for the initial import of the files.
 
 Note: make sure that only one `voter_process` is running at any time. Otherwise, conflicts between the processes would result in unexpected behaviors such as issue https://github.com/NCVotes/voters-ingestor/issues/4
+
+
+## Deployment
+
+$ fab production deploy
+
+### FIXME
+
+- need to add 'apt install unzip' since we need that package installed

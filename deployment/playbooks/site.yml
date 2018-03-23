@@ -1,0 +1,6 @@
+---
+- include: common.yml
+- include: queue.yml
+- include: web.yml
+# uncomment once we set up celery
+# - include: worker.yml

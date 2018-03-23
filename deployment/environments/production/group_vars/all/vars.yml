@@ -1,0 +1,21 @@
+---
+env_name: production
+domain: ncvotes.caktus-built.com
+# FIXME: change back to master once merged
+# repo_branch: master
+repo_branch: dis-200-deploy
+db_host: npb8e1rwss0u0p.ci63lkx0to37.us-east-1.rds.amazonaws.com
+
+# SSL is terminated by AWS at the load balancer, but if the forwarded
+# protocol is not https, nginx will still redirect to https.
+cert_source: none
+force_ssl: true
+
+cloud_staticfiles: false
+source_is_local: false
+gunicorn_num_workers: 2
+use_newrelic: false
+
+extra_env:
+  # just an example
+  FOO: BAR

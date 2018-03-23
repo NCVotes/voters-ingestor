@@ -1,0 +1,10 @@
+prod0 ansible_host=34.239.122.157
+
+[web]
+prod0
+
+[queue]
+prod0
+
+[worker]
+prod0

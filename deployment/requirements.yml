@@ -1,0 +1,11 @@
+- src: https://github.com/caktus/tequila-common
+  version: v0.8.2
+- src: https://github.com/caktus/tequila-django
+  version: v0.9.11
+- src: https://github.com/caktus/tequila-nginx
+  version: v0.8.5
+- src: https://github.com/caktus/tequila-rabbitmq
+  version: v0.8.1
+- src: geerlingguy.nodejs
+  version: 4.1.2
+  name: nodejs

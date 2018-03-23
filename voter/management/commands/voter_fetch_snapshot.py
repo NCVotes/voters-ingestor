@@ -137,11 +137,11 @@ class Command(BaseCommand):
                 snapshots.append(settings.NCVOTER_HISTORICAL_SNAPSHOT_URL + l.strip())
 
             while len(snapshots) > 0:
-                if not FileTracker.objects.filter(file_status=FileTracker.UNPROCESSED).exists():
-                    url = snapshots.popleft()
-                    process_new_zip(url, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter")
-                else:
-                    print("Sleep an hour...")
-                    time.sleep(3600)
+                # if not FileTracker.objects.filter(file_status=FileTracker.UNPROCESSED).exists():
+                url = snapshots.popleft()
+                process_new_zip(url, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter")
+                # else:
+                #     print("Sleep an hour...")
+                #     time.sleep(3600)
             print("Sleep 10 hours...")
             time.sleep(36000)

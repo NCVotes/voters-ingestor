@@ -87,10 +87,11 @@ def get_file_encoding(filename):
         return encoding
 
 
-def get_file_lines(filename, output):
+def get_file_lines(filename, output, last_line):
+    global total_lines
     tqdm = tqdm_or_quiet(output)
 
-    # guess the number of lines and encoding
+    # guess the encoding
     approx_line_count = guess_total_lines(filename)
     encoding = get_file_encoding(filename)
 
@@ -102,7 +103,19 @@ def get_file_lines(filename, output):
     header = [i.strip().lower() for i in header]
 
     counted = 0
-    for row in tqdm(lines, total=approx_line_count):
+
+    if last_line:
+        if output:
+            print("Fast-forward to resume point...")
+        for row in tqdm(lines, total=last_line):
+            counted += 1
+            if counted == last_line:
+                break
+        if output:
+            print("Resuming at line %s" % counted)
+            total_lines = counted
+
+    for row in tqdm(lines, initial=total_lines, total=approx_line_count):
         counted += 1
         line = row.replace('\x00', '')
         line = line.split('\t')
@@ -141,6 +154,8 @@ def find_existing_instance(ncid):
     Will prefetch all ChangeTracker instances related."""
 
     voter = NCVoter.objects.filter(ncid=ncid).prefetch_related('changelog').first()
+    if voter:
+        assert voter.changelog.filter(op_code=ChangeTracker.OP_CODE_ADD).exists()
     return voter
 
 
@@ -268,18 +283,17 @@ def track_changes(file_tracker, output):
     prev_line = ChangeTracker.objects.filter(file_tracker=file_tracker).order_by('file_lineno').last()
     prev_error = BadLine.objects.filter(filename=file_tracker.filename).order_by('line_no').last()
 
+    total_lines = 0
     last_line = 0
     if prev_line:
         last_line = prev_line.file_lineno
     if prev_error:
         last_line = max(last_line, prev_error.line_no)
 
-    lines = get_file_lines(file_tracker.filename, output)
+    lines = get_file_lines(file_tracker.filename, output, last_line)
 
-    for index, line, row in tqdm(lines):
+    for index, line, row in lines:
         total_lines += 1
-        if total_lines <= last_line:
-            continue
 
         try:
             ncid, voter_instance = skip_or_voter(row)
@@ -333,7 +347,7 @@ def process_files(**options):
     ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data).order_by('created')
 
     for file_tracker in ncvoter_file_trackers:
-        if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
+        if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists() and not options.get('resume'):
             if output:
                 print("Another parser is processing the files. Restart me later!")
             return
@@ -353,8 +367,8 @@ def process_files(**options):
             print("Change tracking completed for {}:".format(file_tracker.filename))
             print("Added records: {0}".format(added))
             print("Modified records: {0}".format(modified))
-            print("Skipped records: {0}".format(ignored))
-            print("Ignored records: {0}".format(skipped), flush=True)
+            print("Skipped records: {0}".format(skipped))
+            print("Ignored records: {0}".format(ignored), flush=True)
 
     return
 

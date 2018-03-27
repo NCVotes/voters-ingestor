@@ -7,7 +7,7 @@ PROJECT_ROOT = os.path.dirname(__file__)
 
 envs = {
     'production': {
-        'host_string': '34.239.122.157',
+        'host_string': 'ec2-184-72-184-238.compute-1.amazonaws.com',
     },
     'staging': {
         'host_string': '',

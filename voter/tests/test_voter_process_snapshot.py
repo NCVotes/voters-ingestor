@@ -144,7 +144,7 @@ class VoterProcessChangeTrackerTest(TestCase):
 
         self.assertEqual(data["first_name"], 'VON')
         self.assertEqual(data["last_name"], 'WILSON')
-    
+
     def test_ignore_age(self):
         self.load_two_snapshots()
 

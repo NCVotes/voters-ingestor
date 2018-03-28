@@ -31,12 +31,14 @@ def merge_dicts(x, y):
     return z
 
 
-def diff_dicts(x, y):
+def diff_dicts(x, y, ignored_keys=('age', 'load_dt')):
     """Given dictionaries `x` and `y` returns a dictionairy with any key value
     pairs added or modified by `y` and any keys in `x` but not in `y` set to ''
+
+    Some differences we don't care to track. We don't care about `age` or `load_dt`.
     """
     new_data = {k: y[k] for k in y if k not in x}
-    modified_data = {k: y[k] for k in y if k in x and y[k] != x[k]}
+    modified_data = {k: y[k] for k in y if k in x and y[k] != x[k] and k not in ignored_keys}
     deleted_data = {k: ('' if isinstance(x[k], str) else None) for k in x if k not in y}
     return merge_dicts(merge_dicts(new_data, modified_data), deleted_data)
 

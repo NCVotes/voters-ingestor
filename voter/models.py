@@ -83,7 +83,7 @@ class ChangeTracker(models.Model):
     class Meta:
         verbose_name = "Change Tracker"
         verbose_name_plural = "Change Tracking"
-        ordering = ('snapshot_dt',)
+        ordering = ('snapshot_dt', 'op_code')
 
     OP_CODE_ADD = 'A'
     OP_CODE_MODIFY = 'M'

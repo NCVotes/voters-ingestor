@@ -137,9 +137,23 @@ class VoterProcessChangeTrackerTest(TestCase):
 
         voter = NCVoter.objects.get(ncid="AS2035")
         data = voter.build_current()
+        change1, change2 = voter.changelog.all()
+
+        self.assertEqual(change1.data["last_name"], 'LANGSTON')
+        self.assertEqual(change2.data["last_name"], 'WILSON')
 
         self.assertEqual(data["first_name"], 'VON')
-        self.assertEqual(data["last_name"], 'LANGSTON')
+        self.assertEqual(data["last_name"], 'WILSON')
+
+    def test_ignore_age(self):
+        self.load_two_snapshots()
+
+        voter = NCVoter.objects.get(ncid="AS2035")
+        change1, change2 = voter.changelog.all()
+
+        self.assertEqual('A', change1.op_code)
+        self.assertEqual('68', change1.data.get('age'))
+        self.assertIsNone(change2.data.get('age'))
 
     def test_can_resume_from_last_line(self):
         ft = create_file_tracker(1)

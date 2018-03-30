@@ -47,6 +47,8 @@ class BadLine(models.Model):
 
     @classmethod
     def error(cls, filename, line_no, line, message):
+        if '\x00' in line:
+            line = repr(line)
         props = {
             'line': line,
             'message': message,
@@ -63,6 +65,8 @@ class BadLine(models.Model):
 
     @classmethod
     def warning(cls, filename, line_no, line, message):
+        if '\x00' in line:
+            line = repr(line)
         props = {
             'line': line,
             'message': message,

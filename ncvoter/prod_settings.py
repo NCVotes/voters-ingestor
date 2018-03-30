@@ -26,3 +26,6 @@ DATABASES = {
         'PORT': DB_PORT,
     }
 }
+
+NCVOTER_DOWNLOAD_PATH = "/voter-data/ncvoter"
+NCVHIS_DOWNLOAD_PATH = "/voter-data/ncvhis"

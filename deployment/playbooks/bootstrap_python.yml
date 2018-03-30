@@ -1,0 +1,7 @@
+---
+- hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: install Python 2
+      raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)

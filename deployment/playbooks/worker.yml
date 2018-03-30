@@ -1,0 +1,5 @@
+---
+- hosts: worker
+  become: yes
+  roles:
+    - { role: tequila-django, is_worker: true }

@@ -1,0 +1,7 @@
+---
+- hosts: web
+  become: yes
+  roles:
+    - tequila-nginx
+    - { role: tequila-django, is_web: true }
+    - nodejs

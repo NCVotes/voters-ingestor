@@ -14,11 +14,11 @@ The ncvoter project is deployed on the following stack:
 - Frontend Server: Nginx
 - AWS Region: US-East-1 (N. Virgina)
 
-These services can configured to run on the following machines:
+These services are configured to run on the following machines:
 
 - 1 Application servers (1 AZ, created via CloudFormation and configured via Ansible):
-   - Server IPs: `Staging inventory <../../deployment/environments/staging/inventory>`_
-   - Server IPs: `Production inventory <../../deployment/environments/production/inventory>`_
+   - Server IPs: `Staging inventory <../deployment/environments/staging/inventory>`_
+   - Server IPs: `Production inventory <../deployment/environments/production/inventory>`_
 - 1 RDS  instance (created via CloudFormation and managed by AWS)
 
 On the application server, `Supervisord <http://supervisord.org/>`_ manages
@@ -44,7 +44,7 @@ To create a new stack, upload the CloudFormation template via the AWS Console. S
 
 Other parameters should be self explanatory, or the defaults should be sufficient.
 
-Once CloudFormation beings, you will need to:
+Once CloudFormation begins, you will need to:
 
 * Approve an email sent to the domain admin to accept the AWS::CertificateManager key.
 * Add Inbound SSH access to the EC2 instance security group from the Caktus IP.
@@ -57,7 +57,7 @@ Next, edit ``domain``, ``db_host``, ``SEARCH_HOST`` with the relevant outputs fr
 
 Add the web servers to ``deployment/environments/<env>/inventory``.
 
-Add the AWS private key to our SSH keys temporarily:
+Add the AWS private key to our SSH keys temporarily::
 
   ssh-add -K <path-to-key.pem>
 
@@ -86,7 +86,7 @@ assume:
 Disable Autoscaling
 ~~~~~~~~~~~~~~~~~~~
 
-Since we provision the 2 web instances using Salt, we don't want autoscaling enabled for this
+Since we provision the 2 web instances using Ansible, we don't want autoscaling enabled for this
 deployment. To disable, you should suspend the autoscaling processes on the autoscaling group
 (after the initial instances are created) since we don't want it to bring up new (unprovisioned)
 instances or potentially even terminate one of the instances should it appear unhealthy::
@@ -119,8 +119,8 @@ New requirements or migrations are detected and will be applied
 automatically.
 
 The environments make use of Ansible Vault to protect the server
-secrets.  You will need to obtain the vault password from another
-member of the team and then create a ``.vault_pass`` file at the top
+secrets.  You will need to obtain the vault password from LastPass
+(named "NCVotes .vault_pass") and then create a ``.vault_pass`` file at the top
 level of this repo that contains it.  Never commit this file to
 version control!
 

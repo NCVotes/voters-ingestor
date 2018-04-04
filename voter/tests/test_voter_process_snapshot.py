@@ -83,7 +83,6 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def setUp(self):
         reset()
-        voter_process_snapshot.total_lines = 0
 
     def load_two_snapshots(self):
         create_file_tracker(1)

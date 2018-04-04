@@ -1,4 +1,4 @@
-prod0 ansible_host=ec2-184-72-184-238.compute-1.amazonaws.com
+prod0 ansible_host=ec2-35-174-114-134.compute-1.amazonaws.com
 
 [web]
 prod0

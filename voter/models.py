@@ -39,53 +39,79 @@ class FileTracker(models.Model):
         return os.path.split(self.filename)[-1]
 
 
-class BadLine(models.Model):
+class BadLineRange(models.Model):
+    """
+    Represents a consecutive set of bad lines from the same input file, with
+    the same message, and either all warnings or all errors.
+    """
     filename = models.CharField(max_length=255)
-    line_no = models.IntegerField()
-    line = models.TextField()
+    first_line_no = models.IntegerField()
+    last_line_no = models.IntegerField()
+    example_line = models.TextField(help_text="First line from this range")
     message = models.TextField(db_index=True)
     is_warning = models.BooleanField(blank=True)
 
     class Meta:
         unique_together = (
-            ('filename', 'line_no'),
+            ('filename', 'first_line_no'),
         )
 
-    @classmethod
-    def error(cls, filename, line_no, line, message):
-        if '\x00' in line:
-            line = repr(line)
-        props = {
-            'line': line,
-            'message': message,
-            'is_warning': False,
-        }
-        bl, new = cls.objects.get_or_create(
-            filename = filename,
-            line_no = line_no,
-            defaults = props,
-        )
-        if not new:
-            bl.__dict__.update(props)
-            bl.save()
 
-    @classmethod
-    def warning(cls, filename, line_no, line, message):
+class BadLineTracker():
+    """
+    Instantiate one of these and use its methods to report bad lines.
+    It'll spot runs of the same error on sequential lines and only
+    create one BadLineRange object for each run.  Call flush() at
+    end in case there's still one pending.
+
+    Note: This doesn't bother to see if there's already a range in
+    the database that we could add on to, so in rare cases it's possible
+    we'll end up with range objects that could have been combined, but
+    it doesn't seem worth the complexity of trying to avoid that.
+    """
+    def __init__(self, filename, model=BadLineRange):
+        """
+        We pass in model so we can use this from migrations easily.
+        """
+        self.filename = filename
+        self.pending = None
+        self.model = model
+
+    def error(self, line_no, line, message):
+        self.add(line_no, line, message, is_warning=False)
+
+    def warning(self, line_no, line, message):
+        self.add(line_no, line, message, is_warning=True)
+
+    def add(self, line_no, line, message, is_warning):
         if '\x00' in line:
             line = repr(line)
-        props = {
-            'line': line,
-            'message': message,
-            'is_warning': True,
-        }
-        bl, new = cls.objects.get_or_create(
-            filename = filename,
-            line_no = line_no,
-            defaults = props,
+        pending = self.pending
+        if pending:
+            # Can we use the one we've got going?
+            if pending.message == message and pending.is_warning == is_warning and line_no == 1 + pending.last_line_no:
+                # Yes, just extend this one
+                pending.last_line_no += 1
+                return
+            # Can't use this one, save it and fall through to start a new one
+            pending.save()
+        # Start a new one
+        self.pending = self.model(
+            filename=self.filename,
+            message=message,
+            first_line_no=line_no,
+            last_line_no=line_no,
+            example_line=line,
+            is_warning=is_warning,
         )
-        if not new:
-            bl.__dict__.update(props)
-            bl.save()
+
+    def flush(self):
+        """
+        If we have an unsaved range, save it.
+        """
+        if self.pending:
+            self.pending.save()
+            self.pending = None
 
 
 class ChangeTracker(models.Model):

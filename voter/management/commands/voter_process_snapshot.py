@@ -8,7 +8,7 @@ import sys
 import traceback
 from bencode import bencode
 
-from voter.models import FileTracker, BadLine, ChangeTracker, NCVoter
+from voter.models import FileTracker, ChangeTracker, NCVoter, BadLineRange, BadLineTracker
 
 BULK_CREATE_AMOUNT = 500
 
@@ -102,6 +102,8 @@ def get_file_lines(filename, output):
     header = header.split('\t')
     header = [i.strip().lower() for i in header]
 
+    bad_lines = BadLineTracker(filename)
+
     counted = 0
     for row in tqdm(lines, total=approx_line_count):
         counted += 1
@@ -112,26 +114,27 @@ def get_file_lines(filename, output):
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
 
         elif len(line) == len(header) + 1:
-            BadLine.warning(filename, counted, row, "Line has an extra 1 cell than the headers we have. (removing 45)")
+            bad_lines.warning(counted, row, "Line has an extra 1 cell than the headers we have. (removing 45)")
             del line[45]
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
 
         elif len(line) == len(header) + 3:
-            BadLine.warning(filename, counted, row, "Line has an extra 3 cells than the headers we have. (removing 45-47)")
+            bad_lines.warning(counted, row, "Line has an extra 3 cells than the headers we have. (removing 45-47)")
             x = set([45, 46, 47])
             line = [line[i] for i in range(len(line)) if i not in x]
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
 
         elif len(line) > len(header):
-            BadLine.error(filename, counted, row, "More cells in this line than we know what to do with.")
+            bad_lines.error(counted, row, "More cells in this line than we know what to do with.")
             continue
 
         else:
-            BadLine.error(filename, counted, row, "Less cells in this line than we need.")
+            bad_lines.error(counted, row, "Less cells in this line than we need.")
             continue
 
         yield counted, row, non_empty_row
 
+    bad_lines.flush()
     if output:
         print("Decoded", counted, "lines from", filename)
 
@@ -268,15 +271,17 @@ def track_changes(file_tracker, output):
 
     # Have we seen any lines, successful or failures, from this before?
     prev_line = ChangeTracker.objects.filter(file_tracker=file_tracker).order_by('file_lineno').last()
-    prev_error = BadLine.objects.filter(filename=file_tracker.filename).order_by('line_no').last()
+    prev_error = BadLineRange.objects.filter(filename=file_tracker.filename).order_by('last_line_no').last()
 
     last_line = 0
     if prev_line:
         last_line = prev_line.file_lineno
     if prev_error:
-        last_line = max(last_line, prev_error.line_no)
+        last_line = max(last_line, prev_error.last_line_no)
 
     lines = get_file_lines(file_tracker.filename, output)
+
+    bad_lines = BadLineTracker(file_tracker.filename)
 
     for index, line, row in tqdm(lines):
         line_no += 1
@@ -288,7 +293,7 @@ def track_changes(file_tracker, output):
             if not ncid:
                 continue
         except ValueError as e:
-            BadLine.error(file_tracker.filename, line_no, line, e.args[0])
+            bad_lines.error(line_no, line, str(e))
             continue
 
         # We're done skipping for various reasons, so lets move on to actually recording
@@ -297,7 +302,7 @@ def track_changes(file_tracker, output):
             change = prepare_change(file_tracker, row, voter_instance, line_no)
         except Exception:
             tb = ''.join(traceback.format_exception(*sys.exc_info()))
-            BadLine.error(file_tracker.filename, line_no, line, tb)
+            bad_lines.error(line_no, line, tb)
         else:
             record_change(change)
 
@@ -308,6 +313,8 @@ def track_changes(file_tracker, output):
     # Any left over records to flush that didn't hit the bulk amount?
     if change_records:
         flush()
+
+    bad_lines.flush()
 
     # Mark the file as processed, we're done with it
     file_tracker.file_status = FileTracker.PROCESSED

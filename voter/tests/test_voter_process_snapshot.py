@@ -3,7 +3,7 @@ from unittest import mock
 
 from django.test import TestCase
 
-from voter.models import FileTracker, BadLine, ChangeTracker, NCVHis, NCVoter
+from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter, BadLineRange
 from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset
 
 
@@ -165,11 +165,12 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def test_can_resume_from_last_error(self):
         ft = create_file_tracker(1)
-        BadLine.objects.create(
+        BadLineRange.objects.create(
             filename=ft.filename,
-            line_no=10,
+            first_line_no=10,
+            last_line_no=10,
             message="oops",
-            line="data 1 2 3",
+            example_line="data 1 2 3",
             is_warning=False,
         )
         process_files(quiet=True)
@@ -182,10 +183,10 @@ class VoterProcessChangeTrackerTest(TestCase):
         process_files(quiet=True)
 
         self.assertEquals(ChangeTracker.objects.count(), 19)
-        self.assertEquals(BadLine.objects.count(), 1)
+        self.assertEquals(BadLineRange.objects.count(), 1)
 
-        badline = BadLine.objects.all().first()
-        self.assertEqual(badline.line_no, 19)
+        badline = BadLineRange.objects.all().first()
+        self.assertEqual(badline.last_line_no, 19)
         self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_extra45.txt")
         self.assertEqual(badline.is_warning, True)
         self.assertIn("(removing 45)", badline.message)
@@ -195,10 +196,10 @@ class VoterProcessChangeTrackerTest(TestCase):
         process_files(quiet=True)
 
         self.assertEquals(ChangeTracker.objects.count(), 19)
-        self.assertEquals(BadLine.objects.count(), 1)
+        self.assertEquals(BadLineRange.objects.count(), 1)
 
-        badline = BadLine.objects.all().first()
-        self.assertEqual(badline.line_no, 19)
+        badline = BadLineRange.objects.all().first()
+        self.assertEqual(badline.last_line_no, 19)
         self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_extra45_46_47.txt")
         self.assertEqual(badline.is_warning, True)
         self.assertIn("(removing 45-47)", badline.message)
@@ -209,10 +210,10 @@ class VoterProcessChangeTrackerTest(TestCase):
 
         # 18, because the bad line was an error and not processed
         self.assertEquals(ChangeTracker.objects.count(), 18)
-        self.assertEquals(BadLine.objects.count(), 1)
+        self.assertEquals(BadLineRange.objects.count(), 1)
 
-        badline = BadLine.objects.all().first()
-        self.assertEqual(badline.line_no, 19)
+        badline = BadLineRange.objects.all().first()
+        self.assertEqual(badline.last_line_no, 19)
         self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_extra_lots.txt")
         self.assertEqual(badline.is_warning, False)
         self.assertIn("More cells", badline.message)
@@ -223,10 +224,10 @@ class VoterProcessChangeTrackerTest(TestCase):
 
         # 18, because the bad line was an error and not processed
         self.assertEquals(ChangeTracker.objects.count(), 18)
-        self.assertEquals(BadLine.objects.count(), 1)
+        self.assertEquals(BadLineRange.objects.count(), 1)
 
-        badline = BadLine.objects.all().first()
-        self.assertEqual(badline.line_no, 19)
+        badline = BadLineRange.objects.all().first()
+        self.assertEqual(badline.last_line_no, 19)
         self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_not_enough.txt")
         self.assertEqual(badline.is_warning, False)
         self.assertIn("Less cells", badline.message)
@@ -236,7 +237,7 @@ class VoterProcessChangeTrackerTest(TestCase):
             pc.side_effect = Exception("Something went terribly wrong.")
             create_file_tracker(1)
             process_files(quiet=True)
-        badline = BadLine.objects.all().first()
+        badline = BadLineRange.objects.all().first()
 
         self.assertIn("Exception: Something went terribly wrong", badline.message)
         self.assertIn("= prepare_change(", badline.message)
@@ -247,7 +248,7 @@ class VoterProcessChangeTrackerTest(TestCase):
         process_files(quiet=True)
         process_files(quiet=True)
 
-        self.assertEqual(1, BadLine.objects.all().count())
+        self.assertEqual(1, BadLineRange.objects.all().count())
 
     def test_flush_repeat_voter(self):
         """If the same voter appears twice within the span of the bulk-insert cutoff, we need

@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from voter.models import FileTracker, BadLine, ChangeTracker, NCVHis, NCVoter
 from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset
-from voter.management.commands import voter_process_snapshot
+
 
 file_trackers_data = [
     {

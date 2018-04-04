@@ -37,7 +37,7 @@ def forward_0018(apps, schema):
 
 
 def backward_0018(apps, schema):
-    "Reverse of forward_00017"
+    "Reverse of forward_00018"
     BadLine = apps.get_model('voter.BadLine')
     BadLineRange = apps.get_model('voter.BadLineRange')
 

@@ -29,3 +29,14 @@ DATABASES = {
 
 NCVOTER_DOWNLOAD_PATH = "/voter-data/ncvoter"
 NCVHIS_DOWNLOAD_PATH = "/voter-data/ncvhis"
+
+if os.getenv('SENTRY_DSN'):
+    import raven
+    RAVEN_CONFIG = {
+        'dsn': os.getenv('SENTRY_DSN'),
+        'release': raven.fetch_git_sha(os.path.dirname(os.pardir)),
+        'name': 'NCVotes',
+        'processors': (
+            'raven.processors.SanitizePasswordsProcessor',
+        )
+    }

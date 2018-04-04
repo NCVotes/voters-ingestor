@@ -16,4 +16,4 @@ use_newrelic: false
 
 extra_env:
   # just an example
-  FOO: BAR
+  SENTRY_DSN: "{{ SECRET_SENTRY_DSN }}"

@@ -170,12 +170,3 @@ NCVHIS_LATEST_STATEWIDE_URL = NCSBE_S3_URL_BASE + "ncvhis_Statewide.zip"
 NCVOTER_LATEST_COUNTY_URL_BASE = NCSBE_S3_URL_BASE + "ncvoter"
 NCVHIS_LATEST_COUNTY_URL_BASE = NCSBE_S3_URL_BASE + "ncvhis"
 NCVOTER_HISTORICAL_SNAPSHOT_URL = NCSBE_S3_URL_BASE + "Snapshots/"
-
-RAVEN_CONFIG = {
-    'dsn': 'http://5cc506da78654de3a8918e124b899a73:f4d8b087f9d04d058e00dc3abd2737d3@sentry.caktustest.net/5',
-    'release': raven.fetch_git_sha(os.path.dirname(os.pardir)),
-    'name': 'NCVotes',
-    'processors': (
-        'raven.processors.SanitizePasswordsProcessor',
-    )
-}

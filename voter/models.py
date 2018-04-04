@@ -30,7 +30,6 @@ class FileTracker(models.Model):
     county_num = models.IntegerField(null=True)
     created = models.DateTimeField()
     file_status = models.SmallIntegerField('file status', default=UNPROCESSED, choices=STATUS_CHOICES)
-    change_tracker_processed = models.BooleanField(null=False, blank=True, default=False)
 
 
 class BadLine(models.Model):

@@ -14,49 +14,42 @@ file_trackers_data = [
         "filename": "voter/test_data/2010-10-31T00-00-00/snapshot_latin1.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 2,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2010-10-31T00-00-00/snapshot_utf16.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 3,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2011-10-31T00-00-00/snapshot.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2012, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 4,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2010-10-31T00-00-00/bad_extra45.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 5,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2010-10-31T00-00-00/bad_extra45_46_47.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 6,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2010-10-31T00-00-00/bad_extra_lots.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 7,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2010-10-31T00-00-00/bad_not_enough.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }
 ]
 

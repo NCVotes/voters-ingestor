@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter, BadLineRange
 from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset
-from voter.management.commands import voter_process_snapshot
+
 
 file_trackers_data = [
     {
@@ -83,7 +83,6 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def setUp(self):
         reset()
-        voter_process_snapshot.total_lines = 0
 
     def load_two_snapshots(self):
         create_file_tracker(1)
@@ -330,3 +329,13 @@ class VoterProcessChangeTrackerTest(TestCase):
 
                 process_files(quiet=True)
                 self.assertEqual(0, track_changes.call_count)
+
+    def test_line_numbers_across_files(self):
+        ft0 = create_file_tracker(1)
+        ft1 = create_file_tracker(2)
+        process_files(quiet=True)
+        # Each file's change tracker should start with line number 1
+        ft0_first_tracker = ChangeTracker.objects.filter(file_tracker=ft0).order_by('file_lineno').first()
+        self.assertEqual(1, ft0_first_tracker.file_lineno)
+        ft1_first_tracker = ChangeTracker.objects.filter(file_tracker=ft1).order_by('file_lineno').first()
+        self.assertEqual(1, ft1_first_tracker.file_lineno)

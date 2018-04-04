@@ -20,7 +20,6 @@ added_tally = 0
 modified_tally = 0
 ignored_tally = 0
 skip_tally = 0
-total_lines = 0
 
 
 def merge_dicts(x, y):
@@ -215,7 +214,7 @@ def skip_or_voter(row):
     return ncid, voter_instance
 
 
-def prepare_change(file_tracker, row, voter_instance):
+def prepare_change(file_tracker, row, voter_instance, line_no):
     parsed_row = NCVoter.parse_row(row)
     snapshot_dt = parsed_row.pop('snapshot_dt')
     hash_val = find_md5(row, exclude=['snapshot_dt'])
@@ -237,7 +236,7 @@ def prepare_change(file_tracker, row, voter_instance):
         md5_hash = hash_val,
         snapshot_dt = snapshot_dt,
         file_tracker = file_tracker,
-        file_lineno = total_lines,
+        file_lineno = line_no,
         op_code = change_tracker_op_code,
         data = change_tracker_data,
     )
@@ -263,7 +262,8 @@ def track_changes(file_tracker, output):
     global modified_tally
     global ignored_tally
     global skip_tally
-    global total_lines
+
+    line_no = 0
 
     if output:
         print("Tracking changes for file {0}".format(file_tracker.filename), flush=True)
@@ -284,8 +284,8 @@ def track_changes(file_tracker, output):
     bad_lines = BadLineTracker(file_tracker.filename)
 
     for index, line, row in tqdm(lines):
-        total_lines += 1
-        if total_lines <= last_line:
+        line_no += 1
+        if line_no <= last_line:
             continue
 
         try:
@@ -293,16 +293,16 @@ def track_changes(file_tracker, output):
             if not ncid:
                 continue
         except ValueError as e:
-            bad_lines.error(total_lines, line, str(e))
+            bad_lines.error(line_no, line, str(e))
             continue
 
         # We're done skipping for various reasons, so lets move on to actually recording
         # new data. We start by parsing the the row data.
         try:
-            change = prepare_change(file_tracker, row, voter_instance)
+            change = prepare_change(file_tracker, row, voter_instance, line_no)
         except Exception:
             tb = ''.join(traceback.format_exception(*sys.exc_info()))
-            bad_lines.error(total_lines, line, tb)
+            bad_lines.error(line_no, line, tb)
         else:
             record_change(change)
 
@@ -323,7 +323,7 @@ def track_changes(file_tracker, output):
     # TODO: Add a way to skip this, if we want to re-run for testing without re-downloading
     # remove_files(file_tracker)
     if output:
-        print("Total lines processed:", total_lines)
+        print("Lines processed for %s: %d" % (file_tracker.filename, line_no))
     return (added_tally, modified_tally, ignored_tally, skip_tally)
 
 

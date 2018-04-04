@@ -20,7 +20,9 @@ def forward_0018(apps, schema):
     BadLineRange.objects.all().delete()
 
     tracker = None
-    for line in BadLine.objects.order_by('filename', 'is_warning', 'line_no', 'message'):
+    # Use .iterator() because there could be millions of these records and we can't
+    # hold them all in memory.
+    for line in BadLine.objects.order_by('filename', 'is_warning', 'line_no', 'message').iterator():
         if tracker and tracker.filename != line.filename:
             tracker.flush()
             tracker = None
@@ -43,7 +45,9 @@ def backward_0018(apps, schema):
 
     BadLine.objects.all().delete()
 
-    for blr in BadLineRange.objects.all():
+    # Not sure how many BadLineRange objects there might be, but
+    # adding .iterator() can't hurt.
+    for blr in BadLineRange.objects.all().iterator():
         i = 0
         for line_no in range(start=blr.first_line_no, stop=blr.last_line_no + 1):
             BadLine.objects.create(

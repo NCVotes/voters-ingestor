@@ -5,7 +5,7 @@ from django.db import migrations
 from voter.models import BadLineTracker
 
 
-def forward_0017(apps, schema):
+def forward_0018(apps, schema):
     """
     Given the BadLine objects in the DB, create BadLineRange
     objects, collapsing runs of errors into single objects.
@@ -36,7 +36,7 @@ def forward_0017(apps, schema):
         tracker.flush()
 
 
-def backward_0017(apps, schema):
+def backward_0018(apps, schema):
     "Reverse of forward_00017"
     BadLine = apps.get_model('voter.BadLine')
     BadLineRange = apps.get_model('voter.BadLineRange')
@@ -59,12 +59,12 @@ def backward_0017(apps, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('voter', '0016_badlinerange'),
+        ('voter', '0017_badlinerange'),
     ]
 
     operations = [
         migrations.RunPython(
-            forward_0017,
-            backward_0017,
+            forward_0018,
+            backward_0018,
         )
     ]

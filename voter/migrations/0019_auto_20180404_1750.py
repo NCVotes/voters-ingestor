@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('voter', '0017_convert_badlines'),
+        ('voter', '0018_convert_badlines'),
     ]
 
     operations = [

@@ -1,3 +1,5 @@
+import os
+
 from datetime import datetime
 import pytz
 from django.db import models
@@ -30,6 +32,11 @@ class FileTracker(models.Model):
     county_num = models.IntegerField(null=True)
     created = models.DateTimeField()
     file_status = models.SmallIntegerField('file status', default=UNPROCESSED, choices=STATUS_CHOICES)
+
+    @property
+    def short_filename(self):
+        "Use the filename portion of the path to show a friendly name in the admin."
+        return os.path.split(self.filename)[-1]
 
 
 class BadLine(models.Model):

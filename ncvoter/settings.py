@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 
+import raven
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 STATIC_ROOT = os.path.join(ROOT_DIR, 'public', 'static')
@@ -37,6 +39,7 @@ INSTALLED_APPS = [
     # Third party apps
     'rest_framework',
     'django_filters',
+    'raven.contrib.django.raven_compat',
     # Internal
     'voter',
 ]
@@ -101,6 +104,50 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'root': {
+        'level': 'WARNING',
+        'handlers': ['sentry'],  # <<<<<< Root logger handler is sentry
+    },
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s '
+                      '%(process)d %(thread)d %(message)s'
+        },
+    },
+    'handlers': {
+        'sentry': {
+            'level': 'ERROR',  # To capture more than ERROR, change to WARNING, INFO, etc.
+            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+            # 'tags': {'custom-tag': 'x'},
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        }
+    },
+    'loggers': {
+        'django.db.backends': {
+            'level': 'ERROR',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'raven': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'sentry.errors': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+    },
+}
+
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'ncvoter.permissions.ReadOnlyPermission'
@@ -123,3 +170,12 @@ NCVHIS_LATEST_STATEWIDE_URL = NCSBE_S3_URL_BASE + "ncvhis_Statewide.zip"
 NCVOTER_LATEST_COUNTY_URL_BASE = NCSBE_S3_URL_BASE + "ncvoter"
 NCVHIS_LATEST_COUNTY_URL_BASE = NCSBE_S3_URL_BASE + "ncvhis"
 NCVOTER_HISTORICAL_SNAPSHOT_URL = NCSBE_S3_URL_BASE + "Snapshots/"
+
+RAVEN_CONFIG = {
+    'dsn': 'http://5cc506da78654de3a8918e124b899a73:f4d8b087f9d04d058e00dc3abd2737d3@sentry.caktustest.net/5',
+    'release': raven.fetch_git_sha(os.path.dirname(os.pardir)),
+    'name': 'NCVotes',
+    'processors': (
+        'raven.processors.SanitizePasswordsProcessor',
+    )
+}

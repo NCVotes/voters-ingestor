@@ -5,7 +5,8 @@
   tasks:
   - when: papertrail_host and papertrail_port
     block:
-    - include_role: papertrail
+    - include_role:
+        name: papertrail
     - name: Override papertrail config file so more of our log files will be included, including output from Django
       template:
         src: templates/log_files.yml.j2

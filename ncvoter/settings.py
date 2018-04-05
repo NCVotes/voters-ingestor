@@ -107,7 +107,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'root': {
         'level': 'WARNING',
-        'handlers': ['sentry'],  # <<<<<< Root logger handler is sentry
+        'handlers': ['console', 'sentry'],  # <<<<<< Root logger handler is sentry + console
     },
     'formatters': {
         'verbose': {

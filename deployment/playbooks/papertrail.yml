@@ -14,7 +14,7 @@
 
     - name: Re-configure Papertrail service definition
       template: src="remote_syslog.systemd.conf.j2"
-                dest="{{ papertrail_remote_syslog_config_paths[ansible_service_mgr].path }}"
+                dest="/lib/systemd/system/remote_syslog.service"
 
     - name: Restart remote_syslog
       service:

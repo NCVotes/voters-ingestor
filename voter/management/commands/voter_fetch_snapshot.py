@@ -1,3 +1,4 @@
+import argparse
 from datetime import datetime, timezone
 import os
 from enum import Enum
@@ -67,6 +68,7 @@ def attempt_fetch_and_write_new_zip(url, base_path):
         status_code = FETCH_STATUS_CODES.CODE_NOTHING_TO_DO
     else:
         if resp.status_code == 200:
+            print("Fetching {0}".format(url), flush=True)
             os.makedirs(target_folder, exist_ok=True)
             write_success = write_stream(resp, target_filename)
             if write_success:
@@ -79,7 +81,7 @@ def attempt_fetch_and_write_new_zip(url, base_path):
 
 
 def process_new_zip(url, base_path, label):
-    print("Fetching {0}".format(url), flush=True)
+    print("Looking at {0}".format(url), flush=True)
 
     fetch_status_code, etag, created_time, target_filename = attempt_fetch_and_write_new_zip(url, base_path)
     if fetch_status_code == FETCH_STATUS_CODES.CODE_OK:
@@ -118,7 +120,33 @@ def process_new_zip(url, base_path, label):
 
 
 class Command(BaseCommand):
-    help = "Fetch voter data from NCSBE.gov"
+    help = """Fetch voter data from NCSBE.gov
+
+    E.g.
+
+    no arg: download first available file that we have not already downloaded,
+            then exit.
+    --loop=N: download first available file that we have not already downloaded,
+            then wait N minutes and start over.
+    --all:  download all available files that we have not already downloaded,
+            then exit.
+    --all --loop=N:  download all available files that we have not already downloaded,
+            then wait N minutes and start over.
+    """
+
+    def add_arguments(self, parser):
+        # Don't rewrap the text in the help/description:
+        parser.formatter_class = argparse.RawDescriptionHelpFormatter
+
+        parser.add_argument(
+            '--loop', action='store', type=int, default=0,
+            help='After downloading, wait this many minutes and start over. Default is to stop after downloading.'
+        )
+        parser.add_argument(
+            '--all', action='store_true', default=False,
+            help='Download all available files. Default is to just download the first one that we have not'
+                 'already downloaded.'
+        )
 
     def handle(self, *args, **options):
         print("Fetching voter files...")
@@ -137,11 +165,10 @@ class Command(BaseCommand):
                 snapshots.append(settings.NCVOTER_HISTORICAL_SNAPSHOT_URL + l.strip())
 
             while len(snapshots) > 0:
-                # if not FileTracker.objects.filter(file_status=FileTracker.UNPROCESSED).exists():
                 url = snapshots.popleft()
                 process_new_zip(url, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter")
-                # else:
-                #     print("Sleep an hour...")
-                #     time.sleep(3600)
-            print("Sleep 10 hours...")
-            time.sleep(36000)
+            if not options['loop']:
+                break
+            minutes = options['loop']
+            print("Sleep %d minutes..." % minutes)
+            time.sleep(60 * minutes)

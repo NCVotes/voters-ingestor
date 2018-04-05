@@ -15,6 +15,9 @@
       template: src="remote_syslog.systemd.conf.j2"
                 dest="/lib/systemd/system/remote_syslog.service"
 
+    - name: reload systemd services
+      command: systemctl daemon-reload
+
     - name: Restart remote_syslog
       service:
         name: remote_syslog

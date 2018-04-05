@@ -14,6 +14,11 @@ source_is_local: false
 gunicorn_num_workers: 2
 use_newrelic: false
 
+# These are used by the role avazea.papertrail
+papertrail_preserve_fqdn: "on"
+papertrail_host: "{{ SECRET_PAPERTRAIL_HOST }}"
+papertrail_port: "{{ SECRET_PAPERTRAIL_PORT }}"
+
 extra_env:
-  # just an example
+  # These get set in the process environment before starting Django
   SENTRY_DSN: "{{ SECRET_SENTRY_DSN }}"

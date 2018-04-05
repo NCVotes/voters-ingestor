@@ -122,7 +122,8 @@ def process_new_zip(url, base_path, label):
 class Command(BaseCommand):
     help = """Fetch voter data from NCSBE.gov
 
-E.g.
+    E.g.
+
     no arg: download first available file that we have not already downloaded,
             then exit.
     --loop=N: download first available file that we have not already downloaded,
@@ -164,7 +165,6 @@ E.g.
                 snapshots.append(settings.NCVOTER_HISTORICAL_SNAPSHOT_URL + l.strip())
 
             while len(snapshots) > 0:
-                # if not FileTracker.objects.filter(file_status=FileTracker.UNPROCESSED).exists():
                 url = snapshots.popleft()
                 process_new_zip(url, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter")
             if not options['loop']:

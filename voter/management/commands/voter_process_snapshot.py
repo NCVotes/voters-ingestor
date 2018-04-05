@@ -267,7 +267,6 @@ def track_changes(file_tracker, output):
 
     if output:
         print("Tracking changes for file {0}".format(file_tracker.filename), flush=True)
-    tqdm = tqdm_or_quiet(output)
 
     # Have we seen any lines, successful or failures, from this before?
     prev_line = ChangeTracker.objects.filter(file_tracker=file_tracker).order_by('file_lineno').last()
@@ -283,7 +282,7 @@ def track_changes(file_tracker, output):
 
     bad_lines = BadLineTracker(file_tracker.filename)
 
-    for index, line, row in tqdm(lines):
+    for index, line, row in lines:
         line_no += 1
         if line_no <= last_line:
             continue

@@ -8,3 +8,6 @@ prod0
 
 [worker]
 prod0
+
+[papertrail]
+prod0

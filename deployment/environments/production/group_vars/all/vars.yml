@@ -18,6 +18,7 @@ use_newrelic: false
 papertrail_preserve_fqdn: "on"
 papertrail_host: "{{ SECRET_PAPERTRAIL_HOST }}"
 papertrail_port: "{{ SECRET_PAPERTRAIL_PORT }}"
+papertrail_conf: "/etc/log_files.yml"
 
 extra_env:
   # These get set in the process environment before starting Django

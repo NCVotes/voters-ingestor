@@ -106,16 +106,6 @@ def get_file_lines(filename, output, last_line):
 
     counted = 0
 
-    if last_line:
-        if output:
-            print("Fast-forward to resume point...")
-        for row in tqdm(lines, total=last_line):
-            counted += 1
-            if counted == last_line:
-                break
-        if output:
-            print("Resuming at line %s" % counted)
-
     for row in tqdm(lines, initial=counted, total=approx_line_count):
         counted += 1
         line = row.replace('\x00', '')

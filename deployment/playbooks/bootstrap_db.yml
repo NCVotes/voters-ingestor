@@ -1,0 +1,40 @@
+---
+- hosts: web
+  become: yes
+  tasks:
+    - name: install postgres client
+      apt: name={{ item }} state=present
+      with_items:
+        - postgresql-contrib
+        - postgresql-client
+        - libpq-dev
+        - python-psycopg2
+
+    # - name: create the project postgres user
+    #   postgresql_user:
+    #     login_host: "{{ db_host }}"
+    #     login_user: "ncvotes"
+    #     login_password: "{{ db_password }}"
+    #     db: "ncvotes_production"
+    #     name: "{{ db_user }}"
+    #     role_attr_flags: NOCREATEDB,NOCREATEROLE,NOSUPERUSER
+    #     password: "{{ db_password }}"
+    #     encrypted: yes
+    #   vars:
+    #     ansible_ssh_pipelining: true
+
+    - name: create the project database
+      postgresql_db:
+        login_host: "{{ db_host }}"
+        login_user: "ncvotes"
+        login_password: "{{ db_password }}"
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+        state: present
+        encoding: 'UTF-8'
+        lc_collate: 'en_US.UTF-8'
+        lc_ctype: 'en_US.UTF-8'
+        template: 'template0'
+      run_once: true
+      vars:
+        ansible_ssh_pipelining: true

@@ -1,0 +1,13 @@
+prod0 ansible_host=ec2-35-170-20-68.compute-1.amazonaws.com
+
+[web]
+prod0
+
+[queue]
+prod0
+
+[worker]
+prod0
+
+[papertrail]
+prod0

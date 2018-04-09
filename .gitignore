@@ -1,6 +1,10 @@
 __pycache__/
 *.py[cod]
-deployment/.vault_pass
 downloads
 .coverage
 local_settings.py
+
+# tequila
+/deployment/roles/
+.vault_pass
+*.retry

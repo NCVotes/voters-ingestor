@@ -3,9 +3,9 @@ from unittest import mock
 
 from django.test import TestCase
 
-from voter.models import FileTracker, BadLine, ChangeTracker, NCVHis, NCVoter
+from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter, BadLineRange
 from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset
-from voter.management.commands import voter_process_snapshot
+
 
 file_trackers_data = [
     {
@@ -14,49 +14,42 @@ file_trackers_data = [
         "filename": "voter/test_data/2010-10-31T00-00-00/snapshot_latin1.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 2,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2010-10-31T00-00-00/snapshot_utf16.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 3,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2011-10-31T00-00-00/snapshot.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2012, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 4,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2010-10-31T00-00-00/bad_extra45.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 5,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2010-10-31T00-00-00/bad_extra45_46_47.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 6,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2010-10-31T00-00-00/bad_extra_lots.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }, {
         "id": 7,
         "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
         "filename": "voter/test_data/2010-10-31T00-00-00/bad_not_enough.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
-        "change_tracker_processed": False,
     }
 ]
 
@@ -90,7 +83,6 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def setUp(self):
         reset()
-        voter_process_snapshot.total_lines = 0
 
     def load_two_snapshots(self):
         create_file_tracker(1)
@@ -173,11 +165,12 @@ class VoterProcessChangeTrackerTest(TestCase):
 
     def test_can_resume_from_last_error(self):
         ft = create_file_tracker(1)
-        BadLine.objects.create(
+        BadLineRange.objects.create(
             filename=ft.filename,
-            line_no=10,
+            first_line_no=10,
+            last_line_no=10,
             message="oops",
-            line="data 1 2 3",
+            example_line="data 1 2 3",
             is_warning=False,
         )
         process_files(quiet=True)
@@ -190,10 +183,10 @@ class VoterProcessChangeTrackerTest(TestCase):
         process_files(quiet=True)
 
         self.assertEquals(ChangeTracker.objects.count(), 19)
-        self.assertEquals(BadLine.objects.count(), 1)
+        self.assertEquals(BadLineRange.objects.count(), 1)
 
-        badline = BadLine.objects.all().first()
-        self.assertEqual(badline.line_no, 19)
+        badline = BadLineRange.objects.all().first()
+        self.assertEqual(badline.last_line_no, 19)
         self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_extra45.txt")
         self.assertEqual(badline.is_warning, True)
         self.assertIn("(removing 45)", badline.message)
@@ -203,10 +196,10 @@ class VoterProcessChangeTrackerTest(TestCase):
         process_files(quiet=True)
 
         self.assertEquals(ChangeTracker.objects.count(), 19)
-        self.assertEquals(BadLine.objects.count(), 1)
+        self.assertEquals(BadLineRange.objects.count(), 1)
 
-        badline = BadLine.objects.all().first()
-        self.assertEqual(badline.line_no, 19)
+        badline = BadLineRange.objects.all().first()
+        self.assertEqual(badline.last_line_no, 19)
         self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_extra45_46_47.txt")
         self.assertEqual(badline.is_warning, True)
         self.assertIn("(removing 45-47)", badline.message)
@@ -217,10 +210,10 @@ class VoterProcessChangeTrackerTest(TestCase):
 
         # 18, because the bad line was an error and not processed
         self.assertEquals(ChangeTracker.objects.count(), 18)
-        self.assertEquals(BadLine.objects.count(), 1)
+        self.assertEquals(BadLineRange.objects.count(), 1)
 
-        badline = BadLine.objects.all().first()
-        self.assertEqual(badline.line_no, 19)
+        badline = BadLineRange.objects.all().first()
+        self.assertEqual(badline.last_line_no, 19)
         self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_extra_lots.txt")
         self.assertEqual(badline.is_warning, False)
         self.assertIn("More cells", badline.message)
@@ -231,10 +224,10 @@ class VoterProcessChangeTrackerTest(TestCase):
 
         # 18, because the bad line was an error and not processed
         self.assertEquals(ChangeTracker.objects.count(), 18)
-        self.assertEquals(BadLine.objects.count(), 1)
+        self.assertEquals(BadLineRange.objects.count(), 1)
 
-        badline = BadLine.objects.all().first()
-        self.assertEqual(badline.line_no, 19)
+        badline = BadLineRange.objects.all().first()
+        self.assertEqual(badline.last_line_no, 19)
         self.assertEqual(badline.filename, "voter/test_data/2010-10-31T00-00-00/bad_not_enough.txt")
         self.assertEqual(badline.is_warning, False)
         self.assertIn("Less cells", badline.message)
@@ -244,7 +237,7 @@ class VoterProcessChangeTrackerTest(TestCase):
             pc.side_effect = Exception("Something went terribly wrong.")
             create_file_tracker(1)
             process_files(quiet=True)
-        badline = BadLine.objects.all().first()
+        badline = BadLineRange.objects.all().first()
 
         self.assertIn("Exception: Something went terribly wrong", badline.message)
         self.assertIn("= prepare_change(", badline.message)
@@ -255,7 +248,7 @@ class VoterProcessChangeTrackerTest(TestCase):
         process_files(quiet=True)
         process_files(quiet=True)
 
-        self.assertEqual(1, BadLine.objects.all().count())
+        self.assertEqual(1, BadLineRange.objects.all().count())
 
     def test_flush_repeat_voter(self):
         """If the same voter appears twice within the span of the bulk-insert cutoff, we need
@@ -336,3 +329,13 @@ class VoterProcessChangeTrackerTest(TestCase):
 
                 process_files(quiet=True)
                 self.assertEqual(0, track_changes.call_count)
+
+    def test_line_numbers_across_files(self):
+        ft0 = create_file_tracker(1)
+        ft1 = create_file_tracker(2)
+        process_files(quiet=True)
+        # Each file's change tracker should start with line number 1
+        ft0_first_tracker = ChangeTracker.objects.filter(file_tracker=ft0).order_by('file_lineno').first()
+        self.assertEqual(1, ft0_first_tracker.file_lineno)
+        ft1_first_tracker = ChangeTracker.objects.filter(file_tracker=ft1).order_by('file_lineno').first()
+        self.assertEqual(1, ft1_first_tracker.file_lineno)

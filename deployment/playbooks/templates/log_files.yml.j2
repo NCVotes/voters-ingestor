@@ -1,0 +1,12 @@
+files:
+  - /var/log/auth.log
+  - /var/log/fail2ban.log
+  - /var/log/syslog
+  - /var/log/nginx/error.log
+  - /var/log/rabbitmq/*.log
+  - /var/log/supervisor/*.log
+destination:
+  host: {{ papertrail_host }}
+  port: {{ papertrail_port }}
+  protocol: tls
+new_file_check_interval: "10"

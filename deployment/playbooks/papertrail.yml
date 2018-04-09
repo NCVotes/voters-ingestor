@@ -1,0 +1,25 @@
+---
+- hosts: papertrail
+  become: true
+
+  tasks:
+  - when: papertrail_host and papertrail_port
+    block:
+    - include_role:
+        name: papertrail
+    - name: Override papertrail config file so more of our log files will be included, including output from Django
+      template:
+        src: templates/log_files.yml.j2
+        dest: "{{ papertrail_conf }}"
+
+    - name: Re-configure Papertrail service definition
+      template: src="remote_syslog.systemd.conf.j2"
+                dest="/lib/systemd/system/remote_syslog.service"
+
+    - name: reload systemd services
+      command: systemctl daemon-reload
+
+    - name: Restart remote_syslog
+      service:
+        name: remote_syslog
+        state: restarted

@@ -1,4 +1,4 @@
-Django==2.0.2
+Django==2.0.4
 psycopg2-binary==2.7.4
 pytz>=2017.2
 djangorestframework==3.7.7
@@ -10,3 +10,5 @@ djangorestframework-csv==2.0.0
 boto3==1.5.29
 chardet==3.0.4
 tqdm==4.19.5
+django-dotenv==1.4.2
+raven==6.6.0

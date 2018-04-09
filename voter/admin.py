@@ -1,13 +1,13 @@
 from django.contrib import admin
 
-from voter.models import FileTracker, ChangeTracker, BadLine, NCVoter, NCVHis
+from voter.models import FileTracker, ChangeTracker, NCVoter, NCVHis, BadLineRange
 
 
 @admin.register(FileTracker)
 class FileTrackerAdmin(admin.ModelAdmin):
     ordering = ('created',)
     readonly_fields = ('etag', 'filename', 'data_file_kind', 'created')
-    list_display = ('created', 'data_file_kind', 'file_status')
+    list_display = ('short_filename', 'created', 'data_file_kind', 'file_status')
 
 
 @admin.register(ChangeTracker)
@@ -27,6 +27,6 @@ class NCVoter(admin.ModelAdmin):
     pass
 
 
-@admin.register(BadLine)
-class BadLine(admin.ModelAdmin):
-    pass
+@admin.register(BadLineRange)
+class BadLineRangeAdmin(admin.ModelAdmin):
+    list_display = ('filename', 'first_line_no', 'last_line_no', 'message')

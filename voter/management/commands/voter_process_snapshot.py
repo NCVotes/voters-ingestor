@@ -8,7 +8,7 @@ import sys
 import traceback
 from bencode import bencode
 
-from voter.models import FileTracker, BadLine, ChangeTracker, NCVoter
+from voter.models import FileTracker, ChangeTracker, NCVoter, BadLineRange, BadLineTracker
 
 BULK_CREATE_AMOUNT = 500
 
@@ -20,7 +20,6 @@ added_tally = 0
 modified_tally = 0
 ignored_tally = 0
 skip_tally = 0
-total_lines = 0
 
 
 def merge_dicts(x, y):
@@ -90,7 +89,6 @@ def get_file_encoding(filename):
 
 
 def get_file_lines(filename, output, last_line):
-    global total_lines
     tqdm = tqdm_or_quiet(output)
 
     # guess the encoding
@@ -104,6 +102,8 @@ def get_file_lines(filename, output, last_line):
     header = header.split('\t')
     header = [i.strip().lower() for i in header]
 
+    bad_lines = BadLineTracker(filename)
+
     counted = 0
 
     if last_line:
@@ -115,9 +115,8 @@ def get_file_lines(filename, output, last_line):
                 break
         if output:
             print("Resuming at line %s" % counted)
-            total_lines = counted
 
-    for row in tqdm(lines, initial=total_lines, total=approx_line_count):
+    for row in tqdm(lines, initial=counted, total=approx_line_count):
         counted += 1
         line = row.replace('\x00', '')
         line = line.split('\t')
@@ -126,26 +125,27 @@ def get_file_lines(filename, output, last_line):
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
 
         elif len(line) == len(header) + 1:
-            BadLine.warning(filename, counted, row, "Line has an extra 1 cell than the headers we have. (removing 45)")
+            bad_lines.warning(counted, row, "Line has an extra 1 cell than the headers we have. (removing 45)")
             del line[45]
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
 
         elif len(line) == len(header) + 3:
-            BadLine.warning(filename, counted, row, "Line has an extra 3 cells than the headers we have. (removing 45-47)")
+            bad_lines.warning(counted, row, "Line has an extra 3 cells than the headers we have. (removing 45-47)")
             x = set([45, 46, 47])
             line = [line[i] for i in range(len(line)) if i not in x]
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
 
         elif len(line) > len(header):
-            BadLine.error(filename, counted, row, "More cells in this line than we know what to do with.")
+            bad_lines.error(counted, row, "More cells in this line than we know what to do with.")
             continue
 
         else:
-            BadLine.error(filename, counted, row, "Less cells in this line than we need.")
+            bad_lines.error(counted, row, "Less cells in this line than we need.")
             continue
 
         yield counted, row, non_empty_row
 
+    bad_lines.flush()
     if output:
         print("Decoded", counted, "lines from", filename)
 
@@ -227,7 +227,7 @@ def skip_or_voter(row):
     return ncid, voter_instance
 
 
-def prepare_change(file_tracker, row, voter_instance):
+def prepare_change(file_tracker, row, voter_instance, line_no):
     parsed_row = NCVoter.parse_row(row)
     snapshot_dt = parsed_row.pop('snapshot_dt')
     hash_val = find_md5(row, exclude=['snapshot_dt'])
@@ -249,7 +249,7 @@ def prepare_change(file_tracker, row, voter_instance):
         md5_hash = hash_val,
         snapshot_dt = snapshot_dt,
         file_tracker = file_tracker,
-        file_lineno = total_lines,
+        file_lineno = line_no,
         op_code = change_tracker_op_code,
         data = change_tracker_data,
     )
@@ -275,43 +275,45 @@ def track_changes(file_tracker, output):
     global modified_tally
     global ignored_tally
     global skip_tally
-    global total_lines
+
+    line_no = 0
 
     if output:
         print("Tracking changes for file {0}".format(file_tracker.filename), flush=True)
-    tqdm = tqdm_or_quiet(output)
 
     # Have we seen any lines, successful or failures, from this before?
     prev_line = ChangeTracker.objects.filter(file_tracker=file_tracker).order_by('file_lineno').last()
-    prev_error = BadLine.objects.filter(filename=file_tracker.filename).order_by('line_no').last()
+    prev_error = BadLineRange.objects.filter(filename=file_tracker.filename).order_by('last_line_no').last()
 
-    total_lines = 0
     last_line = 0
     if prev_line:
         last_line = prev_line.file_lineno
     if prev_error:
-        last_line = max(last_line, prev_error.line_no)
+        last_line = max(last_line, prev_error.last_line_no)
 
     lines = get_file_lines(file_tracker.filename, output, last_line)
+    bad_lines = BadLineTracker(file_tracker.filename)
 
     for index, line, row in lines:
-        total_lines += 1
+        line_no += 1
+        if line_no <= last_line:
+            continue
 
         try:
             ncid, voter_instance = skip_or_voter(row)
             if not ncid:
                 continue
         except ValueError as e:
-            BadLine.error(file_tracker.filename, total_lines, line, e.args[0])
+            bad_lines.error(line_no, line, str(e))
             continue
 
         # We're done skipping for various reasons, so lets move on to actually recording
         # new data. We start by parsing the the row data.
         try:
-            change = prepare_change(file_tracker, row, voter_instance)
+            change = prepare_change(file_tracker, row, voter_instance, line_no)
         except Exception:
             tb = ''.join(traceback.format_exception(*sys.exc_info()))
-            BadLine.error(file_tracker.filename, total_lines, line, tb)
+            bad_lines.error(line_no, line, tb)
         else:
             record_change(change)
 
@@ -323,6 +325,8 @@ def track_changes(file_tracker, output):
     if change_records:
         flush()
 
+    bad_lines.flush()
+
     # Mark the file as processed, we're done with it
     file_tracker.file_status = FileTracker.PROCESSED
     file_tracker.save()
@@ -330,7 +334,7 @@ def track_changes(file_tracker, output):
     # TODO: Add a way to skip this, if we want to re-run for testing without re-downloading
     # remove_files(file_tracker)
     if output:
-        print("Total lines processed:", total_lines)
+        print("Lines processed for %s: %d" % (file_tracker.filename, line_no))
     return (added_tally, modified_tally, ignored_tally, skip_tally)
 
 

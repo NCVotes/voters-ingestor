@@ -75,6 +75,6 @@ def changes(request):
 
         result[c.voter.ncid] = r
 
-    result['_elapsed'] = (datetime.now() - start).microseconds / 1000000
+    result['_elapsed'] = (datetime.now() - start).total_seconds()
 
     return JsonResponse(result, encoder=Serializer)

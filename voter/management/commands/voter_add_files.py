@@ -4,7 +4,7 @@ from datetime import datetime
 
 from django.core.management import BaseCommand
 
-from voter.models import FileTracker, BadLine
+from voter.models import FileTracker, BadLineRange
 
 
 class Command(BaseCommand):
@@ -46,6 +46,6 @@ class Command(BaseCommand):
                 if options.get('reset'):
                     ft.file_status = FileTracker.UNPROCESSED
                     ft.save()
-                    BadLine.objects.filter(filename=ft.filename).delete()
+                    BadLineRange.objects.filter(filename=ft.filename).delete()
                 else:
                     print("REPEAT", filepath)

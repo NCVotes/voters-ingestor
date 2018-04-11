@@ -88,10 +88,10 @@ def get_file_encoding(filename):
         return encoding
 
 
-def get_file_lines(filename, output, last_line):
+def get_file_lines(filename, output):
     tqdm = tqdm_or_quiet(output)
 
-    # guess the encoding
+    # guess the number of lines and encoding
     approx_line_count = guess_total_lines(filename)
     encoding = get_file_encoding(filename)
 
@@ -281,7 +281,7 @@ def track_changes(file_tracker, output):
     if prev_error:
         last_line = max(last_line, prev_error.last_line_no)
 
-    lines = get_file_lines(file_tracker.filename, output, last_line)
+    lines = get_file_lines(file_tracker.filename, output)
     bad_lines = BadLineTracker(file_tracker.filename)
 
     for index, line, row in lines:

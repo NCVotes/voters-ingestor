@@ -13,7 +13,6 @@ class FileTracker(models.Model):
     class Meta:
         verbose_name = "File Tracker"
         verbose_name_plural = "File Tracking"
-        # ordering = ('filename',)
 
     DATA_FILE_KIND_NCVOTER = 'NCVoter'
     DATA_FILE_KIND_NCVHIS = 'NCVHis'
@@ -259,7 +258,7 @@ class NCVoter(models.Model):
         return row, {}
 
     def build_version(self, index):
-        changelog = self.changelog.all().order_by('snapshot_dt')
+        changelog = self.changelog.all()
         data = {}
         nindex = len(changelog) - index
         for change in list(changelog)[:nindex]:

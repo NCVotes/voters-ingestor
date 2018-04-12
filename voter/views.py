@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from voter.models import ChangeTracker
 
 
@@ -24,7 +24,7 @@ def get_voter_basic(voter):
             d.get('midl_name', ''),
             d.get('last_name', ''),
         )),
-        "age": d['age'],
+        "age": d.get('age', ''),
     }
 
 
@@ -62,6 +62,9 @@ def changes(request):
     # For example, changed=county_desc and new=DURHAM to find people who moved to Durham
     if new:
         mod_records = mod_records.filter(**{'data__' + changed: new})
+
+    if request.GET.get('__debug'):
+        return HttpResponse(mod_records.query)
 
     result = {}
     for c in mod_records[:limit]:

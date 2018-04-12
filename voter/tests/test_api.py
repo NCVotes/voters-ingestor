@@ -8,12 +8,12 @@ from voter.views import changes
 
 
 class APIChangesTests(TestCase):
-    
+
     def makeRequest(self, params):
         request = Mock()
         request.GET = params
         return request
-    
+
     def makeChange(self, ncid, data):
         now = datetime.now()
         ft = models.FileTracker.objects.get_or_create(filename="data.txt", defaults={'created': now})[0]
@@ -21,7 +21,7 @@ class APIChangesTests(TestCase):
         lineno = models.ChangeTracker.objects.filter(file_tracker=ft).count()
         op_code = 'A' if voter.changelog.count() == 0 else 'M'
 
-        change = models.ChangeTracker.objects.create(
+        models.ChangeTracker.objects.create(
             file_tracker=ft,
             file_lineno=lineno,
             snapshot_dt=now,
@@ -33,7 +33,7 @@ class APIChangesTests(TestCase):
     def test_changed_required(self):
         resp = changes(self.makeRequest({}))
         assert resp.status_code == 400
-    
+
     def test_no_added_records(self):
         self.makeChange("A1", {
             'last_name': 'SMITH',
@@ -67,7 +67,7 @@ class APIChangesTests(TestCase):
         assert resp['A1']['new'] == 'WILLIAMS'
         assert resp['A1']['old'] == 'SMITH'
         assert 'A2' not in resp
-    
+
     def test_specific_changes_only(self):
         self.makeChange("A1", {
             'last_name': 'SMITH',
@@ -90,7 +90,7 @@ class APIChangesTests(TestCase):
         assert resp['A2']['new'] == 'EAST'
         assert resp['A2']['old'] == 'WEST'
         assert 'A1' not in resp
-    
+
     def test_limit(self):
         for i in range(1, 11):
             self.makeChange("A%s" % i, {

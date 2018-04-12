@@ -238,17 +238,9 @@ class NCVoter(models.Model):
 
         return parsed_row
 
-    # Use build_current() instead now
-    @staticmethod
-    def parse_existing(row):
-        existing_data = model_to_dict(row)
-        del existing_data['id']
-        existing_data = {k: v for k, v in existing_data.items() if (v is not None and v != '')}
-        return existing_data
-
     @classmethod
-    def from_row(cls, row):
-        return cls(ncid=row['ncid'])
+    def from_row(cls, parsed_row):
+        return cls(ncid=parsed_row['ncid'], data=parsed_row)
 
     @classmethod
     def data_from_row(cls, row):
@@ -269,6 +261,16 @@ class NCVoter(models.Model):
         return self.build_version(0)
 
     ncid = models.TextField('ncid', unique=True, db_index=True)
+    data = JSONField(
+        null=True,
+        default=None,
+        encoder=DjangoJSONEncoder,
+        help_text="Most recently known registration data for this voter, or NULL."
+    )
+    deleted = models.BooleanField(
+        default=False,
+        help_text="True if this voter not seen in most recent registration data."
+    )
 
 
 COUNTY_CODES = {

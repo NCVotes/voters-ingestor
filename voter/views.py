@@ -35,7 +35,7 @@ def changes(request):
     Querystring Parameteres:
     `changed`       A data field to search for changes in between consecutive records for voters (required)
     `new`           Only find results where the field's new value matches this parameter (optional)
-    `limit`         The number of voters to return, or fewer. (default: 10) 
+    `limit`         The number of voters to return, or fewer. (default: 10)
     """
 
     start = datetime.now()

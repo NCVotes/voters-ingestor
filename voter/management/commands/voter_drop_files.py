@@ -33,7 +33,7 @@ class Command(BaseCommand):
         files = FileTracker.objects.filter(file_status=FileTracker.PROCESSED)
         if options['all']:
             files = FileTracker.objects.all()
-        
+
         if files:
             for ft in files:
                 exists = os.path.exists(ft.filename)

@@ -5,7 +5,7 @@ from django.test import TestCase
 import django.utils.timezone
 
 from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter, BadLineRange
-from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset, reset_file, diff_dicts
+from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset, diff_dicts
 
 file_trackers_data = [
     {

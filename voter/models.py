@@ -5,7 +5,6 @@ import pytz
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
-from django.forms.models import model_to_dict
 
 
 class FileTracker(models.Model):

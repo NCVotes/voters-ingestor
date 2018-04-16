@@ -31,61 +31,61 @@ class APIChangesTests(TestCase):
         )
 
     def test_changed_required(self):
-        resp = changes(self.makeRequest({}))
+        resp = changes(self.make_request({}))
         assert resp.status_code == 400
 
     def test_no_added_records(self):
-        self.makeChange("A1", {
+        self.make_change("A1", {
             'last_name': 'SMITH',
         })
 
         with patch("voter.views.JsonResponse") as jr:
             jr.side_effect = lambda x, *a, **kw: x
-            resp = changes(self.makeRequest({'changed': 'last_name'}))
+            resp = changes(self.make_request({'changed': 'last_name'}))
 
         assert set(('_elapsed',)) == set(resp.keys())
 
     def test_finds_changes_only(self):
-        self.makeChange("A1", {
+        self.make_change("A1", {
             'last_name': 'SMITH',
         })
-        self.makeChange("A1", {
+        self.make_change("A1", {
             'last_name': 'WILLIAMS',
         })
 
-        self.makeChange("A2", {
+        self.make_change("A2", {
             'last_name': 'WEST',
         })
-        self.makeChange("A2", {
+        self.make_change("A2", {
             # Because the field excluded if it didn't change at import time
         })
 
         with patch("voter.views.JsonResponse") as jr:
             jr.side_effect = lambda x, *a, **kw: x
-            resp = changes(self.makeRequest({'changed': 'last_name'}))
+            resp = changes(self.make_request({'changed': 'last_name'}))
 
         assert resp['A1']['new'] == 'WILLIAMS'
         assert resp['A1']['old'] == 'SMITH'
         assert 'A2' not in resp
 
     def test_specific_changes_only(self):
-        self.makeChange("A1", {
+        self.make_change("A1", {
             'last_name': 'SMITH',
         })
-        self.makeChange("A1", {
+        self.make_change("A1", {
             'last_name': 'WILLIAMS',
         })
 
-        self.makeChange("A2", {
+        self.make_change("A2", {
             'last_name': 'WEST',
         })
-        self.makeChange("A2", {
+        self.make_change("A2", {
             'last_name': 'EAST',
         })
 
         with patch("voter.views.JsonResponse") as jr:
             jr.side_effect = lambda x, *a, **kw: x
-            resp = changes(self.makeRequest({'changed': 'last_name', 'new': 'EAST'}))
+            resp = changes(self.make_request({'changed': 'last_name', 'new': 'EAST'}))
 
         assert resp['A2']['new'] == 'EAST'
         assert resp['A2']['old'] == 'WEST'
@@ -93,15 +93,15 @@ class APIChangesTests(TestCase):
 
     def test_limit(self):
         for i in range(1, 11):
-            self.makeChange("A%s" % i, {
+            self.make_change("A%s" % i, {
                 'last_name': 'SMITH',
             })
-            self.makeChange("A%s" % i, {
+            self.make_change("A%s" % i, {
                 'last_name': 'WILLIAMS',
             })
 
         with patch("voter.views.JsonResponse") as jr:
             jr.side_effect = lambda x, *a, **kw: x
-            resp = changes(self.makeRequest({'changed': 'last_name', 'limit': '5'}))
+            resp = changes(self.make_request({'changed': 'last_name', 'limit': '5'}))
 
         assert 6 == len(resp)  # 5 NCIDs + _elapsed key

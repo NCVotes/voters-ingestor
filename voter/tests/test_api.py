@@ -9,12 +9,12 @@ from voter.views import changes
 
 class APIChangesTests(TestCase):
 
-    def makeRequest(self, params):
+    def make_request(self, params):
         request = Mock()
         request.GET = params
         return request
 
-    def makeChange(self, ncid, data):
+    def make_change(self, ncid, data):
         now = datetime.now()
         ft = models.FileTracker.objects.get_or_create(filename="data.txt", defaults={'created': now})[0]
         voter = models.NCVoter.objects.get_or_create(ncid=ncid)[0]

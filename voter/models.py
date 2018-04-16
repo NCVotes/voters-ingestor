@@ -24,7 +24,13 @@ class FileTracker(models.Model):
     UNPROCESSED = 0
     PROCESSING = 1
     PROCESSED = 2
-    STATUS_CHOICES = [(UNPROCESSED, 'Unprocessed'), (PROCESSING, 'Processing'), (PROCESSED, 'Processed')]
+    CANCELLED = 3
+    STATUS_CHOICES = [
+        (UNPROCESSED, 'Unprocessed'),
+        (PROCESSING, 'Processing'),
+        (PROCESSED, 'Processed'),
+        (CANCELLED, 'Cancelled'),
+    ]
 
     etag = models.TextField('etag')
     filename = models.TextField('filename')
@@ -127,7 +133,7 @@ class ChangeTracker(models.Model):
         (OP_CODE_ADD, 'Add'),
         (OP_CODE_MODIFY, 'Modify'),
     ]
-    op_code = models.CharField('Operation Code', max_length=1, choices=OP_CODE_CHOICES)
+    op_code = models.CharField('Operation Code', max_length=1, choices=OP_CODE_CHOICES, db_index=True)
     model_name = models.CharField('Model Name', max_length=20, choices=FileTracker.DATA_FILE_KIND_CHOICES)
     md5_hash = models.CharField('MD5 Hash Value', max_length=32)
     data = JSONField(encoder=DjangoJSONEncoder)
@@ -136,6 +142,16 @@ class ChangeTracker(models.Model):
     file_lineno = models.IntegerField(db_index=True)
     voter = models.ForeignKey('NCVoter', on_delete=models.CASCADE, related_name='changelog')
     snapshot_dt = models.DateTimeField()
+
+    def get_prev(self):
+        return self.voter.changelog.filter(snapshot_dt__lte=self.snapshot_dt).exclude(id=self.id).last()
+
+    def build_version(self):
+        data = {}
+        changes = self.voter.changelog.filter(snapshot_dt__lte=self.snapshot_dt)
+        for change in changes:
+            data.update(change.data)
+        return data
 
 
 class NCVHis(models.Model):
@@ -241,12 +257,16 @@ class NCVoter(models.Model):
         row['registr_dt'] = str(row['registr_dt'])
         return row, {}
 
-    def build_current(self):
+    def build_version(self, index):
         changelog = self.changelog.all()
         data = {}
-        for change in changelog:
+        nindex = len(changelog) - index
+        for change in list(changelog)[:nindex]:
             data.update(change.data)
         return data
+
+    def build_current(self):
+        return self.build_version(0)
 
     ncid = models.TextField('ncid', unique=True, db_index=True)
 

@@ -105,7 +105,8 @@ def get_file_lines(filename, output):
     bad_lines = BadLineTracker(filename)
 
     counted = 0
-    for row in tqdm(lines, total=approx_line_count):
+
+    for row in tqdm(lines, initial=counted, total=approx_line_count):
         counted += 1
         line = row.replace('\x00', '')
         line = line.split('\t')
@@ -145,6 +146,8 @@ def find_existing_instance(ncid):
     Will prefetch all ChangeTracker instances related."""
 
     voter = NCVoter.objects.filter(ncid=ncid).prefetch_related('changelog').first()
+    if voter:
+        assert voter.changelog.filter(op_code=ChangeTracker.OP_CODE_ADD).exists()
     return voter
 
 
@@ -279,7 +282,6 @@ def track_changes(file_tracker, output):
         last_line = max(last_line, prev_error.last_line_no)
 
     lines = get_file_lines(file_tracker.filename, output)
-
     bad_lines = BadLineTracker(file_tracker.filename)
 
     for index, line, row in lines:
@@ -341,7 +343,7 @@ def process_files(**options):
     ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data).order_by('created')
 
     for file_tracker in ncvoter_file_trackers:
-        if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
+        if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists() and not options.get('resume'):
             if output:
                 print("Another parser is processing the files. Restart me later!")
             return
@@ -361,8 +363,8 @@ def process_files(**options):
             print("Change tracking completed for {}:".format(file_tracker.filename))
             print("Added records: {0}".format(added))
             print("Modified records: {0}".format(modified))
-            print("Skipped records: {0}".format(ignored))
-            print("Ignored records: {0}".format(skipped), flush=True)
+            print("Skipped records: {0}".format(skipped))
+            print("Ignored records: {0}".format(ignored), flush=True)
 
     return
 

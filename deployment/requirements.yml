@@ -11,3 +11,4 @@
   name: nodejs
 - src: azavea.papertrail
   version: 1.2.0
+  name: papertrail

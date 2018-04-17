@@ -105,7 +105,8 @@ def get_file_lines(filename, output):
     bad_lines = BadLineTracker(filename)
 
     counted = 0
-    for row in tqdm(lines, total=approx_line_count):
+
+    for row in tqdm(lines, initial=counted, total=approx_line_count):
         counted += 1
         line = row.replace('\x00', '')
         line = line.split('\t')
@@ -145,6 +146,8 @@ def find_existing_instance(ncid):
     Will prefetch all ChangeTracker instances related."""
 
     voter = NCVoter.objects.filter(ncid=ncid).prefetch_related('changelog').first()
+    if voter:
+        assert voter.changelog.filter(op_code=ChangeTracker.OP_CODE_ADD).exists()
     return voter
 
 
@@ -183,9 +186,19 @@ def flush():
 
 
 def reset():
+    global added_tally
+    global ignored_tally
+    global modified_tally
+    global skip_tally
+
     change_records.clear()
     voter_records.clear()
     processed_ncids.clear()
+
+    added_tally = 0
+    ignored_tally = 0
+    modified_tally = 0
+    skip_tally = 0
 
 
 def skip_or_voter(row):
@@ -223,8 +236,12 @@ def prepare_change(file_tracker, row, voter_instance, line_no):
     # For modifying we only record a diff of data, otherwise all of it
     if voter_instance:
         change_tracker_op_code = ChangeTracker.OP_CODE_MODIFY
-        existing_data = voter_instance.build_current()
+        existing_data = voter_instance.data
+        if existing_data is None:  # Not set yet
+            existing_data = voter_instance.build_current()
         change_tracker_data = diff_dicts(existing_data, parsed_row)
+        voter_instance.data = parsed_row
+        voter_instance.save()
     else:
         change_tracker_op_code = ChangeTracker.OP_CODE_ADD
         change_tracker_data = parsed_row
@@ -232,13 +249,13 @@ def prepare_change(file_tracker, row, voter_instance, line_no):
 
     # Queue the change up to be bulk inserted later
     change = ChangeTracker(
-        voter = voter_instance,
-        md5_hash = hash_val,
-        snapshot_dt = snapshot_dt,
-        file_tracker = file_tracker,
-        file_lineno = line_no,
-        op_code = change_tracker_op_code,
-        data = change_tracker_data,
+        voter=voter_instance,
+        md5_hash=hash_val,
+        snapshot_dt=snapshot_dt,
+        file_tracker=file_tracker,
+        file_lineno=line_no,
+        op_code=change_tracker_op_code,
+        data=change_tracker_data,
     )
 
     return change
@@ -279,7 +296,6 @@ def track_changes(file_tracker, output):
         last_line = max(last_line, prev_error.last_line_no)
 
     lines = get_file_lines(file_tracker.filename, output)
-
     bad_lines = BadLineTracker(file_tracker.filename)
 
     for index, line, row in lines:
@@ -298,7 +314,7 @@ def track_changes(file_tracker, output):
         # We're done skipping for various reasons, so lets move on to actually recording
         # new data. We start by parsing the the row data.
         try:
-            change = prepare_change(file_tracker, row, voter_instance, line_no)
+            change = prepare_change(file_tracker, row, voter_instance, line_no)  # ChangeTracker
         except Exception:
             tb = ''.join(traceback.format_exception(*sys.exc_info()))
             bad_lines.error(line_no, line, tb)
@@ -341,7 +357,8 @@ def process_files(**options):
     ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data).order_by('created')
 
     for file_tracker in ncvoter_file_trackers:
-        if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists():
+        reset()
+        if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists() and not options.get('resume'):
             if output:
                 print("Another parser is processing the files. Restart me later!")
             return
@@ -357,14 +374,19 @@ def process_files(**options):
         except BaseException:
             reset_file(file_tracker)
             return
+
+        # Mark voters who weren't in this file, and weren't already deleted, as 'deleted'
+        num_deleted = NCVoter.objects.exclude(ncid__in=processed_ncids).exclude(deleted=True).update(deleted=True)
+        # and vice-versa
+        NCVoter.objects.filter(ncid__in=processed_ncids).exclude(deleted=False).update(deleted=False)
+
         if output:
             print("Change tracking completed for {}:".format(file_tracker.filename))
             print("Added records: {0}".format(added))
             print("Modified records: {0}".format(modified))
-            print("Skipped records: {0}".format(ignored))
-            print("Ignored records: {0}".format(skipped), flush=True)
-
-    return
+            print("Skipped records: {0}".format(skipped))
+            print("Ignored records: {0}".format(ignored))
+            print("Deleted voters: {0}".format(num_deleted), flush=True)
 
 
 def remove_files(file_tracker, output=True):

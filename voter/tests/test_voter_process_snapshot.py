@@ -2,10 +2,10 @@ import datetime
 from unittest import mock
 
 from django.test import TestCase
+import django.utils.timezone
 
 from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter, BadLineRange
-from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset
-
+from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset, diff_dicts
 
 file_trackers_data = [
     {
@@ -50,6 +50,12 @@ file_trackers_data = [
         "filename": "voter/test_data/2010-10-31T00-00-00/bad_not_enough.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
+    }, {
+        "id": 8,
+        "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
+        "filename": "voter/test_data/2010-10-31T00-00-00/snapshot_latin1_copy.txt",
+        "data_file_kind": "NCVoter",
+        "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
     }
 ]
 
@@ -91,6 +97,12 @@ class VoterProcessChangeTrackerTest(TestCase):
         create_file_tracker(3)
         process_files(quiet=True)
 
+    def load_same_two_snapshots(self):
+        create_file_tracker(1)
+        # Copy of same file, with snapshot_dt altered slightly
+        create_file_tracker(8)
+        process_files(quiet=True)
+
     def test_can_consume_latin1(self):
         create_file_tracker(1)
         process_files(quiet=True)
@@ -124,6 +136,18 @@ class VoterProcessChangeTrackerTest(TestCase):
         modifications = ChangeTracker.objects.filter(op_code='M')
         self.assertEquals(modifications.count(), 6)
 
+        for voter in NCVoter.objects.all():
+            self.assertEqual({}, diff_dicts(voter.build_current(), voter.data))
+
+    def test_records_unchanged(self):
+        self.load_same_two_snapshots()
+
+        additions = ChangeTracker.objects.filter(op_code=ChangeTracker.OP_CODE_ADD)
+        self.assertEquals(additions.count(), 19)
+
+        for voter in NCVoter.objects.all():
+            self.assertEqual({}, diff_dicts(voter.build_current(), voter.data))
+
     def test_records_merge(self):
         self.load_two_snapshots()
 
@@ -154,7 +178,7 @@ class VoterProcessChangeTrackerTest(TestCase):
             file_lineno=10,
             data={},
             op_code='A',
-            snapshot_dt=datetime.datetime.now(),
+            snapshot_dt=django.utils.timezone.now(),
             voter=NCVoter.objects.create(ncid="A1"),
         )
         process_files(quiet=True)

@@ -43,4 +43,8 @@ class Command(BaseCommand):
                     mark = '-'
                 print("[{}] {}".format(mark, ft.filename))
         else:
-            print("no files found")
+            if options['all']:
+                print("No files found.")
+            else:
+                count = FileTracker.objects.exclude(pk__in=files).count()
+                print("No processed files found. (%s other files in system)" % count)

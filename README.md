@@ -106,6 +106,13 @@ process can take a very long time, especially for the initial import of the file
 
 Note: make sure that only one `voter_process` is running at any time. Otherwise, conflicts between the processes would result in unexpected behaviors such as issue https://github.com/NCVotes/voters-ingestor/issues/4
 
+After fetching and processing files, clean up can be done with the `voter_drop_files` management
+command. When run it will list already processed files. When run with the `--delete` option it will
+delete those processed files. It will also show you `FileTrackers` whose files have already been
+deleted.
+
+The `--all` option can be given to delete all files, even those which have not yet been processed.
+
 
 ## Deployment
 

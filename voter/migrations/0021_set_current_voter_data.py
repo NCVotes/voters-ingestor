@@ -5,7 +5,7 @@ from django.db import migrations
 
 def build_current(voter):
     data = {}
-    for change in voter.changelog_set:
+    for change in voter.changelog.all():
         data.update(change.data)
     return data
 

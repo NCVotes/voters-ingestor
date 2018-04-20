@@ -260,3 +260,24 @@ use of a branch for one of the roles instead of master, just replace
 the ``src`` like so::
 
     - src: https://github.com/caktus/tequila-common/archive/my-branch-name.tar.gz
+
+
+Additional Read-only PostgreSQL Users
+-------------------------------------
+
+First create a read-only group (if not already created) as the ``ncvotes`` user::
+
+  -- Create a group
+  CREATE ROLE readaccess;
+
+  -- Grant access to existing tables
+  GRANT USAGE ON SCHEMA public TO readaccess;
+  GRANT SELECT ON ALL TABLES IN SCHEMA public TO readaccess;
+
+  -- Grant access to future tables
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO readaccess;
+
+From the ``psql`` prompt, now you can run::
+
+  CREATE USER user1 WITH PASSWORD '***';
+  GRANT readaccess TO user1;

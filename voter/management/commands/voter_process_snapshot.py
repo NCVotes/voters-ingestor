@@ -18,7 +18,7 @@ processed_ncids = set()
 
 added_tally = 0
 modified_tally = 0
-ignored_tally = 0
+already_seen_tally = 0
 skip_tally = 0
 
 
@@ -182,12 +182,13 @@ def flush():
             c.voter = c.voter
             c.voter_id = c.voter.id
         ChangeTracker.objects.bulk_create(change_records)
-    reset()
+    change_records.clear()
+    voter_records.clear()
 
 
 def reset():
     global added_tally
-    global ignored_tally
+    global already_seen_tally
     global modified_tally
     global skip_tally
 
@@ -196,14 +197,14 @@ def reset():
     processed_ncids.clear()
 
     added_tally = 0
-    ignored_tally = 0
+    already_seen_tally = 0
     modified_tally = 0
     skip_tally = 0
 
 
 def skip_or_voter(row):
     global skip_tally
-    global ignored_tally
+    global already_seen_tally
 
     # If we see a repeat, flushed queued data before continuing
     # This prevents the same voter from appearing twice in a single bulk insert
@@ -221,7 +222,7 @@ def skip_or_voter(row):
     # an existing change already recorded
     hash_val = find_md5(row, exclude=['snapshot_dt'])
     if voter_instance and voter_instance.changelog.filter(md5_hash=hash_val).exists():
-        ignored_tally += 1
+        already_seen_tally += 1
         return None, None
 
     return ncid, voter_instance
@@ -277,7 +278,7 @@ def record_change(change):
 def track_changes(file_tracker, output):
     global added_tally
     global modified_tally
-    global ignored_tally
+    global already_seen_tally
     global skip_tally
 
     line_no = 0
@@ -339,7 +340,7 @@ def track_changes(file_tracker, output):
     # remove_files(file_tracker)
     if output:
         print("Lines processed for %s: %d" % (file_tracker.filename, line_no))
-    return (added_tally, modified_tally, ignored_tally, skip_tally)
+    return (added_tally, modified_tally, already_seen_tally, skip_tally)
 
 
 def process_files(**options):
@@ -364,7 +365,7 @@ def process_files(**options):
             return
         lock_file(file_tracker)
         try:
-            added, modified, ignored, skipped = track_changes(file_tracker, output)
+            added, modified, already_seen, skipped = track_changes(file_tracker, output)
         except Exception:
             reset_file(file_tracker)
             raise Exception('Error processing file {}'.format(file_tracker.filename))
@@ -378,14 +379,15 @@ def process_files(**options):
         # Mark voters who weren't in this file, and weren't already deleted, as 'deleted'
         num_deleted = NCVoter.objects.exclude(ncid__in=processed_ncids).exclude(deleted=True).update(deleted=True)
         # and vice-versa
-        NCVoter.objects.filter(ncid__in=processed_ncids).exclude(deleted=False).update(deleted=False)
+        num_restored = NCVoter.objects.filter(ncid__in=processed_ncids).exclude(deleted=False).update(deleted=False)
 
         if output:
             print("Change tracking completed for {}:".format(file_tracker.filename))
             print("Added records: {0}".format(added))
             print("Modified records: {0}".format(modified))
             print("Skipped records: {0}".format(skipped))
-            print("Ignored records: {0}".format(ignored))
+            print("Already seen records: {0}".format(already_seen))
+            print("Restored records: {0}".format(num_restored))
             print("Deleted voters: {0}".format(num_deleted), flush=True)
 
 

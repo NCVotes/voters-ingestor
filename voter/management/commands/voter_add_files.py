@@ -1,8 +1,8 @@
 import os
 import re
-from datetime import datetime
 
 from django.core.management import BaseCommand
+from django.utils.timezone import now
 
 from voter.models import FileTracker, BadLineRange
 
@@ -38,7 +38,7 @@ class Command(BaseCommand):
                     'file_status': FileTracker.UNPROCESSED,
                     'etag': "",
                     'data_file_kind': FileTracker.DATA_FILE_KIND_NCVOTER,
-                    'created': datetime.now(),
+                    'created': now(),
                 },
             )
 

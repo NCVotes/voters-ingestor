@@ -110,12 +110,13 @@ Create the DB and set it up. This will be in your normal Postgres cluster:
     python manage.py migrate
     python manage.py createsuperuser
 
-Add the files and begin the processing. The `voter_process_snapshot` step will take about 20-30
-minutes, but there will be a nice progress bar to watch:
+Add the files and begin the processing. The `voter_process_snapshot` step will take a few hours, but
+there will be a nice progress bar to watch:
 
     python manage.py voter_add_files /path/to/dir/slices/
     python manage.py voter_process_snapshot
 
+If you need to stop it, you should be able to abort the process and resume with the `--resume` flag.
 Once it's complete, you can run the server and view the data in the admin:
 
     python manage.py runserver

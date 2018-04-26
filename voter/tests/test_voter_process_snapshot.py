@@ -5,7 +5,7 @@ from django.test import TestCase
 import django.utils.timezone
 
 from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter, BadLineRange
-from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset, diff_dicts
+from voter.management.commands.voter_process_snapshot import process_files, get_file_lines, skip_or_voter, record_change, reset, diff_dicts, flush
 
 file_trackers_data = [
     {
@@ -106,6 +106,9 @@ class VoterProcessChangeTrackerTest(TestCase):
     def test_can_consume_latin1(self):
         create_file_tracker(1)
         process_files(quiet=True)
+
+        # All NCVoter objects should be marked deleted=False
+        self.assertEqual(NCVoter.objects.filter(deleted=False).count(), 19)
 
         # All inserted changes should be additions
         ncvoter_modifieds = ChangeTracker.objects.filter(op_code='A')
@@ -311,13 +314,20 @@ class VoterProcessChangeTrackerTest(TestCase):
     def test_flush_at_bulk_limit(self):
         create_file_tracker(1)
 
-        with mock.patch("voter.management.commands.voter_process_snapshot.BULK_CREATE_AMOUNT", 10) as _:  # noqa, F841
+        with mock.patch("voter.management.commands.voter_process_snapshot.BULK_CREATE_AMOUNT", 10):
             with mock.patch("voter.management.commands.voter_process_snapshot.flush") as flush:
                 flush.side_effect = reset  # minimal flush, no DB just reset the tracking variables
 
                 process_files(quiet=True)
 
                 self.assertEqual(2, flush.call_count)
+
+    def test_flush_doesnt_reset_processed_ncids(self):
+        "flush() should only reset change_records and voter_records, not processed_ncids"
+        processed_ncids = set(['foo', 'bar'])
+        with mock.patch('voter.management.commands.voter_process_snapshot.processed_ncids', processed_ncids):
+            flush()
+        self.assertEqual(processed_ncids, set(['foo', 'bar']))
 
     def test_unhandled_exceptions_reset(self):
         create_file_tracker(1)

@@ -102,7 +102,6 @@ files](https://drive.google.com/file/d/1mc6cSFV5eG533GqAjsJiCyiZdnJ8fzbB/view?us
 Unzip the zipfile and record the directory name:
 
     unzip slices.zip
-    cd slices
 
 Create the DB and set it up. This will be in your normal Postgres cluster:
 

@@ -20,19 +20,10 @@ Status](https://travis-ci.org/NCVotes/voters-ingestor.svg?branch=master)](https:
    `pip install -r requirements/dev.txt` (from this folder)
 4. Copy `ncvoter/local_settings.example.py` to `ncvoter/local_settings.py` and
    customize for your machine.
-4. While you can run `source setupdb.sh` to create and configure Postgres DB
-   for the project, you may need to consider if the database can fit on the
-   hard disk you're working with. By default, postgres will use the drive it is
-   installed on.  If you intend to use an external or non-default drive, the
-   setupdb.sh script takes an optional argument for a PostgreSQL TABLESPACE
-   location. This argument is a fully qualified path to a folder on the
-   external volume where you've created a folder for Postgres to use. E.g.
-   /Volumes/SEAGATE/ncvoter-db. As an example, to use that folder for
-   PostgreSQL storage, run `source setupdb.sh /Volumes/SEAGATE/ncvoter-db`.
-   This script can be run at any later time, but any existing data will be
-   deleted.
-5. To create the initially empty database tables, run `python manage.py
-   migrate` inside the ncvoter folder where manage.py is.
+5. You can either choose to download and process the full voter files, in which case you'll likely
+   need to use a Postgres instance on an external hard drive. Alternatively, you can choose to work
+   with a smaller subset of the data. Instructions for both of those alternatives are included
+   below.
 
 ### External Database Drive Tips
 
@@ -94,7 +85,41 @@ running in one terminal and run these commands in another.
 
 A helper script is included to start up the external DB to run a manage.py command. Simply
 replace `./manage.py` with `./extmanage.sh` to run a command with the DB running, and automatically
-clean up afterwards.
+clean up afterwards. For example, to get started, you would do the following steps:
+
+    ./extmanage.sh migrate
+    ./extmanage.sh createsuperuser
+    ./extmanage.sh runserver
+
+### Local development without an external drive
+
+If you'd prefer not to use an external drive, you may be able to instead use small slices of the
+voter files. You will not be able to reproduce the ability of the app to fetch and process full
+files, but it may be enough for you to meaningfully work on the application. In order to do this,
+download this [zipfile of "sliced" voter
+files](https://drive.google.com/file/d/1mc6cSFV5eG533GqAjsJiCyiZdnJ8fzbB/view?usp=sharing).
+
+Unzip the zipfile and record the directory name:
+
+    unzip slices.zip
+
+Create the DB and set it up. This will be in your normal Postgres cluster:
+
+    createdb ncvoter
+    python manage.py migrate
+    python manage.py createsuperuser
+
+Add the files and begin the processing. The `voter_process_snapshot` step will take a few hours, but
+there will be a nice progress bar to watch:
+
+    python manage.py voter_add_files /path/to/dir/slices/
+    python manage.py voter_process_snapshot
+
+If you need to stop it, you should be able to abort the process and resume with the `--resume` flag.
+Once it's complete, you can run the server and view the data in the admin:
+
+    python manage.py runserver
+
 
 ## Fetching and Processing Data
 

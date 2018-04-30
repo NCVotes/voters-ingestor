@@ -35,6 +35,7 @@ def get_etag_and_zip_stream(url):
 
 
 def write_stream(stream_response, filename):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     try:
         with open(filename, 'wb') as f:
             total = int(stream_response.headers['content-length']) / 1024
@@ -48,13 +49,11 @@ def write_stream(stream_response, filename):
 
 
 def extract_and_remove_file(filename):
-    try:
-        # with ZipFile(filename, "r") as z:
-        #     z.extractall(os.path.dirname(filename))
-        subprocess.call(['unzip', filename, '-d', os.path.dirname(filename)])
-        os.remove(filename)
-    except IOError:
+    return_code = subprocess.call(['unzip', filename, '-d', os.path.dirname(filename)])
+    if return_code != 0:
         return False
+    # if unzip failed, then don't rm file so we can investigate
+    os.remove(filename)
     return True
 
 
@@ -69,7 +68,6 @@ def attempt_fetch_and_write_new_zip(url, base_path):
     else:
         if resp.status_code == 200:
             print("Fetching {0}".format(url), flush=True)
-            os.makedirs(target_folder, exist_ok=True)
             write_success = write_stream(resp, target_filename)
             if write_success:
                 status_code = FETCH_STATUS_CODES.CODE_OK
@@ -96,12 +94,10 @@ def process_new_zip(url, base_path, label):
                     result_filename = os.path.join(target_dir, filename)
                     print("Finished extracting to {0}".format(result_filename), flush=True)
                     data_file_kind = FileTracker.DATA_FILE_KIND_NCVOTER
-                    ft = FileTracker.objects.create(
+                    FileTracker.objects.create(
                         etag=etag, filename=result_filename,
                         county_num=None, created=created_time,
                         data_file_kind=data_file_kind)
-                    if not ft:
-                        return FETCH_STATUS_CODES.CODE_DB_FAILURE
                     print("Updated FileTracker table", flush=True)
         else:
             print("Unable to unzip {0}".format(target_filename), flush=True)
@@ -113,9 +109,6 @@ def process_new_zip(url, base_path, label):
             print("Unable to fetch file from {0}".format(url), flush=True)
         if fetch_status_code == FETCH_STATUS_CODES.CODE_WRITE_FAILURE:
             print("Unable to write file to {0}".format(target_filename), flush=True)
-        if fetch_status_code == FETCH_STATUS_CODES.CODE_NOTHING_TO_DO:
-            # print("Resource at {0} contains no new information. Nothing to do.".format(url))
-            pass
     return fetch_status_code
 
 
@@ -124,13 +117,9 @@ class Command(BaseCommand):
 
     E.g.
 
-    no arg: download first available file that we have not already downloaded,
+    no arg: download all available files that we have not already downloaded,
             then exit.
-    --loop=N: download first available file that we have not already downloaded,
-            then wait N minutes and start over.
-    --all:  download all available files that we have not already downloaded,
-            then exit.
-    --all --loop=N:  download all available files that we have not already downloaded,
+    --loop=N: download all available files that we have not already downloaded,
             then wait N minutes and start over.
     """
 
@@ -169,6 +158,7 @@ class Command(BaseCommand):
                 process_new_zip(url, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter")
             if not options['loop']:
                 break
-            minutes = options['loop']
-            print("Sleep %d minutes..." % minutes)
-            time.sleep(60 * minutes)
+            else:  # pragma: no cover (infinite loop)
+                minutes = options['loop']
+                print("Sleep %d minutes..." % minutes)
+                time.sleep(60 * minutes)

@@ -1,7 +1,7 @@
-from datetime import datetime
 from unittest.mock import Mock, patch
 
 from django.test import TestCase
+from django.utils import timezone
 
 from voter import models
 from voter.views import changes
@@ -15,7 +15,7 @@ class APIChangesTests(TestCase):
         return request
 
     def make_change(self, ncid, data):
-        now = datetime.now()
+        now = timezone.now()
         ft = models.FileTracker.objects.get_or_create(filename="data.txt", defaults={'created': now})[0]
         voter = models.NCVoter.objects.get_or_create(ncid=ncid)[0]
         lineno = models.ChangeTracker.objects.filter(file_tracker=ft).count()

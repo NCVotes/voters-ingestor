@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import os
-from zipfile import ZipFile
+import subprocess
 from enum import Enum
 
 from django.core.management import BaseCommand
@@ -37,14 +37,13 @@ def write_stream(stream_response, filename):
 
 
 def extract_and_remove_file(filename):
-    try:
-        with ZipFile(filename, "r") as z:
-            z.extractall(os.path.dirname(filename))
-    except IOError:
+    return_code = subprocess.call(['unzip', filename, '-d', os.path.dirname(filename)])
+    if return_code != 0:
         return False
-    finally:
+    else:
+        # if unzip failed, then don't rm file so we can investigate
         os.remove(filename)
-    return True
+        return True
 
 
 def attempt_fetch_and_write_new_zip(url, base_path):
@@ -68,7 +67,7 @@ def attempt_fetch_and_write_new_zip(url, base_path):
     return (status_code, etag, now, target_filename)
 
 
-def process_new_zip(url, base_path, label, county_num):
+def process_new_zip(url, base_path, label, county_num=None):
     print("Fetching {0}".format(label))
     fetch_status_code, etag, created_time, target_filename = attempt_fetch_and_write_new_zip(url, base_path)
     if fetch_status_code == FETCH_STATUS_CODES.CODE_OK:
@@ -86,12 +85,10 @@ def process_new_zip(url, base_path, label, county_num):
                 data_file_kind = FileTracker.DATA_FILE_KIND_NCVOTER
             else:
                 data_file_kind = FileTracker.DATA_FILE_KIND_NCVHIS
-            ft = FileTracker.objects.create(
-                etag=etag, filename=target_filename[:-3] + 'txt',
+            FileTracker.objects.create(
+                etag=etag, filename=result_filename,
                 county_num=county_num, created=created_time,
                 data_file_kind=data_file_kind)
-            if not ft:
-                return FETCH_STATUS_CODES.CODE_DB_FAILURE
         else:
             print("Unable to unzip {0}".format(target_filename))
             return FETCH_STATUS_CODES.CODE_WRITE_FAILURE

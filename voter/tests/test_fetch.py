@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from voter.models import FileTracker
-from voter.management.commands import voter_fetch_snapshot, voter_fetch
+from voter import utils
 
 
 class VoterFetchTest(TestCase):
@@ -21,18 +21,18 @@ class VoterFetchTest(TestCase):
         "creates a folder path given a base_path and a date"
         now = timezone.now()
         expected_result = '{}/{}'.format(self.base_path, now.strftime('%Y-%m-%dT%H:%M:%S:%s'))
-        result = voter_fetch_snapshot.derive_target_folder(self.base_path, now)
+        result = utils.derive_target_folder(self.base_path, now)
         self.assertEqual(result, expected_result)
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.requests.get')
+    @mock.patch('voter.utils.requests.get')
     def test_get_etag_and_zip_stream(self, mock_get):
         "returns the URL response and its etag header"
         mock_response = mock_get.return_value
         mock_response.headers = {'etag': self.etag}
-        result = voter_fetch_snapshot.get_etag_and_zip_stream(self.url)
+        result = utils.get_etag_and_zip_stream(self.url)
         self.assertEqual(result, (self.etag, mock_response))
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.os.makedirs')
+    @mock.patch('voter.utils.os.makedirs')
     def test_write_stream(self, mock_mkdirs):
         "mock that we can write a response to a mock file"
         mock_open = mock.mock_open()
@@ -40,8 +40,8 @@ class VoterFetchTest(TestCase):
         rsp.headers = {'content-length': 1}
         rsp.iter_content.return_value = ['some', 'content']
         filename = 'foo/bar.txt'
-        with mock.patch('voter.management.commands.voter_fetch_snapshot.open', mock_open, create=True):
-            result = voter_fetch_snapshot.write_stream(rsp, filename)
+        with mock.patch('voter.utils.open', mock_open, create=True):
+            result = utils.write_stream(rsp, filename)
         mock_open.assert_called_once_with(filename, 'wb')
         self.assertEqual(result, True)
 
@@ -50,23 +50,23 @@ class VoterFetchTest(TestCase):
         rsp = mock.Mock()
         # filename at root of filesystem should not be writable, so will generate IOError
         filename = '/foo.txt'
-        result = voter_fetch_snapshot.write_stream(rsp, filename)
+        result = utils.write_stream(rsp, filename)
         self.assertEqual(result, False)
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.subprocess.call')
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.os.remove')
+    @mock.patch('voter.utils.subprocess.call')
+    @mock.patch('voter.utils.os.remove')
     def test_extract_and_remove_file(self, mock_remove, mock_unzip):
         mock_unzip.return_value = 0
         filename = 'foo/bar.zip'
-        result = voter_fetch_snapshot.extract_and_remove_file(filename)
+        result = utils.extract_and_remove_file(filename)
         self.assertEqual(result, True)
         mock_unzip.assert_called_once_with(['unzip', filename, '-d', 'foo'])
         mock_remove.assert_called_once_with(filename)
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.os.remove')
+    @mock.patch('voter.utils.os.remove')
     def test_extract_and_remove_file_ioerror(self, mock_remove):
         filename = 'foo/bar.zip'
-        result = voter_fetch_snapshot.extract_and_remove_file(filename)
+        result = utils.extract_and_remove_file(filename)
         self.assertEqual(result, False)
         # unzip failed, so we shouldn't have tried to remove the file
         mock_remove.assert_not_called()
@@ -91,90 +91,90 @@ class VoterFetchTest(TestCase):
         )
         return now, expected_result
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.datetime')
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.get_etag_and_zip_stream')
+    @mock.patch('voter.utils.datetime')
+    @mock.patch('voter.utils.get_etag_and_zip_stream')
     def test_attempt_fetch_and_write_new_zip_file_exists_already(self, mock_get_etag, mock_datetime):
         mock_get_etag.return_value = (self.etag, self.make_mock_response())
-        now, expected_result = self.make_now_and_expected_result(voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO)
+        now, expected_result = self.make_now_and_expected_result(utils.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO)
         mock_datetime.now.return_value = now
         # create a FileTracker with this etag value -> CODE_NOTHING_TO_DO
         FileTracker.objects.create(etag=self.etag, created=now)
-        result = voter_fetch_snapshot.attempt_fetch_and_write_new_zip(self.url, self.base_path)
+        result = utils.attempt_fetch_and_write_new_zip(self.url, self.base_path)
         self.assertEqual(result, expected_result)
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.write_stream')
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.datetime')
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.get_etag_and_zip_stream')
+    @mock.patch('voter.utils.write_stream')
+    @mock.patch('voter.utils.datetime')
+    @mock.patch('voter.utils.get_etag_and_zip_stream')
     def test_attempt_fetch_and_write_new_zip(self, mock_get_etag, mock_datetime, mock_write_stream):
         mock_get_etag.return_value = (self.etag, self.make_mock_response())
-        now, expected_result = self.make_now_and_expected_result(voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_OK)
+        now, expected_result = self.make_now_and_expected_result(utils.FETCH_STATUS_CODES.CODE_OK)
         mock_datetime.now.return_value = now
         # write is successful -> CODE_OK
         mock_write_stream.return_value = True
-        result = voter_fetch_snapshot.attempt_fetch_and_write_new_zip(self.url, self.base_path)
+        result = utils.attempt_fetch_and_write_new_zip(self.url, self.base_path)
         self.assertEqual(result, expected_result)
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.write_stream')
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.datetime')
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.get_etag_and_zip_stream')
+    @mock.patch('voter.utils.write_stream')
+    @mock.patch('voter.utils.datetime')
+    @mock.patch('voter.utils.get_etag_and_zip_stream')
     def test_attempt_fetch_and_write_new_zip_write_failure(self, mock_get_etag, mock_datetime, mock_write_stream):
         mock_get_etag.return_value = (self.etag, self.make_mock_response())
-        now, expected_result = self.make_now_and_expected_result(voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
+        now, expected_result = self.make_now_and_expected_result(utils.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
         mock_datetime.now.return_value = now
         # write failure -> CODE_WRITE_FAILURE
         mock_write_stream.return_value = False
-        result = voter_fetch_snapshot.attempt_fetch_and_write_new_zip(self.url, self.base_path)
+        result = utils.attempt_fetch_and_write_new_zip(self.url, self.base_path)
         self.assertEqual(result, expected_result)
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.datetime')
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.get_etag_and_zip_stream')
+    @mock.patch('voter.utils.datetime')
+    @mock.patch('voter.utils.get_etag_and_zip_stream')
     def test_attempt_fetch_and_write_new_zip_net_failure(self, mock_get_etag, mock_datetime):
         # status_code != 200 -> CODE_NET_FAILURE
         mock_get_etag.return_value = (self.etag, self.make_mock_response(status_code=500))
-        now, expected_result = self.make_now_and_expected_result(voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_NET_FAILURE)
+        now, expected_result = self.make_now_and_expected_result(utils.FETCH_STATUS_CODES.CODE_NET_FAILURE)
         mock_datetime.now.return_value = now
-        result = voter_fetch_snapshot.attempt_fetch_and_write_new_zip(self.url, self.base_path)
+        result = utils.attempt_fetch_and_write_new_zip(self.url, self.base_path)
         self.assertEqual(result, expected_result)
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.os.listdir')
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.extract_and_remove_file')
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.attempt_fetch_and_write_new_zip')
+    @mock.patch('voter.utils.os.listdir')
+    @mock.patch('voter.utils.extract_and_remove_file')
+    @mock.patch('voter.utils.attempt_fetch_and_write_new_zip')
     def test_process_new_zip(self, mock_fetch, mock_extract, mock_listdir):
-        mock_fetch.return_value = voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_OK, self.etag, timezone.now(), ''
+        mock_fetch.return_value = utils.FETCH_STATUS_CODES.CODE_OK, self.etag, timezone.now(), ''
         mock_extract.return_value = True
         mock_listdir.return_value = ['bar.txt', 'ignored.foo']
-        result = voter_fetch_snapshot.process_new_zip(self.url, self.base_path, self.label)
-        self.assertEqual(result, voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_OK)
+        result = utils.process_new_zip(self.url, self.base_path, self.label)
+        self.assertEqual(result, utils.FETCH_STATUS_CODES.CODE_OK)
         # FileTracker for .txt file gets created ...
         self.assertTrue(FileTracker.objects.filter(filename='bar.txt').exists())
         # ... but we ignore files that don't have a .txt extension
         self.assertFalse(FileTracker.objects.filter(filename='ignored.foo').exists())
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.extract_and_remove_file')
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.attempt_fetch_and_write_new_zip')
+    @mock.patch('voter.utils.extract_and_remove_file')
+    @mock.patch('voter.utils.attempt_fetch_and_write_new_zip')
     def test_process_new_zip_unable_to_unzip(self, mock_fetch, mock_extract):
-        mock_fetch.return_value = voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_OK, None, None, None
+        mock_fetch.return_value = utils.FETCH_STATUS_CODES.CODE_OK, None, None, None
         mock_extract.return_value = False
-        result = voter_fetch_snapshot.process_new_zip(self.url, self.base_path, self.label)
-        self.assertEqual(result, voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
+        result = utils.process_new_zip(self.url, self.base_path, self.label)
+        self.assertEqual(result, utils.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.attempt_fetch_and_write_new_zip')
+    @mock.patch('voter.utils.attempt_fetch_and_write_new_zip')
     def test_process_new_zip_already_downloaded(self, mock_fetch):
-        mock_fetch.return_value = voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO, None, None, None
-        result = voter_fetch_snapshot.process_new_zip(self.url, self.base_path, self.label)
-        self.assertEqual(result, voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO)
+        mock_fetch.return_value = utils.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO, None, None, None
+        result = utils.process_new_zip(self.url, self.base_path, self.label)
+        self.assertEqual(result, utils.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO)
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.attempt_fetch_and_write_new_zip')
+    @mock.patch('voter.utils.attempt_fetch_and_write_new_zip')
     def test_process_new_zip_net_failure(self, mock_fetch):
-        mock_fetch.return_value = voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_NET_FAILURE, None, None, None
-        result = voter_fetch_snapshot.process_new_zip(self.url, self.base_path, self.label)
-        self.assertEqual(result, voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_NET_FAILURE)
+        mock_fetch.return_value = utils.FETCH_STATUS_CODES.CODE_NET_FAILURE, None, None, None
+        result = utils.process_new_zip(self.url, self.base_path, self.label)
+        self.assertEqual(result, utils.FETCH_STATUS_CODES.CODE_NET_FAILURE)
 
-    @mock.patch('voter.management.commands.voter_fetch_snapshot.attempt_fetch_and_write_new_zip')
+    @mock.patch('voter.utils.attempt_fetch_and_write_new_zip')
     def test_process_new_zip_write_failure(self, mock_fetch):
-        mock_fetch.return_value = voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_WRITE_FAILURE, None, None, None
-        result = voter_fetch_snapshot.process_new_zip(self.url, self.base_path, self.label)
-        self.assertEqual(result, voter_fetch_snapshot.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
+        mock_fetch.return_value = utils.FETCH_STATUS_CODES.CODE_WRITE_FAILURE, None, None, None
+        result = utils.process_new_zip(self.url, self.base_path, self.label)
+        self.assertEqual(result, utils.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
 
     # Finally, test the management command itself
 
@@ -223,18 +223,18 @@ class VoterFetchCurrentTest(TestCase):
         "creates a folder path given a base_path and a date"
         now = timezone.now()
         expected_result = '{}/{}'.format(self.base_path, now.strftime('%Y-%m-%dT%H:%M:%S:%s'))
-        result = voter_fetch.derive_target_folder(self.base_path, now)
+        result = utils.derive_target_folder(self.base_path, now)
         self.assertEqual(result, expected_result)
 
-    @mock.patch('voter.management.commands.voter_fetch.requests.get')
+    @mock.patch('voter.utils.requests.get')
     def test_get_etag_and_zip_stream(self, mock_get):
         "returns the URL response and its etag header"
         mock_response = mock_get.return_value
         mock_response.headers = {'etag': self.etag}
-        result = voter_fetch.get_etag_and_zip_stream(self.url)
+        result = utils.get_etag_and_zip_stream(self.url)
         self.assertEqual(result, (self.etag, mock_response))
 
-    @mock.patch('voter.management.commands.voter_fetch.os.makedirs')
+    @mock.patch('voter.utils.os.makedirs')
     def test_write_stream(self, mock_mkdirs):
         "mock that we can write a response to a mock file"
         mock_open = mock.mock_open()
@@ -242,8 +242,8 @@ class VoterFetchCurrentTest(TestCase):
         rsp.headers = {'content-length': 1}
         rsp.iter_content.return_value = ['some', 'content']
         filename = 'foo/bar.txt'
-        with mock.patch('voter.management.commands.voter_fetch.open', mock_open, create=True):
-            result = voter_fetch.write_stream(rsp, filename)
+        with mock.patch('voter.utils.open', mock_open, create=True):
+            result = utils.write_stream(rsp, filename)
         mock_open.assert_called_once_with(filename, 'wb')
         self.assertEqual(result, True)
 
@@ -252,23 +252,23 @@ class VoterFetchCurrentTest(TestCase):
         rsp = mock.Mock()
         # filename at root of filesystem should not be writable, so will generate IOError
         filename = '/foo.txt'
-        result = voter_fetch.write_stream(rsp, filename)
+        result = utils.write_stream(rsp, filename)
         self.assertEqual(result, False)
 
-    @mock.patch('voter.management.commands.voter_fetch.subprocess.call')
-    @mock.patch('voter.management.commands.voter_fetch.os.remove')
+    @mock.patch('voter.utils.subprocess.call')
+    @mock.patch('voter.utils.os.remove')
     def test_extract_and_remove_file(self, mock_remove, mock_unzip):
         mock_unzip.return_value = 0
         filename = 'foo/bar.zip'
-        result = voter_fetch.extract_and_remove_file(filename)
+        result = utils.extract_and_remove_file(filename)
         self.assertEqual(result, True)
         mock_unzip.assert_called_once_with(['unzip', filename, '-d', 'foo'])
         mock_remove.assert_called_once_with(filename)
 
-    @mock.patch('voter.management.commands.voter_fetch.os.remove')
+    @mock.patch('voter.utils.os.remove')
     def test_extract_and_remove_file_ioerror(self, mock_remove):
         filename = 'foo/bar.zip'
-        result = voter_fetch.extract_and_remove_file(filename)
+        result = utils.extract_and_remove_file(filename)
         self.assertEqual(result, False)
         # unzip failed, so we shouldn't have tried to remove the file
         mock_remove.assert_not_called()
@@ -293,104 +293,104 @@ class VoterFetchCurrentTest(TestCase):
         )
         return now, expected_result
 
-    @mock.patch('voter.management.commands.voter_fetch.datetime')
-    @mock.patch('voter.management.commands.voter_fetch.get_etag_and_zip_stream')
+    @mock.patch('voter.utils.datetime')
+    @mock.patch('voter.utils.get_etag_and_zip_stream')
     def test_attempt_fetch_and_write_new_zip_file_exists_already(self, mock_get_etag, mock_datetime):
         mock_get_etag.return_value = (self.etag, self.make_mock_response())
-        now, expected_result = self.make_now_and_expected_result(voter_fetch.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO)
+        now, expected_result = self.make_now_and_expected_result(utils.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO)
         mock_datetime.now.return_value = now
         # create a FileTracker with this etag value -> CODE_NOTHING_TO_DO
         FileTracker.objects.create(etag=self.etag, created=now)
-        result = voter_fetch.attempt_fetch_and_write_new_zip(self.url, self.base_path)
+        result = utils.attempt_fetch_and_write_new_zip(self.url, self.base_path)
         self.assertEqual(result, expected_result)
 
-    @mock.patch('voter.management.commands.voter_fetch.write_stream')
-    @mock.patch('voter.management.commands.voter_fetch.datetime')
-    @mock.patch('voter.management.commands.voter_fetch.get_etag_and_zip_stream')
+    @mock.patch('voter.utils.write_stream')
+    @mock.patch('voter.utils.datetime')
+    @mock.patch('voter.utils.get_etag_and_zip_stream')
     def test_attempt_fetch_and_write_new_zip(self, mock_get_etag, mock_datetime, mock_write_stream):
         mock_get_etag.return_value = (self.etag, self.make_mock_response())
-        now, expected_result = self.make_now_and_expected_result(voter_fetch.FETCH_STATUS_CODES.CODE_OK)
+        now, expected_result = self.make_now_and_expected_result(utils.FETCH_STATUS_CODES.CODE_OK)
         mock_datetime.now.return_value = now
         # write is successful -> CODE_OK
         mock_write_stream.return_value = True
-        result = voter_fetch.attempt_fetch_and_write_new_zip(self.url, self.base_path)
+        result = utils.attempt_fetch_and_write_new_zip(self.url, self.base_path)
         self.assertEqual(result, expected_result)
 
-    @mock.patch('voter.management.commands.voter_fetch.write_stream')
-    @mock.patch('voter.management.commands.voter_fetch.datetime')
-    @mock.patch('voter.management.commands.voter_fetch.get_etag_and_zip_stream')
+    @mock.patch('voter.utils.write_stream')
+    @mock.patch('voter.utils.datetime')
+    @mock.patch('voter.utils.get_etag_and_zip_stream')
     def test_attempt_fetch_and_write_new_zip_write_failure(self, mock_get_etag, mock_datetime, mock_write_stream):
         mock_get_etag.return_value = (self.etag, self.make_mock_response())
-        now, expected_result = self.make_now_and_expected_result(voter_fetch.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
+        now, expected_result = self.make_now_and_expected_result(utils.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
         mock_datetime.now.return_value = now
         # write failure -> CODE_WRITE_FAILURE
         mock_write_stream.return_value = False
-        result = voter_fetch.attempt_fetch_and_write_new_zip(self.url, self.base_path)
+        result = utils.attempt_fetch_and_write_new_zip(self.url, self.base_path)
         self.assertEqual(result, expected_result)
 
-    @mock.patch('voter.management.commands.voter_fetch.datetime')
-    @mock.patch('voter.management.commands.voter_fetch.get_etag_and_zip_stream')
+    @mock.patch('voter.utils.datetime')
+    @mock.patch('voter.utils.get_etag_and_zip_stream')
     def test_attempt_fetch_and_write_new_zip_net_failure(self, mock_get_etag, mock_datetime):
         # status_code != 200 -> CODE_NET_FAILURE
         mock_get_etag.return_value = (self.etag, self.make_mock_response(status_code=500))
-        now, expected_result = self.make_now_and_expected_result(voter_fetch.FETCH_STATUS_CODES.CODE_NET_FAILURE)
+        now, expected_result = self.make_now_and_expected_result(utils.FETCH_STATUS_CODES.CODE_NET_FAILURE)
         mock_datetime.now.return_value = now
-        result = voter_fetch.attempt_fetch_and_write_new_zip(self.url, self.base_path)
+        result = utils.attempt_fetch_and_write_new_zip(self.url, self.base_path)
         self.assertEqual(result, expected_result)
 
-    @mock.patch('voter.management.commands.voter_fetch.os.listdir')
-    @mock.patch('voter.management.commands.voter_fetch.extract_and_remove_file')
-    @mock.patch('voter.management.commands.voter_fetch.attempt_fetch_and_write_new_zip')
+    @mock.patch('voter.utils.os.listdir')
+    @mock.patch('voter.utils.extract_and_remove_file')
+    @mock.patch('voter.utils.attempt_fetch_and_write_new_zip')
     def test_process_new_zip(self, mock_fetch, mock_extract, mock_listdir):
-        mock_fetch.return_value = voter_fetch.FETCH_STATUS_CODES.CODE_OK, self.etag, timezone.now(), ''
+        mock_fetch.return_value = utils.FETCH_STATUS_CODES.CODE_OK, self.etag, timezone.now(), ''
         mock_extract.return_value = True
         mock_listdir.return_value = ['bar.txt', 'ignored.foo']
-        result = voter_fetch.process_new_zip(self.url, self.base_path, self.label)
-        self.assertEqual(result, voter_fetch.FETCH_STATUS_CODES.CODE_OK)
+        result = utils.process_new_zip(self.url, self.base_path, self.label)
+        self.assertEqual(result, utils.FETCH_STATUS_CODES.CODE_OK)
         # FileTracker for .txt file gets created ...
         self.assertTrue(FileTracker.objects.filter(filename='bar.txt').exists())
         # ... but we ignore files that don't have a .txt extension
         self.assertFalse(FileTracker.objects.filter(filename='ignored.foo').exists())
 
-    @mock.patch('voter.management.commands.voter_fetch.os.listdir')
-    @mock.patch('voter.management.commands.voter_fetch.extract_and_remove_file')
-    @mock.patch('voter.management.commands.voter_fetch.attempt_fetch_and_write_new_zip')
+    @mock.patch('voter.utils.os.listdir')
+    @mock.patch('voter.utils.extract_and_remove_file')
+    @mock.patch('voter.utils.attempt_fetch_and_write_new_zip')
     def test_process_new_zip_ncvhis(self, mock_fetch, mock_extract, mock_listdir):
-        mock_fetch.return_value = voter_fetch.FETCH_STATUS_CODES.CODE_OK, self.etag, timezone.now(), ''
+        mock_fetch.return_value = utils.FETCH_STATUS_CODES.CODE_OK, self.etag, timezone.now(), ''
         mock_extract.return_value = True
         mock_listdir.return_value = ['bar.txt', 'ignored.foo']
-        result = voter_fetch.process_new_zip(self.url, self.base_path, 'ncvhis')
-        self.assertEqual(result, voter_fetch.FETCH_STATUS_CODES.CODE_OK)
+        result = utils.process_new_zip(self.url, self.base_path, 'ncvhis')
+        self.assertEqual(result, utils.FETCH_STATUS_CODES.CODE_OK)
         # FileTracker for .txt file gets created ...
         self.assertTrue(FileTracker.objects.filter(filename='bar.txt').exists())
         # ... but we ignore files that don't have a .txt extension
         self.assertFalse(FileTracker.objects.filter(filename='ignored.foo').exists())
 
-    @mock.patch('voter.management.commands.voter_fetch.extract_and_remove_file')
-    @mock.patch('voter.management.commands.voter_fetch.attempt_fetch_and_write_new_zip')
+    @mock.patch('voter.utils.extract_and_remove_file')
+    @mock.patch('voter.utils.attempt_fetch_and_write_new_zip')
     def test_process_new_zip_unable_to_unzip(self, mock_fetch, mock_extract):
-        mock_fetch.return_value = voter_fetch.FETCH_STATUS_CODES.CODE_OK, None, None, None
+        mock_fetch.return_value = utils.FETCH_STATUS_CODES.CODE_OK, None, None, None
         mock_extract.return_value = False
-        result = voter_fetch.process_new_zip(self.url, self.base_path, self.label)
-        self.assertEqual(result, voter_fetch.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
+        result = utils.process_new_zip(self.url, self.base_path, self.label)
+        self.assertEqual(result, utils.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
 
-    @mock.patch('voter.management.commands.voter_fetch.attempt_fetch_and_write_new_zip')
+    @mock.patch('voter.utils.attempt_fetch_and_write_new_zip')
     def test_process_new_zip_already_downloaded(self, mock_fetch):
-        mock_fetch.return_value = voter_fetch.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO, None, None, None
-        result = voter_fetch.process_new_zip(self.url, self.base_path, self.label)
-        self.assertEqual(result, voter_fetch.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO)
+        mock_fetch.return_value = utils.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO, None, None, None
+        result = utils.process_new_zip(self.url, self.base_path, self.label)
+        self.assertEqual(result, utils.FETCH_STATUS_CODES.CODE_NOTHING_TO_DO)
 
-    @mock.patch('voter.management.commands.voter_fetch.attempt_fetch_and_write_new_zip')
+    @mock.patch('voter.utils.attempt_fetch_and_write_new_zip')
     def test_process_new_zip_net_failure(self, mock_fetch):
-        mock_fetch.return_value = voter_fetch.FETCH_STATUS_CODES.CODE_NET_FAILURE, None, None, None
-        result = voter_fetch.process_new_zip(self.url, self.base_path, self.label)
-        self.assertEqual(result, voter_fetch.FETCH_STATUS_CODES.CODE_NET_FAILURE)
+        mock_fetch.return_value = utils.FETCH_STATUS_CODES.CODE_NET_FAILURE, None, None, None
+        result = utils.process_new_zip(self.url, self.base_path, self.label)
+        self.assertEqual(result, utils.FETCH_STATUS_CODES.CODE_NET_FAILURE)
 
-    @mock.patch('voter.management.commands.voter_fetch.attempt_fetch_and_write_new_zip')
+    @mock.patch('voter.utils.attempt_fetch_and_write_new_zip')
     def test_process_new_zip_write_failure(self, mock_fetch):
-        mock_fetch.return_value = voter_fetch.FETCH_STATUS_CODES.CODE_WRITE_FAILURE, None, None, None
-        result = voter_fetch.process_new_zip(self.url, self.base_path, self.label)
-        self.assertEqual(result, voter_fetch.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
+        mock_fetch.return_value = utils.FETCH_STATUS_CODES.CODE_WRITE_FAILURE, None, None, None
+        result = utils.process_new_zip(self.url, self.base_path, self.label)
+        self.assertEqual(result, utils.FETCH_STATUS_CODES.CODE_WRITE_FAILURE)
 
     @mock.patch('voter.management.commands.voter_fetch.process_new_zip')
     def test_handle(self, mock_process_new_zip):

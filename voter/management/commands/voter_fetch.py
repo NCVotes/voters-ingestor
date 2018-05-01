@@ -40,9 +40,10 @@ def extract_and_remove_file(filename):
     return_code = subprocess.call(['unzip', filename, '-d', os.path.dirname(filename)])
     if return_code != 0:
         return False
-    # if unzip failed, then don't rm file so we can investigate
-    os.remove(filename)
-    return True
+    else:
+        # if unzip failed, then don't rm file so we can investigate
+        os.remove(filename)
+        return True
 
 
 def attempt_fetch_and_write_new_zip(url, base_path):

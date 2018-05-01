@@ -63,8 +63,10 @@ class VoterFetchUtilsTest(TestCase):
         mock_unzip.assert_called_once_with(['unzip', filename, '-d', 'foo'])
         mock_remove.assert_called_once_with(filename)
 
+    @mock.patch('voter.utils.subprocess.call')
     @mock.patch('voter.utils.os.remove')
-    def test_extract_and_remove_file_ioerror(self, mock_remove):
+    def test_extract_and_remove_file_ioerror(self, mock_remove, mock_unzip):
+        mock_unzip.return_value = 9  # error happened
         filename = 'foo/bar.zip'
         result = utils.extract_and_remove_file(filename)
         self.assertEqual(result, False)
@@ -197,23 +199,23 @@ class VoterFetchHistoricalTest(TestCase):
     @mock.patch('voter.management.commands.voter_fetch_snapshot.s3client.list_objects')
     def test_handle(self, mock_s3_list, mock_process_new_zip):
         mock_s3_list.return_value = {'Contents': [{'Key': 'http://example.com/foo.zip'}]}
-        call_command('voter_fetch_snapshot')
+        call_command('voter_fetch_snapshot', '--quiet')
         expected_url = settings.NCVOTER_HISTORICAL_SNAPSHOT_URL + 'foo.zip'
-        mock_process_new_zip.assert_called_once_with(expected_url, settings.NCVOTER_DOWNLOAD_PATH, 'ncvoter')
+        mock_process_new_zip.assert_called_once_with(expected_url, settings.NCVOTER_DOWNLOAD_PATH, 'ncvoter', output=False)
 
     @mock.patch('voter.management.commands.voter_fetch_snapshot.process_new_zip')
     @mock.patch('voter.management.commands.voter_fetch_snapshot.s3client.list_objects')
     def test_handle_multiple_files(self, mock_s3_list, mock_process_new_zip):
         mock_s3_list.return_value = {'Contents': [{'Key': 'http://example.com/foo.zip'},
                                                   {'Key': 'http://example.com/bar.zip'}]}
-        call_command('voter_fetch_snapshot')
+        call_command('voter_fetch_snapshot', '--quiet')
         # We re-order alphabetically by the filename, so bar.zip comes before foo.zip
         expected_url1 = settings.NCVOTER_HISTORICAL_SNAPSHOT_URL + 'bar.zip'
         expected_url2 = settings.NCVOTER_HISTORICAL_SNAPSHOT_URL + 'foo.zip'
         expected = [
-            # mock records tuples of (args, kwargs), but we don't send kwargs in our commands
-            ((expected_url1, settings.NCVOTER_DOWNLOAD_PATH, 'ncvoter'), {}),
-            ((expected_url2, settings.NCVOTER_DOWNLOAD_PATH, 'ncvoter'), {}),
+            # mock records tuples of (args, kwargs)
+            ((expected_url1, settings.NCVOTER_DOWNLOAD_PATH, 'ncvoter'), {'output': False}),
+            ((expected_url2, settings.NCVOTER_DOWNLOAD_PATH, 'ncvoter'), {'output': False}),
         ]
         self.assertEqual(mock_process_new_zip.call_args_list, expected)
 
@@ -222,7 +224,7 @@ class VoterFetchHistoricalTest(TestCase):
     def test_handle_skip_non_zip_files(self, mock_s3_list, mock_process_new_zip):
         mock_s3_list.return_value = {'Contents': [{'Key': 'http://example.com/foo.txt'},
                                                   {'Key': 'http://example.com/bar.txt'}]}
-        call_command('voter_fetch_snapshot')
+        call_command('voter_fetch_snapshot', '--quiet')
         self.assertEqual(mock_process_new_zip.call_count, 0)
 
 
@@ -230,19 +232,19 @@ class VoterFetchCurrentTest(TestCase):
 
     @mock.patch('voter.management.commands.voter_fetch.process_new_zip')
     def test_handle(self, mock_process_new_zip):
-        call_command('voter_fetch')
+        call_command('voter_fetch', '--quiet')
         expected_url1 = settings.NCVOTER_LATEST_STATEWIDE_URL
         expected_url2 = settings.NCVHIS_LATEST_STATEWIDE_URL
         expected = [
-            # mock records tuples of (args, kwargs), but we don't send kwargs in our commands
-            ((expected_url1, settings.NCVOTER_DOWNLOAD_PATH, 'ncvoter', None), {}),
-            ((expected_url2, settings.NCVHIS_DOWNLOAD_PATH, 'ncvhis', None), {}),
+            # mock records tuples of (args, kwargs)
+            ((expected_url1, settings.NCVOTER_DOWNLOAD_PATH, 'ncvoter'), {'output': False}),
+            ((expected_url2, settings.NCVHIS_DOWNLOAD_PATH, 'ncvhis'), {'output': False}),
         ]
         self.assertEqual(mock_process_new_zip.call_args_list, expected)
 
     @mock.patch('voter.management.commands.voter_fetch.process_new_zip')
     def test_handle_county(self, mock_process_new_zip):
-        call_command('voter_fetch', '--bycounty')
+        call_command('voter_fetch', '--bycounty', '--quiet')
         # we don't currently do in-depth testing: just check that we try to process 200 files
         #   100 counties x 2 files per county (ncvoter and ncvhis)
         self.assertEqual(mock_process_new_zip.call_count, 200)

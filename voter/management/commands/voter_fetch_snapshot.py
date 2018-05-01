@@ -8,14 +8,14 @@ import botocore
 import boto3
 from collections import deque
 
-from voter.utils import process_new_zip
+from voter.utils import process_new_zip, get_output_file
 
 s3client = boto3.client('s3')
 s3client.meta.events.register('choose-signer.s3.*', botocore.handlers.disable_signing)
 
 
 class Command(BaseCommand):
-    help = """Fetch voter data from NCSBE.gov
+    help = """Fetch historical snapshots of voter data from NCSBE.gov
 
     E.g.
 
@@ -38,9 +38,16 @@ class Command(BaseCommand):
             help='Download all available files. Default is to just download the first one that we have not'
                  'already downloaded.'
         )
+        parser.add_argument(
+            '--quiet',
+            action='store_true',
+            dest='quiet',
+            help='Do not output updates or progress while running',
+        )
 
     def handle(self, *args, **options):
-        print("Fetching voter files...")
+        output = not options.get('quiet')
+        print("Fetching voter files...", file=get_output_file(output))
         while True:
             objects = s3client.list_objects(Bucket='dl.ncsbe.gov', Prefix='data/Snapshots/')
             filename_list = []
@@ -52,15 +59,15 @@ class Command(BaseCommand):
             filename_list = sorted(filename_list)
             snapshots = deque()
             for l in filename_list:
-                print(l)
+                print(l, file=get_output_file(output))
                 snapshots.append(settings.NCVOTER_HISTORICAL_SNAPSHOT_URL + l.strip())
 
             while len(snapshots) > 0:
                 url = snapshots.popleft()
-                process_new_zip(url, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter")
+                process_new_zip(url, settings.NCVOTER_DOWNLOAD_PATH, "ncvoter", output=output)
             if not options['loop']:
                 break
             else:  # pragma: no cover (infinite loop)
                 minutes = options['loop']
-                print("Sleep %d minutes..." % minutes)
+                print("Sleep %d minutes..." % minutes, file=get_output_file(output))
                 time.sleep(60 * minutes)

@@ -9,6 +9,7 @@ import traceback
 from bencode import bencode
 
 from voter.models import FileTracker, ChangeTracker, NCVoter, BadLineRange, BadLineTracker
+from voter.utils import tqdm_or_quiet
 
 BULK_CREATE_AMOUNT = 500
 
@@ -51,17 +52,6 @@ def find_md5(row_data, exclude=[]):
     row_data_str = bencode(row)
     row_data_b = bytes(row_data_str, 'utf-8')
     return hashlib.md5(row_data_b).hexdigest()
-
-
-def tqdm_or_quiet(output):
-    """Get our progress-bar generator OR a no-op if we're running in no-output mode."""
-
-    if output:
-        from tqdm import tqdm
-    else:
-        def tqdm(x, **kw):
-            return x
-    return tqdm
 
 
 def guess_total_lines(filename):

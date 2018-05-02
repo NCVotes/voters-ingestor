@@ -129,9 +129,6 @@ def get_file_lines(filename, output):
 
     for row in tqdm(lines, initial=counted, total=approx_line_count):
         counted += 1
-        # line = row.replace('\x00', '')
-        # line = line.split('\t')
-        # line = [i.strip('"').strip() for i in line]
         line = clean_and_split_line(row)
 
         if len(line) == len(header):

@@ -56,6 +56,12 @@ file_trackers_data = [
         "filename": "voter/test_data/2010-10-31T00-00-00/snapshot_latin1_copy.txt",
         "data_file_kind": "NCVoter",
         "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
+    }, {
+        "id": 9,
+        "etag": "ab476ee500a0421dfab629e8dc464f2a-59",
+        "filename": "voter/test_data/2010-10-31T00-00-00/current.txt",
+        "data_file_kind": "NCVoter",
+        "created": datetime.datetime(2011, 4, 30, 1, 49, 28, 718731, tzinfo=datetime.timezone.utc),
     }
 ]
 
@@ -116,6 +122,21 @@ class VoterProcessChangeTrackerTest(TestCase):
 
         # Can find the first person from the snapshot
         c = ChangeTracker.objects.filter(data__last_name="THOMPSON", data__first_name="JESSICA").first()
+        self.assert_(c)
+
+    def test_can_consume_current(self):
+        create_file_tracker(9)
+        process_files(quiet=True)
+
+        # All NCVoter objects should be marked deleted=False
+        self.assertEqual(NCVoter.objects.filter(deleted=False).count(), 19)
+
+        # All inserted changes should be additions
+        ncvoter_modifieds = ChangeTracker.objects.filter(op_code='A')
+        self.assertEquals(ncvoter_modifieds.count(), 19)
+
+        # Can find the first person from the snapshot
+        c = ChangeTracker.objects.filter(data__last_name="SMITH", data__first_name="EVELYN").first()
         self.assert_(c)
 
     def test_can_consume_utf16(self):

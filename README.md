@@ -3,6 +3,12 @@
 [![Build
 Status](https://travis-ci.org/NCVotes/voters-ingestor.svg?branch=master)](https://travis-ci.org/NCVotes/voters-ingestor)
 
+## Purpose
+
+Fetch public voter data from the North Carolina State Board of Elections and process the data in a
+way that allows users to track changes in voter data.
+
+
 ## Local Project Setup
 
 ### Requirements
@@ -123,11 +129,46 @@ Once it's complete, you can run the server and view the data in the admin:
 
 ## Fetching and Processing Data
 
-To fetch the voter data files run `python manage.py voter_fetch`. This will download, unzip and track
-any files not already downloaded. Any previously downloaded files that match are simply ignored.
+There are 2 types of voter data: Voter registration data ("NCVoter") and voter history data
+("NCVHis"). NCVoter data has information about each registered voter including demographics and
+voter registration information. NCVHis data has information about each voter's participation in an
+election. Because of the nature of these datasets, NCVoter data can change from time-period to
+time-period (for example, if a voter relocates), but NCVHis data should be immutable. From one
+time-period to the next time-period, there may be additional NCVHis records, but old records should
+never change.
 
-To process and load the data for any existing downloaded files run `python manage.py voter_process`. This
-process can take a very long time, especially for the initial import of the files.
+In addition, there are 2 types of snapshots available from the State Board of Elections. We'll call
+the first type "historical" snapshots. These are snapshots of the NCVoter data at a specific point
+in time. These are only important for the NCVoter data, since any snapshot of the NCVHis data should
+contain all previous information, so we don't need historical ones. There are about 30 of these
+historical snapshots, dating back to 2005. We'll call the other type of snapshot "current"
+snapshots. These are posted periodically to the State Board of Elections website (weekly or
+biweekly) and represent the NCVoter and NCVHis data as they currently exist at this moment.
+
+In order to get a production database set up, you'll need to run the following commands:
+
+    python manage.py voter_fetch_snapshot
+    python manage.py voter_process_snapshot
+
+The first command downloads, unzips and tracks all of the historical snapshots. The second command
+processes those snapshots sequentially starting with the earliest one, populating the NCVoter and
+ChangeTracker tables. Downloading and processing all of these files takes on the order of weeks.
+
+Once the ingestion of the historical NCVoter snapshots is complete, we can then ignore them because
+all of the up-to-date information will be available in the "current" snapshots.
+
+To keep your production database updated, you'll need to run the following commands.
+
+    python manage.py voter_fetch
+    python manage.py voter_process_snapshot
+
+The first command downloads the current NCVoter and NCVHis file. The second command processes the
+NCVoter file. (FIXME: This should eventually process the NCVHis file as well, but that work is not
+complete yet.) Those 2 command should ideally be run in a scheduled fashion. If no new data is
+available from the State Board of Elections, then nothing will be done, but as soon as a new file is
+available, it will be downloaded and processed. The deployment recipes in this repo install a
+cronjob which accomplishes these tasks. Processing a single snapshot file takes about a day,
+depending on the speed of your server/database.
 
 Note: make sure that only one `voter_process` is running at any time. Otherwise, conflicts between the processes would result in unexpected behaviors such as issue https://github.com/NCVotes/voters-ingestor/issues/4
 
@@ -142,7 +183,3 @@ The `--all` option can be given to delete all files, even those which have not y
 ## Deployment
 
 $ fab production deploy
-
-### FIXME
-
-- need to add 'apt install unzip' since we need that package installed

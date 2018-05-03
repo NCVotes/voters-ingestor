@@ -3,7 +3,7 @@ import argparse
 from django.core.management import BaseCommand
 from django.conf import settings
 
-from voter.utils import process_new_zip, get_output_file
+from voter.utils import process_new_zip, out
 
 
 class Command(BaseCommand):
@@ -14,6 +14,7 @@ class Command(BaseCommand):
     no arg: fetch latest statewide voter and voter history snapshot.
 
     --bycounty: fetch county files rather than statewide
+    --quiet: do not display any progress updates
     """
 
     def add_arguments(self, parser):
@@ -53,7 +54,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         output = not options.get('quiet')
-        print("Fetching zip files...", file=get_output_file(output))
+        out("Fetching zip files...", output)
         if not options['bycounty']:
             status_1, status_2 = self.fetch_state_zips(output=output)
         else:

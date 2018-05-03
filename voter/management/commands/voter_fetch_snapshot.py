@@ -8,7 +8,7 @@ import botocore
 import boto3
 from collections import deque
 
-from voter.utils import process_new_zip, get_output_file
+from voter.utils import process_new_zip, out
 
 s3client = boto3.client('s3')
 s3client.meta.events.register('choose-signer.s3.*', botocore.handlers.disable_signing)
@@ -47,7 +47,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         output = not options.get('quiet')
-        print("Fetching voter files...", file=get_output_file(output))
+        out("Fetching voter files...", output)
         while True:
             objects = s3client.list_objects(Bucket='dl.ncsbe.gov', Prefix='data/Snapshots/')
             filename_list = []
@@ -59,7 +59,7 @@ class Command(BaseCommand):
             filename_list = sorted(filename_list)
             snapshots = deque()
             for l in filename_list:
-                print(l, file=get_output_file(output))
+                out(l, output)
                 snapshots.append(settings.NCVOTER_HISTORICAL_SNAPSHOT_URL + l.strip())
 
             while len(snapshots) > 0:
@@ -69,5 +69,5 @@ class Command(BaseCommand):
                 break
             else:  # pragma: no cover (infinite loop)
                 minutes = options['loop']
-                print("Sleep %d minutes..." % minutes, file=get_output_file(output))
+                out("Sleep %d minutes..." % minutes, output)
                 time.sleep(60 * minutes)

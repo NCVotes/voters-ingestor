@@ -20,7 +20,7 @@ class VoterFetchUtilsTest(TestCase):
     def test_derive_target_folder(self):
         "creates a folder path given a base_path and a date"
         now = timezone.now()
-        expected_result = '{}/{}'.format(self.base_path, now.strftime('%Y-%m-%dT%H:%M:%S:%s'))
+        expected_result = '{}/{}'.format(self.base_path, now.strftime(utils.FOLDER_DATETIME_FORMAT))
         result = utils.derive_target_folder(self.base_path, now)
         self.assertEqual(result, expected_result)
 
@@ -84,7 +84,7 @@ class VoterFetchUtilsTest(TestCase):
     def make_now_and_expected_result(self, fetch_status_code):
         now = timezone.now()
         target_filename = '{}/{}/{}'.format(
-            self.base_path, now.strftime('%Y-%m-%dT%H:%M:%S:%s'), self.url.split('/')[-1])
+            self.base_path, now.strftime(utils.FOLDER_DATETIME_FORMAT), self.url.split('/')[-1])
         expected_result = (
             fetch_status_code,
             self.etag,

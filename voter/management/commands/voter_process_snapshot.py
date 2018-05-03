@@ -78,6 +78,28 @@ def get_file_encoding(filename):
         return encoding
 
 
+def clean_and_split_line(line, make_lowercase=False):
+    """
+    Given a string representing 1 line of a CSV file, do the following:
+
+    1. split on tabs
+    2. remove double-quotes
+    3. remove leading and trailing whitespace
+    4. optionally lowercase each field (if make_lowercase is True)
+    5. convert fields which are only a NULL byte to an empty string instead
+
+    Return that list of fields.
+    """
+    # Yes, it would make much more sense to just use the csv module which handles delimiting and
+    # quoting properly, but unforuntately some of the older datafiles includes null bytes, which
+    # makes the csv module choke.
+    line = line.split('\t')
+    if make_lowercase:
+        return [field.strip('"').strip().lower() if field != '\x00' else '' for field in line]
+    else:
+        return [field.strip('"').strip() if field != '\x00' else '' for field in line]
+
+
 def get_file_lines(filename, output):
     tqdm = tqdm_or_quiet(output)
 
@@ -88,9 +110,7 @@ def get_file_lines(filename, output):
     f = open(filename, encoding=encoding)
     lines = iter(f)
     header = next(lines)
-    header = header.replace('\x00', '')
-    header = header.split('\t')
-    header = [i.strip().lower() for i in header]
+    header = clean_and_split_line(header, make_lowercase=True)
 
     bad_lines = BadLineTracker(filename)
 
@@ -98,8 +118,7 @@ def get_file_lines(filename, output):
 
     for row in tqdm(lines, initial=counted, total=approx_line_count):
         counted += 1
-        line = row.replace('\x00', '')
-        line = line.split('\t')
+        line = clean_and_split_line(row)
 
         if len(line) == len(header):
             non_empty_row = {header[i]: line[i].strip() for i in range(len(header)) if not line[i].strip() == ''}
@@ -220,7 +239,8 @@ def skip_or_voter(row):
 
 def prepare_change(file_tracker, row, voter_instance, line_no):
     parsed_row = NCVoter.parse_row(row)
-    snapshot_dt = parsed_row.pop('snapshot_dt')
+    # get snapshot_dt from the data (if available), else from the file tracker creation timestamp
+    snapshot_dt = parsed_row.pop('snapshot_dt', None) or file_tracker.created
     hash_val = find_md5(row, exclude=['snapshot_dt'])
 
     # If there was no voter instance, this is an ADD otherwise a MODIFY

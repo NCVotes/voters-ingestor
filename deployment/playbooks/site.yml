@@ -2,6 +2,7 @@
 - include: common.yml
 - include: queue.yml
 - include: web.yml
+- include: cron.yml
 - include: papertrail.yml
 # uncomment once we set up celery
 # - include: worker.yml

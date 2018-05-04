@@ -1,0 +1,11 @@
+---
+- hosts: worker
+  become: yes
+  tasks:
+  - name: Regularly update voter data via cron
+    cron:
+      cron_file: voter-process
+      hour: 2
+      minute: 0
+      user: {{ project_user }}
+      job: cd {{ root_dir }}; ./manage.sh voter_fetch; ./manage.sh voter_process_snapshot

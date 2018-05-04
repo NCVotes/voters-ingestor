@@ -1,3 +1,5 @@
+import logging
+
 from django.core.management import BaseCommand
 from django.db import transaction
 
@@ -10,6 +12,8 @@ from bencode import bencode
 
 from voter.models import FileTracker, ChangeTracker, NCVoter, BadLineRange, BadLineTracker
 from voter.utils import tqdm_or_quiet
+
+logger = logging.getLogger(__name__)
 
 BULK_CREATE_AMOUNT = 500
 
@@ -156,7 +160,9 @@ def find_existing_instance(ncid):
 
     voter = NCVoter.objects.filter(ncid=ncid).prefetch_related('changelog').first()
     if voter:
-        assert voter.changelog.filter(op_code=ChangeTracker.OP_CODE_ADD).exists()
+        if not voter.changelog.filter(op_code=ChangeTracker.OP_CODE_ADD).exists():
+            logger.error('Voter has no ADD ChangeTracker: %s', voter.ncid)
+
     return voter
 
 

@@ -4,6 +4,7 @@
   tasks:
   - name: Regularly update voter data via cron
     cron:
+      name: Fetch and Process Voter Data
       cron_file: voter-process
       hour: 2
       minute: 0

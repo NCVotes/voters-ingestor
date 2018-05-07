@@ -11,7 +11,7 @@ import traceback
 from bencode import bencode
 
 from voter.models import FileTracker, ChangeTracker, NCVoter, BadLineRange, BadLineTracker
-from voter.utils import tqdm_or_quiet
+from voter.utils import out, tqdm_or_quiet
 
 logger = logging.getLogger(__name__)
 
@@ -149,8 +149,7 @@ def get_file_lines(filename, output):
         yield counted, row, non_empty_row
 
     bad_lines.flush()
-    if output:
-        print("Decoded", counted, "lines from", filename)
+    out("Decoded {} lines from {}".format(counted, filename), output)
 
 
 def find_existing_instance(ncid):
@@ -299,8 +298,7 @@ def track_changes(file_tracker, output):
 
     line_no = 0
 
-    if output:
-        print("Tracking changes for file {0}".format(file_tracker.filename), flush=True)
+    out("Tracking changes for file {0}".format(file_tracker.filename), output)
 
     # Have we seen any lines, successful or failures, from this before?
     prev_line = ChangeTracker.objects.filter(file_tracker=file_tracker).order_by('file_lineno').last()
@@ -354,15 +352,13 @@ def track_changes(file_tracker, output):
 
     # TODO: Add a way to skip this, if we want to re-run for testing without re-downloading
     # remove_files(file_tracker)
-    if output:
-        print("Lines processed for %s: %d" % (file_tracker.filename, line_no))
+    out("Lines processed for {}: {}".format(file_tracker.filename, line_no), output)
     return (added_tally, modified_tally, already_seen_tally, skip_tally)
 
 
 def process_files(**options):
     output = not options.get('quiet')
-    if output:
-        print("Processing NCVoter file...", flush=True)
+    out("Processing NCVoter file...", output)
 
     file_tracker_filter_data = {
         'data_file_kind': FileTracker.DATA_FILE_KIND_NCVOTER
@@ -376,8 +372,7 @@ def process_files(**options):
     for file_tracker in ncvoter_file_trackers:
         reset()
         if FileTracker.objects.filter(file_status=FileTracker.PROCESSING).exists() and not options.get('resume'):
-            if output:
-                print("Another parser is processing the files. Restart me later!")
+            out("Another parser is processing the files. Restart me later!", output)
             return
         lock_file(file_tracker)
         try:
@@ -392,17 +387,15 @@ def process_files(**options):
             reset_file(file_tracker)
             return
 
-        if output:
-            print("Change tracking completed for {}:".format(file_tracker.filename))
-            print("Added records: {0}".format(added))
-            print("Modified records: {0}".format(modified))
-            print("Skipped records: {0}".format(skipped))
-            print("Already seen records: {0}".format(already_seen))
+        out("Change tracking completed for {}:".format(file_tracker.filename), output)
+        out("Added records: {0}".format(added), output)
+        out("Modified records: {0}".format(modified), output)
+        out("Skipped records: {0}".format(skipped), output)
+        out("Already seen records: {0}".format(already_seen), output)
 
 
 def remove_files(file_tracker, output=True):
-    if output:
-        print("Deleting processed file {}".format(file_tracker.filename), flush=True)
+    out("Deleting processed file {}".format(file_tracker.filename), output)
     try:
         os.remove(file_tracker.filename)
     except FileNotFoundError:

@@ -1,3 +1,5 @@
+import logging
+
 from django.core.management import BaseCommand
 from django.db import transaction
 
@@ -10,6 +12,8 @@ from bencode import bencode
 
 from voter.models import FileTracker, ChangeTracker, NCVoter, BadLineRange, BadLineTracker
 from voter.utils import out, tqdm_or_quiet
+
+logger = logging.getLogger(__name__)
 
 BULK_CREATE_AMOUNT = 500
 
@@ -155,7 +159,9 @@ def find_existing_instance(ncid):
 
     voter = NCVoter.objects.filter(ncid=ncid).prefetch_related('changelog').first()
     if voter:
-        assert voter.changelog.filter(op_code=ChangeTracker.OP_CODE_ADD).exists()
+        if not voter.changelog.filter(op_code=ChangeTracker.OP_CODE_ADD).exists():
+            logger.error('Voter has no ADD ChangeTracker: %s', voter.ncid)
+
     return voter
 
 
@@ -381,18 +387,11 @@ def process_files(**options):
             reset_file(file_tracker)
             return
 
-        # Mark voters who weren't in this file, and weren't already deleted, as 'deleted'
-        num_deleted = NCVoter.objects.exclude(ncid__in=processed_ncids).exclude(deleted=True).update(deleted=True)
-        # and vice-versa
-        num_restored = NCVoter.objects.filter(ncid__in=processed_ncids).exclude(deleted=False).update(deleted=False)
-
         out("Change tracking completed for {}:".format(file_tracker.filename), output)
         out("Added records: {0}".format(added), output)
         out("Modified records: {0}".format(modified), output)
         out("Skipped records: {0}".format(skipped), output)
         out("Already seen records: {0}".format(already_seen), output)
-        out("Restored records: {0}".format(num_restored), output)
-        out("Deleted voters: {0}".format(num_deleted), output)
 
 
 def remove_files(file_tracker, output=True):

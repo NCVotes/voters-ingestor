@@ -392,19 +392,12 @@ def process_files(**options):
             reset_file(file_tracker)
             return
 
-        # Mark voters who weren't in this file, and weren't already deleted, as 'deleted'
-        num_deleted = NCVoter.objects.exclude(ncid__in=processed_ncids).exclude(deleted=True).update(deleted=True)
-        # and vice-versa
-        num_restored = NCVoter.objects.filter(ncid__in=processed_ncids).exclude(deleted=False).update(deleted=False)
-
         if output:
             print("Change tracking completed for {}:".format(file_tracker.filename))
             print("Added records: {0}".format(added))
             print("Modified records: {0}".format(modified))
             print("Skipped records: {0}".format(skipped))
             print("Already seen records: {0}".format(already_seen))
-            print("Restored records: {0}".format(num_restored))
-            print("Deleted voters: {0}".format(num_deleted), flush=True)
 
 
 def remove_files(file_tracker, output=True):

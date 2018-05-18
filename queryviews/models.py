@@ -8,10 +8,13 @@ from matview.dbutils import get_matview_name
 queries = {}
 
 
-def add_query(filters):
+def add_query(model, filters):
+    name = get_matview_name(model, filters)
+    app_label, model_name = model.split('.')
+
     class Meta:
         managed = False
-        db_table = get_matview_name(filters)
+        db_table = name
     attrs = {
         'ncid': models.CharField('ncid', max_length=12),
         'data': JSONField(encoder=DjangoJSONEncoder),
@@ -19,18 +22,40 @@ def add_query(filters):
         '__module__': 'queryviews.models',
         'filters': filters,
     }
-    name = get_matview_name(filters)
-    queries[name] = type(name, (models.Model,), attrs)
+    query_model = type(name, (models.Model,), attrs)
+    queries.setdefault(app_label, {}).setdefault(model_name, {})[name] = query_model
+
+    class Meta:
+        managed = False
+        db_table = name + '__count'
+    attrs = {
+        'count': models.IntegerField(),
+        'Meta': Meta,
+        '__module__': 'queryviews.models',
+    }
+    count_model = type(name, (models.Model,), attrs)
+    queries.setdefault(app_label, {}).setdefault(model_name, {})[name + '__count'] = count_model
 
 
-def get_query(filters):
-    name = get_matview_name(filters)
+def get_count(model, filters):
+    name = get_matview_name(model, filters)
+    app_label, model_name = model.split('.')
+    count_model = queries[app_label][model_name][name + '__count']
+
+    return count_model.objects.all().first().count
+
+
+def get_query(model, filters):
+    name = get_matview_name(model, filters)
+    app_label, model_name = model.split('.')
+    query_items = queries[app_label][model_name].items()
 
     # Find a materialized view query with the best match for the filter
     match = False
-    for name, query in queries.items():
+    for name, query in query_items:
         # Does the view have a subset of the query filters?
         match = True
+        print("!", name, query)
         for k, v in query.filters.items():
             if filters[k] != v:
                 match = False
@@ -44,7 +69,11 @@ def get_query(filters):
         raise Exception("!?")
 
 
-add_query({"party_cd": "DEM"})
-add_query({"party_cd": "REP"})
-add_query({"sex_code": "M"})
-add_query({"sex_code": "F"})
+add_query("voter.NCVoter", {"party_cd": "DEM"})
+add_query("voter.NCVoter", {"party_cd": "REP"})
+add_query("voter.NCVoter", {"sex_code": "M"})
+add_query("voter.NCVoter", {"sex_code": "F"})
+add_query("voter.NCVoter", {"sex_code": "F", "party_cd": "REP"})
+add_query("voter.NCVoter", {"sex_code": "M", "party_cd": "REP"})
+add_query("voter.NCVoter", {"sex_code": "F", "party_cd": "DEM"})
+add_query("voter.NCVoter", {"sex_code": "M", "party_cd": "DEM "})

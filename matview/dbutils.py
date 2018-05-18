@@ -30,7 +30,7 @@ def _make_matview_migration(src, data_clause, name):
         CREATE UNIQUE INDEX %(name)s_pk ON %(name)s(id);
     """
     forward = (forward_tmpl % locals()) \
-        + ("CREATE MATERIALIZED VIEW %(name)s__count AS SELECT COUNT(*) FROM %(name)s" % locals())
+        + ("CREATE MATERIALIZED VIEW %(name)s__count AS SELECT 1 AS id, COUNT(*) FROM %(name)s" % locals())
 
     return migrations.RunSQL(
         forward,
@@ -45,24 +45,23 @@ def delete_matview(MatView, filters):
     MatView.objects.filter(filters=filters).delete()
 
 
-def get_matview_name(filters):
-    name = '__'.join(
+def get_matview_name(model, filters):
+    app_label, model_name = model.split('.')
+    name = '_X_'.join(
         '%s_%s' % (k, filters[k])
         for k in sorted(filters.keys())
     )
-    name = 'matview_mv_' + name
+    name = 'matview_mv_%s_%s_%s' % (app_label, model_name, name)
     return name.lower()
 
 
 def make_matview_migration(model, filters):
     fkeys = sorted(filters.keys())
-    name = get_matview_name(filters)
-    data_clause = ''.join(["'{"] +
-        [
-            '"%s":"%s"' % (k, filters[k])
-            for k in fkeys
-        ] +
-    ["}'"])
+    name = get_matview_name(model, filters)
+    data_clause = ("'{" + ','.join((
+        '"%s":"%s"' % (k, filters[k])
+        for k in fkeys
+    )) + "}'")
     app_label, model_name = model.split('.')
     table_name = ('%s_%s' % (app_label, model_name))
 

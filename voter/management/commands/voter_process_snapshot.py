@@ -160,7 +160,9 @@ def find_existing_instance(ncid):
     voter = NCVoter.objects.filter(ncid=ncid).prefetch_related('changelog').first()
     if voter:
         if not voter.changelog.filter(op_code=ChangeTracker.OP_CODE_ADD).exists():
-            logger.error('Voter has no ADD ChangeTracker: %s', voter.ncid)
+            # This should not happen, but logging it just spams sentry.
+            # logger.error('Voter has no ADD ChangeTracker: %s', voter.ncid)
+            pass
 
     return voter
 

@@ -157,12 +157,7 @@ def find_existing_instance(ncid):
 
     Will prefetch all ChangeTracker instances related."""
 
-    voter = NCVoter.objects.filter(ncid=ncid).prefetch_related('changelog').first()
-    if voter:
-        if not voter.changelog.filter(op_code=ChangeTracker.OP_CODE_ADD).exists():
-            logger.error('Voter has no ADD ChangeTracker: %s', voter.ncid)
-
-    return voter
+    return NCVoter.objects.filter(ncid=ncid).prefetch_related('changelog').first()
 
 
 @transaction.atomic

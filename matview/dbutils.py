@@ -26,6 +26,8 @@ class ArrayAppend(Func):
 def _make_matview_migration(src, data_clause, name):
     query = 'select %s from %s where data @>%s' % ('*', src, data_clause)
     forward_tmpl = """
+        DROP MATERIALIZED VIEW IF EXISTS %(name)s__count;
+        DROP MATERIALIZED VIEW IF EXISTS %(name)s;
         CREATE MATERIALIZED VIEW %(name)s AS %(query)s;
         CREATE UNIQUE INDEX %(name)s_pk ON %(name)s(id);
     """
@@ -55,21 +57,39 @@ def get_matview_name(model, filters):
     return name.lower()
 
 
-def make_matview_migration(model, filters):
+def _create_matview_instance(model, filters, src, src_name):
+    def _(apps, schema):
+        name = get_matview_name(model, filters)
+        parent_id = MatView.objects.get(matview_name=src_name).id if src else None
+        apps.get_model("matview", "MatView").objects.create(
+            parent_id=parent_id,
+            src_name=src_name,
+            matview_name=name,
+            filters=filters,
+        )
+    return _
+
+
+def make_matview_migration(model, parent, filters):
+    if parent:
+        src_name = get_matview_name(model, parent)
+        # Keys cannot exist in both parent and subset filter
+        assert set(parent) - set(filters) == set(parent)
+    else:
+        app_label, model_name = model.split('.')
+        src_name = ('%s_%s' % (app_label, model_name))
+
     fkeys = sorted(filters.keys())
     name = get_matview_name(model, filters)
     data_clause = ("'{" + ','.join((
         '"%s":"%s"' % (k, filters[k])
         for k in fkeys
     )) + "}'")
-    app_label, model_name = model.split('.')
-    src_name = ('%s_%s' % (app_label, model_name))
 
     return [
         _make_matview_migration(src_name, data_clause, name),
-        migrations.RunPython(lambda apps, schema: apps.get_model("matview", "MatView").objects.create(
-            parent=None,
-            model_name=name,
-            filters=filters,
-        ), lambda apps, schema: delete_matview(apps.get_model("matview", "MatView"), filters)),
+        migrations.RunPython(
+            _create_matview_instance(model, filters, parent, src_name),
+            lambda apps, schema: delete_matview(apps.get_model("matview", "MatView"), filters)
+        ),
     ]

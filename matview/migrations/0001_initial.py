@@ -14,14 +14,17 @@ class Migration(migrations.Migration):
         ('voter', '0027_auto_20180417_1418'),
     ]
 
+    def _():
+        assert 0
+
     operations = [
         migrations.CreateModel(
             name='MatView',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('filters', django.contrib.postgres.fields.jsonb.JSONField(encoder=django.core.serializers.json.DjangoJSONEncoder)),
-                ('table_name', models.CharField(max_length=255)),
-                ('model_name', models.CharField(max_length=255)),
+                ('src_name', models.CharField(max_length=255)),
+                ('matview_name', models.CharField(max_length=255)),
                 ('last_updated', models.DateTimeField(auto_now=True)),
                 ('parent', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='matview.MatView', blank=True, null=True)),
             ],

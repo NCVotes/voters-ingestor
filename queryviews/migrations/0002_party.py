@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = itertools.chain(*(
-        make_matview_migration("voter.NCVoter", {"party_cd": "DEM"}),
-        make_matview_migration("voter.NCVoter", {"party_cd": "REP"}),
+        make_matview_migration("voter.NCVoter", None, {"party_cd": "DEM"}),
+        make_matview_migration("voter.NCVoter", None, {"party_cd": "REP"}),
     ))

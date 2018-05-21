@@ -9,9 +9,10 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('voter', '0001_initial'),
+        ('matview', '0001_initial'),
     ]
 
     operations = itertools.chain(*(
-        make_matview_migration("voter.NCVoter", {"sex_code": "F"}),
-        make_matview_migration("voter.NCVoter", {"sex_code": "M"}),
+        make_matview_migration("voter.NCVoter", None, {"sex_code": "F"}),
+        make_matview_migration("voter.NCVoter", None, {"sex_code": "M"}),
     ))

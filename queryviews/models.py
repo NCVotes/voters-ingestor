@@ -8,7 +8,7 @@ from matview.dbutils import get_matview_name
 queries = {}
 
 
-def add_query(model, filters):
+def register_query(model, filters):
     name = get_matview_name(model, filters)
     app_label, model_name = model.split('.')
 
@@ -76,11 +76,11 @@ def get_query(model, filters):
         raise Exception("!?")
 
 
-add_query("voter.NCVoter", {"party_cd": "DEM"})
-add_query("voter.NCVoter", {"party_cd": "REP"})
-add_query("voter.NCVoter", {"sex_code": "M"})
-add_query("voter.NCVoter", {"sex_code": "F"})
-add_query("voter.NCVoter", {"sex_code": "F", "party_cd": "REP"})
-add_query("voter.NCVoter", {"sex_code": "M", "party_cd": "REP"})
-add_query("voter.NCVoter", {"sex_code": "F", "party_cd": "DEM"})
-add_query("voter.NCVoter", {"sex_code": "M", "party_cd": "DEM"})
+register_query("voter.NCVoter", {"party_cd": "DEM"})
+register_query("voter.NCVoter", {"party_cd": "REP"})
+register_query("voter.NCVoter", {"sex_code": "M"})
+register_query("voter.NCVoter", {"sex_code": "F"})
+register_query("voter.NCVoter", {"sex_code": "F", "party_cd": "REP"})
+register_query("voter.NCVoter", {"sex_code": "M", "party_cd": "REP"})
+register_query("voter.NCVoter", {"sex_code": "F", "party_cd": "DEM"})
+register_query("voter.NCVoter", {"sex_code": "M", "party_cd": "DEM"})

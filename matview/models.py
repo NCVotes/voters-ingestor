@@ -11,14 +11,23 @@ from django.db.models import ProtectedError
 
 
 class MatView(models.Model):
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name="children")
     src_name = models.CharField(max_length=255)
     matview_name = models.CharField(max_length=255)
     filters = JSONField(encoder=DjangoJSONEncoder)
     last_updated = models.DateTimeField(auto_now=True)
 
-    @transaction.atomic
-    def refresh_reports(self):
-        with connection.cursor() as cursor:
-            cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY %s" % self.model_name)
-        self.save()
+    def refresh(self):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY %s" % self.matview_name)
+            self.save()
+
+        for child in self.children.all():
+            child.refresh()
+    
+    @classmethod
+    def refresh_all(cls):
+        tops = cls.objects.filter(parent=None)
+        for top in tops:
+            top.refresh()

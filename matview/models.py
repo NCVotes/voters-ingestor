@@ -12,10 +12,9 @@ from django.db.models import ProtectedError
 
 class MatView(models.Model):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
-    # Name of Materialized View
-    model_name = models.CharField(max_length=255)
+    src_name = models.CharField(max_length=255)
+    matview_name = models.CharField(max_length=255)
     filters = JSONField(encoder=DjangoJSONEncoder)
-    table_name = models.CharField(max_length=255)
     last_updated = models.DateTimeField(auto_now=True)
 
     @transaction.atomic

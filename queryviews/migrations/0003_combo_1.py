@@ -8,15 +8,10 @@ from matview.dbutils import make_matview_migration
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('matview', '0001_initial'),
+        ('queryviews', '0002_party'),
     ]
 
     operations = itertools.chain(*(
-        make_matview_migration("voter.NCVoter", {"party_cd": "DEM"}),
-        make_matview_migration("voter.NCVoter", {"party_cd": "REP"}),
-        make_matview_migration("voter.NCVoter", {"sex_code": "F"}),
-        make_matview_migration("voter.NCVoter", {"sex_code": "M"}),
-
         make_matview_migration("voter.NCVoter", {"party_cd": "REP", "sex_code": "F"}),
         make_matview_migration("voter.NCVoter", {"party_cd": "REP", "sex_code": "M"}),
         make_matview_migration("voter.NCVoter", {"party_cd": "DEM", "sex_code": "F"}),

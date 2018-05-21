@@ -63,14 +63,13 @@ def make_matview_migration(model, filters):
         for k in fkeys
     )) + "}'")
     app_label, model_name = model.split('.')
-    table_name = ('%s_%s' % (app_label, model_name))
+    src_name = ('%s_%s' % (app_label, model_name))
 
     return [
-        _make_matview_migration(table_name, data_clause, name),
+        _make_matview_migration(src_name, data_clause, name),
         migrations.RunPython(lambda apps, schema: apps.get_model("matview", "MatView").objects.create(
             parent=None,
             model_name=name,
             filters=filters,
-            table_name=table_name
         ), lambda apps, schema: delete_matview(apps.get_model("matview", "MatView"), filters)),
     ]

@@ -22,11 +22,3 @@ class MatView(models.Model):
         with connection.cursor() as cursor:
             cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY %s" % self.model_name)
         self.save()
-
-
-def forbid_outside_migrations(sender, **kwargs):
-    pass # raise ProtectedError("Cannot modify MatView outside migration.")
-
-
-pre_delete.connect(forbid_outside_migrations, sender=MatView)
-pre_save.connect(forbid_outside_migrations, sender=MatView)

@@ -51,18 +51,25 @@ def get_query(model, filters):
     query_items = queries[app_label][model_name].items()
 
     # Find a materialized view query with the best match for the filter
-    match = False
+    matches = []
     for name, query in query_items:
+        if name.endswith('__count'):
+            continue
         # Does the view have a subset of the query filters?
         match = True
-        print("!", name, query)
         for k, v in query.filters.items():
-            if filters[k] != v:
+            # Do not include the query if
+            # - it filters on a field we don't care about
+            # - it filters on a field we care about with a different value
+            if k not in filters or filters[k] != v:
                 match = False
                 break
         if match:
-            break
-    if match:
+            matches.append(query)
+    if matches:
+        # Find the match with the smallest count
+        matches = sorted(matches, key=lambda query: get_count(model, query.filters))
+        query = matches[0]
         remaining = {k: filters[k] for k in filters if k not in query.filters}
         return query.objects.filter(**{'data__'+k: v for k, v in remaining.items()})
     else:
@@ -76,4 +83,4 @@ add_query("voter.NCVoter", {"sex_code": "F"})
 add_query("voter.NCVoter", {"sex_code": "F", "party_cd": "REP"})
 add_query("voter.NCVoter", {"sex_code": "M", "party_cd": "REP"})
 add_query("voter.NCVoter", {"sex_code": "F", "party_cd": "DEM"})
-add_query("voter.NCVoter", {"sex_code": "M", "party_cd": "DEM "})
+add_query("voter.NCVoter", {"sex_code": "M", "party_cd": "DEM"})

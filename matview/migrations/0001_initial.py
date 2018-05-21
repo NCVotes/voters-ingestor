@@ -11,6 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('voter', '0027_auto_20180417_1418'),
     ]
 
     operations = [

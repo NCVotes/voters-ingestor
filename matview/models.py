@@ -12,6 +12,7 @@ from django.db.models import ProtectedError
 
 class MatView(models.Model):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
+    # Name of Materialized View
     model_name = models.CharField(max_length=255)
     filters = JSONField(encoder=DjangoJSONEncoder)
     table_name = models.CharField(max_length=255)
@@ -20,12 +21,12 @@ class MatView(models.Model):
     @transaction.atomic
     def refresh_reports(self):
         with connection.cursor() as cursor:
-            cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY %s" % self.table_name)
+            cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY %s" % self.model_name)
         self.save()
 
 
-def forbid_outside_migrations(cls, sender, **kwargs):
-    raise ProtectedError("Cannot modify MatView outside migration.")
+def forbid_outside_migrations(sender, **kwargs):
+    pass # raise ProtectedError("Cannot modify MatView outside migration.")
 
 
 pre_delete.connect(forbid_outside_migrations, sender=MatView)

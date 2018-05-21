@@ -69,7 +69,7 @@ def make_matview_migration(model, filters):
         _make_matview_migration(table_name, data_clause, name),
         migrations.RunPython(lambda apps, schema: apps.get_model("matview", "MatView").objects.create(
             parent=None,
-            model_name=model,
+            model_name=name,
             filters=filters,
             table_name=table_name
         ), lambda apps, schema: delete_matview(apps.get_model("matview", "MatView"), filters)),

@@ -1,5 +1,6 @@
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
+from django.apps import apps
 from django.db import models
 
 from matview.dbutils import get_matview_name
@@ -12,18 +13,19 @@ def register_query(model, filters):
     name = get_matview_name(model, filters)
     app_label, model_name = model.split('.')
 
-    class Meta:
-        managed = False
-        db_table = name
-    attrs = {
-        'ncid': models.CharField('ncid', max_length=12),
-        'data': JSONField(encoder=DjangoJSONEncoder),
-        'Meta': Meta,
-        '__module__': 'queryviews.models',
-        'filters': filters,
-    }
-    query_model = type(name, (models.Model,), attrs)
-    queries.setdefault(app_label, {}).setdefault(model_name, {})[name] = query_model
+    if filters:
+        class Meta:
+            managed = False
+            db_table = name
+        attrs = {
+            'ncid': models.CharField('ncid', max_length=12),
+            'data': JSONField(encoder=DjangoJSONEncoder),
+            'Meta': Meta,
+            '__module__': 'queryviews.models',
+            'filters': filters,
+        }
+        query_model = type(name, (models.Model,), attrs)
+        queries.setdefault(app_label, {}).setdefault(model_name, {})[name] = query_model
 
     class Meta:
         managed = False
@@ -71,11 +73,12 @@ def get_query(model, filters):
         matches = sorted(matches, key=lambda query: get_count(model, query.filters))
         query = matches[0]
         remaining = {k: filters[k] for k in filters if k not in query.filters}
-        return query.objects.filter(**{'data__'+k: v for k, v in remaining.items()})
+        return query.objects.filter(**{'data__' + k: v for k, v in remaining.items()})
     else:
-        raise Exception("!?")
+        return apps.get_model(app_label, model_name).objects.filter(**{'data__' + k: v for k, v in filters.items()})
 
 
+register_query("voter.NCVoter", {})
 register_query("voter.NCVoter", {"party_cd": "DEM"})
 register_query("voter.NCVoter", {"party_cd": "REP"})
 register_query("voter.NCVoter", {"sex_code": "M"})

@@ -13,6 +13,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = itertools.chain(*(
+        make_matview_migration("voter.NCVoter", None, {}),
         make_matview_migration("voter.NCVoter", None, {"sex_code": "F"}),
         make_matview_migration("voter.NCVoter", None, {"sex_code": "M"}),
     ))

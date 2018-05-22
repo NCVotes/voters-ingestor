@@ -36,7 +36,7 @@ def _make_matview_migration(src, data_clause, name, count_only=False):
     count_matview_tmpl = """
         CREATE MATERIALIZED VIEW %(name)s__count AS SELECT 1 AS id, COUNT(*) FROM %(count_src)s
     """
-    
+
     forward = drop_tmpl % locals()
     if not count_only:
         forward = forward + (main_matview_tmpl % locals())

@@ -1,13 +1,8 @@
-import datetime
-import time
-
 from django.db import transaction, connection
 
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models.signals import pre_delete, pre_save
-from django.db.models import ProtectedError
 
 
 class MatView(models.Model):
@@ -25,7 +20,7 @@ class MatView(models.Model):
 
         for child in self.children.all():
             child.refresh()
-    
+
     @classmethod
     def refresh_all(cls):
         tops = cls.objects.filter(parent=None)

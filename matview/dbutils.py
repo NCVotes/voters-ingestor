@@ -30,16 +30,17 @@ def _make_matview_migration(src, filters, name):
     )) + "}'")
     count_only = not filters
     query = 'select %s from %s where data @>%s' % ('*', src, data_clause)
-    drop_tmpl = """
-        DROP MATERIALIZED VIEW IF EXISTS %(name)s__count;
-        DROP MATERIALIZED VIEW IF EXISTS %(name)s;
-    """
+    drop_tmpl = ""
+    #     DROP MATERIALIZED VIEW IF EXISTS %(name)s__count;
+    #     DROP MATERIALIZED VIEW IF EXISTS %(name)s;
+    # """
     main_matview_tmpl = """
         CREATE MATERIALIZED VIEW %(name)s AS %(query)s;
         CREATE UNIQUE INDEX %(name)s_pk ON %(name)s(id);
     """
     count_matview_tmpl = """
-        CREATE MATERIALIZED VIEW %(name)s__count AS SELECT 1 AS id, COUNT(*) FROM %(count_src)s
+        CREATE MATERIALIZED VIEW %(name)s__count AS SELECT 1 AS id, COUNT(*) FROM %(count_src)s;
+        CREATE UNIQUE INDEX %(name)s__count_pk ON %(name)s__count(id);
     """
 
     forward = drop_tmpl % locals()
@@ -91,17 +92,20 @@ def make_matview_migration(model, parent, filters):
         src_name = get_matview_name(model, parent)
         # Keys cannot exist in both parent and subset filter
         assert set(parent) - set(filters) == set(parent)
+        all_filters = {}
+        all_filters.update(parent)
+        all_filters.update(filters)
     else:
         app_label, model_name = model.split('.')
         src_name = ('%s_%s' % (app_label, model_name))
+        all_filters = filters
 
-    fkeys = sorted(filters.keys())
-    name = get_matview_name(model, filters)
+    name = get_matview_name(model, all_filters)
 
     return [
         _make_matview_migration(src_name, filters, name),
         migrations.RunPython(
-            _create_matview_instance(model, filters, parent, src_name),
+            _create_matview_instance(model, all_filters, parent, src_name),
             lambda apps, schema: delete_matview(apps.get_model("matview", "MatView"), filters)
         ),
     ]

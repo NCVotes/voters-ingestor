@@ -15,7 +15,9 @@ class MatView(models.Model):
     def refresh(self):
         with transaction.atomic():
             with connection.cursor() as cursor:
-                cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY %s" % self.matview_name)
+                if self.filters:
+                    cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY %s" % self.matview_name)
+                cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY %s__count" % self.matview_name)
             self.save()
 
         for child in self.children.all():

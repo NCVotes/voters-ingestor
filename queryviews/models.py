@@ -35,7 +35,7 @@ def register_query(model, filters):
         'Meta': Meta,
         '__module__': 'queryviews.models',
     }
-    count_model = type(name, (models.Model,), attrs)
+    count_model = type(name + '_count', (models.Model,), attrs)
     queries.setdefault(app_label, {}).setdefault(model_name, {})[name + '__count'] = count_model
 
 

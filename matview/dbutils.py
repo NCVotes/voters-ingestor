@@ -1,26 +1,6 @@
-from django.db.models.expressions import Func
 from django.db import migrations
 
 from .models import MatView
-
-
-class ArrayAppend(Func):
-    function = 'array_append'
-    template = "%(function)s(%(expressions)s, %(element)s)"
-    arity = 1
-
-    def __init__(self, expression: str, element, **extra):
-        if not isinstance(element, (str, int)):
-            raise TypeError(
-                f'Type of "{element}" must be int or str, '
-                f'not "{type(element).__name__}".'
-            )
-
-        super().__init__(
-            expression,
-            element=isinstance(element, int) and element or f"'{element}'",
-            **extra,
-        )
 
 
 def _make_matview_migration(src, filters, name):
@@ -30,10 +10,6 @@ def _make_matview_migration(src, filters, name):
     )) + "}'")
     count_only = not filters
     query = 'select %s from %s where data @>%s' % ('*', src, data_clause)
-    drop_tmpl = ""
-    #     DROP MATERIALIZED VIEW IF EXISTS %(name)s__count;
-    #     DROP MATERIALIZED VIEW IF EXISTS %(name)s;
-    # """
     main_matview_tmpl = """
         CREATE MATERIALIZED VIEW %(name)s AS %(query)s;
         CREATE UNIQUE INDEX %(name)s_pk ON %(name)s(id);
@@ -43,7 +19,7 @@ def _make_matview_migration(src, filters, name):
         CREATE UNIQUE INDEX %(name)s__count_pk ON %(name)s__count(id);
     """
 
-    forward = drop_tmpl % locals()
+    forward = ""
     if not count_only:
         forward = forward + (main_matview_tmpl % locals())
         count_src = name
@@ -54,8 +30,8 @@ def _make_matview_migration(src, filters, name):
     return migrations.RunSQL(
         forward,
         """
-        DROP MATERIALIZED VIEW IF EXISTS %(name)s__count;
-        DROP MATERIALIZED VIEW IF EXISTS %(name)s;
+        DROP MATERIALIZED VIEW IF EXISTS %(name)s__count CASCADE;
+        DROP MATERIALIZED VIEW IF EXISTS %(name)s CASCADE;
         """ % locals()
     )
 

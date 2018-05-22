@@ -24,7 +24,10 @@ def register_query(model, filters):
             '__module__': 'queryviews.models',
             'filters': filters,
         }
+
+        # Instansiate a Model class with our generated name and attributes
         query_model = type(name, (models.Model,), attrs)
+        # Register our generated model in our lookup registry
         queries.setdefault(app_label, {}).setdefault(model_name, {})[name] = query_model
 
     class Meta:
@@ -35,7 +38,9 @@ def register_query(model, filters):
         'Meta': Meta,
         '__module__': 'queryviews.models',
     }
+    # Instansiate a Model class with our generated name and attributes
     count_model = type(name + '_count', (models.Model,), attrs)
+    # Register our generated model in our lookup registry
     queries.setdefault(app_label, {}).setdefault(model_name, {})[name + '__count'] = count_model
 
 
@@ -81,9 +86,9 @@ def get_query(model, filters):
 register_query("voter.NCVoter", {})
 register_query("voter.NCVoter", {"party_cd": "DEM"})
 register_query("voter.NCVoter", {"party_cd": "REP"})
-register_query("voter.NCVoter", {"sex_code": "M"})
-register_query("voter.NCVoter", {"sex_code": "F"})
-register_query("voter.NCVoter", {"sex_code": "F", "party_cd": "REP"})
-register_query("voter.NCVoter", {"sex_code": "M", "party_cd": "REP"})
-register_query("voter.NCVoter", {"sex_code": "F", "party_cd": "DEM"})
-register_query("voter.NCVoter", {"sex_code": "M", "party_cd": "DEM"})
+register_query("voter.NCVoter", {"gender_code": "M"})
+register_query("voter.NCVoter", {"gender_code": "F"})
+register_query("voter.NCVoter", {"gender_code": "F", "party_cd": "REP"})
+register_query("voter.NCVoter", {"gender_code": "M", "party_cd": "REP"})
+register_query("voter.NCVoter", {"gender_code": "F", "party_cd": "DEM"})
+register_query("voter.NCVoter", {"gender_code": "M", "party_cd": "DEM"})

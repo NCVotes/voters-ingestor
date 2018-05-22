@@ -23,7 +23,12 @@ class ArrayAppend(Func):
         )
 
 
-def _make_matview_migration(src, data_clause, name, count_only=False):
+def _make_matview_migration(src, filters, name):
+    data_clause = ("'{" + ','.join((
+        '"%s":"%s"' % (k, filters[k])
+        for k in sorted(filters)
+    )) + "}'")
+    count_only = not filters
     query = 'select %s from %s where data @>%s' % ('*', src, data_clause)
     drop_tmpl = """
         DROP MATERIALIZED VIEW IF EXISTS %(name)s__count;
@@ -60,12 +65,12 @@ def delete_matview(MatView, filters):
 
 def get_matview_name(model, filters):
     app_label, model_name = model.split('.')
-    name = '_X_'.join(
+    name = '_xx_'.join(
         '%s_%s' % (k, filters[k])
         for k in sorted(filters.keys())
     )
     name = 'matview_mv_%s_%s_%s' % (app_label, model_name, name)
-    return name.lower()
+    return name.lower().strip('_')
 
 
 def _create_matview_instance(model, filters, src, src_name):
@@ -92,13 +97,9 @@ def make_matview_migration(model, parent, filters):
 
     fkeys = sorted(filters.keys())
     name = get_matview_name(model, filters)
-    data_clause = ("'{" + ','.join((
-        '"%s":"%s"' % (k, filters[k])
-        for k in fkeys
-    )) + "}'")
 
     return [
-        _make_matview_migration(src_name, data_clause, name, count_only=bool(not filters)),
+        _make_matview_migration(src_name, filters, name),
         migrations.RunPython(
             _create_matview_instance(model, filters, parent, src_name),
             lambda apps, schema: delete_matview(apps.get_model("matview", "MatView"), filters)

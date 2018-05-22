@@ -1,5 +1,5 @@
 from django.db.models.expressions import Func
-from django.db import migrations, models
+from django.db import migrations
 
 from .models import MatView
 
@@ -104,17 +104,6 @@ def make_matview_migration(model, parent, filters):
 
     return [
         _make_matview_migration(src_name, filters, name),
-        migrations.CreateModel(
-            name='%s_count' % (name,),
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('count', models.IntegerField()),
-            ],
-            options={
-                'db_table': '%s__count' % (name,),
-                'managed': False,
-            },
-        ),
         migrations.RunPython(
             _create_matview_instance(model, all_filters, parent, src_name),
             lambda apps, schema: delete_matview(apps.get_model("matview", "MatView"), filters)

@@ -1,9 +1,10 @@
 from django.db import migrations
+from django.apps import apps
 
 from .models import MatView
 
 
-def _make_matview_migration(src, filters, name):
+def _make_matview_sql_migration(src, filters, name):
     """Generate the SQL strings forward and backwards to create and drop materialized views.
 
     This create a second view which simply materializes a count of the regular one. Both have
@@ -14,7 +15,8 @@ def _make_matview_migration(src, filters, name):
         '"%s":"%s"' % (k, filters[k])
         for k in sorted(filters)
     )) + "}'")
-    count_only = not filters
+    # Create a query for the materialized view, using the JSONB operator @>
+    # https://www.postgresql.org/docs/9.5/static/functions-json.html
     query = 'select %s from %s where data @>%s' % ('*', src, data_clause)
     main_matview_tmpl = """
         CREATE MATERIALIZED VIEW %(name)s AS %(query)s;
@@ -26,7 +28,7 @@ def _make_matview_migration(src, filters, name):
     """
 
     forward = ""
-    if not count_only:
+    if filters:
         forward = forward + (main_matview_tmpl % locals())
         count_src = name
     else:
@@ -76,7 +78,7 @@ def make_matview_migration(model, parent, filters):
     represent it for us.
 
     `model` is a "appname.modelname" style string representing a large queryable model
-    `filters` is a dictionary of key/value pairs that much match in the model's `data` JSON field
+    `filters` is a dictionary of key/value pairs that must match in the model's `data` JSON field
     `parent` is None if the model will be queried directly
         If `parent` is its own set of filters, it must not share any keys with `filters` and an
         existing materialized view must match the parameters to be queried.
@@ -105,19 +107,19 @@ def make_matview_migration(model, parent, filters):
     if parent:
         src_name = get_matview_name(model, parent)
         # Keys cannot exist in both parent and subset filter
-        assert set(parent) - set(filters) == set(parent)
+        assert set(parent).isdisjoint(set(filters))
         all_filters = {}
         all_filters.update(parent)
         all_filters.update(filters)
     else:
         app_label, model_name = model.split('.')
-        src_name = ('%s_%s' % (app_label, model_name))
+        src_name = apps.get_model(app_label, model_name)._meta.db_table
         all_filters = filters
 
     name = get_matview_name(model, all_filters)
 
     return [
-        _make_matview_migration(src_name, filters, name),
+        _make_matview_sql_migration(src_name, filters, name),
         migrations.RunPython(
             _create_matview_instance(model, all_filters, parent, src_name),
             lambda apps, schema: apps.get_model("matview", "MatView").objects.filter(filters=filters).delete()

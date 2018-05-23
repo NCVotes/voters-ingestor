@@ -71,6 +71,16 @@ class QueryTestCase(TestCase):
 
         MatView.refresh_all()
 
+    def assertIsSubset(self, left, right):
+        left = set(left)
+        right = set(right)
+        extra_left = left - right
+
+        if extra_left:
+            raise AssertionError(
+                "First set is not a subset of second. Values not in second set: %s"
+                % ', '.join(str(v) for v in extra_left))
+
     def test_all_fallback(self):
         assert 5 == models.get_query("voter.NCVoter", {}).count()
 
@@ -83,7 +93,7 @@ class QueryTestCase(TestCase):
 
         q = models.get_query("voter.NCVoter", {"party_cd": "REP"})
         ncids = q.values_list('ncid', flat=True)
-        assert set(("A4", "A5")).issubset(set(ncids)), ncids
+        self.assertIsSubset(("A4", "A5"), ncids)
 
     def test_multi_key(self):
         # So we know we're querying the materialized views
@@ -91,7 +101,7 @@ class QueryTestCase(TestCase):
 
         q = models.get_query("voter.NCVoter", {"party_cd": "DEM", "gender_code": "F"})
         ncids = q.values_list('ncid', flat=True)
-        assert set(("A1", "A3")).issubset(set(ncids)), ncids
+        self.assertIsSubset(("A1", "A3"), ncids)
 
     def test_deep_filtering(self):
         # So we know we're querying the materialized views
@@ -99,4 +109,4 @@ class QueryTestCase(TestCase):
 
         q = models.get_query("voter.NCVoter", {"party_cd": "DEM", "last_name": "Lambert"})
         ncids = q.values_list('ncid', flat=True)
-        assert set(("A1", "A2")).issubset(set(ncids)), ncids
+        self.assertIsSubset(("A1", "A2"), ncids)

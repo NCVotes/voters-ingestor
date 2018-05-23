@@ -25,7 +25,7 @@ def register_query(model, filters):
             'filters': filters,
         }
 
-        # Instansiate a Model class with our generated name and attributes
+        # Instantiate a Model class with our generated name and attributes
         query_model = type(name, (models.Model,), attrs)
         # Register our generated model in our lookup registry
         queries.setdefault(app_label, {}).setdefault(model_name, {})[name] = query_model
@@ -38,7 +38,7 @@ def register_query(model, filters):
         'Meta': Meta,
         '__module__': 'queryviews.models',
     }
-    # Instansiate a Model class with our generated name and attributes
+    # Instantiate a Model class with our generated name and attributes
     count_model = type(name + '_count', (models.Model,), attrs)
     # Register our generated model in our lookup registry
     queries.setdefault(app_label, {}).setdefault(model_name, {})[name + '__count'] = count_model
@@ -49,7 +49,7 @@ def get_count(model, filters):
     app_label, model_name = model.split('.')
     count_model = queries[app_label][model_name][name + '__count']
 
-    return count_model.objects.all().first().count
+    return count_model.objects.first().count
 
 
 def get_query(model, filters):
@@ -63,15 +63,13 @@ def get_query(model, filters):
         if name.endswith('__count'):
             continue
         # Does the view have a subset of the query filters?
-        match = True
         for k, v in query.filters.items():
             # Do not include the query if
             # - it filters on a field we don't care about
             # - it filters on a field we care about with a different value
             if k not in filters or filters[k] != v:
-                match = False
                 break
-        if match:
+        else:
             matches.append(query)
     if matches:
         # Find the match with the smallest count

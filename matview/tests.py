@@ -25,7 +25,7 @@ class MatViewMigrationTest(TestCase):
     def setUp(self):
         NCVoter.objects.create(ncid='A1', data={"party_cd": "REP"})
         NCVoter.objects.create(ncid='A2', data={"party_cd": "DEM"})
-        self.migration = dbutils._make_matview_migration("voter_ncvoter", {"party_cd": "DEM"}, "matview_mv_test")
+        self.migration = dbutils._make_matview_sql_migration("voter_ncvoter", {"party_cd": "DEM"}, "matview_mv_test")
         with connection.cursor() as cursor:
             cursor.execute(self.migration.sql)
 

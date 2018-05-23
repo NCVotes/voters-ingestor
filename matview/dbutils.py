@@ -9,6 +9,10 @@ def _make_matview_sql_migration(src, filters, name):
 
     This create a second view which simply materializes a count of the regular one. Both have
     a unique index to allow concurrent updates.
+
+    `src` is a table or view name
+    `filters` is a dictionary of key/value to match against the `data` JSON field of that model
+    `name` is the name of the materialized view to be created
     """
 
     data_clause = ("'{" + ','.join((
@@ -45,7 +49,11 @@ def _make_matview_sql_migration(src, filters, name):
 
 
 def get_matview_name(model, filters):
-    """Generate the name of a materialized view for a model and a given set of filters."""
+    """Generate the name of a materialized view for a model and a given set of filters.
+
+    `model` is a "app.modelname" string referencing a Django model
+    `filters` is a dictionary of key/value to match against the `data` JSON field of that model
+    """
 
     app_label, model_name = model.split('.')
     name = '_xx_'.join(
@@ -56,8 +64,14 @@ def get_matview_name(model, filters):
     return name.lower().strip('_')
 
 
-def _create_matview_instance(model, filters, src, src_name):
-    """Create a python migration function that will create a MatView for our materialized view."""
+def _make_matview_python_migration(model, filters, src, src_name):
+    """Create a python migration function that will create a MatView for our materialized view.
+
+    `model` is a "app.modelname" string referencing a Django model
+    `filters` is a dictionary of key/value to match against the `data` JSON field of that model
+    `src` is the filter of an existing materialized view to base this one one, None if based on the model directly
+    `src_name` is a table name or materialized view name, depending on `src` being None or not
+    """
 
     def _(apps, schema):
         name = get_matview_name(model, filters)
@@ -121,7 +135,7 @@ def make_matview_migration(model, parent, filters):
     return [
         _make_matview_sql_migration(src_name, filters, name),
         migrations.RunPython(
-            _create_matview_instance(model, all_filters, parent, src_name),
+            _make_matview_python_migration(model, all_filters, parent, src_name),
             lambda apps, schema: apps.get_model("matview", "MatView").objects.filter(filters=filters).delete()
         ),
     ]

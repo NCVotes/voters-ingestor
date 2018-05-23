@@ -16,6 +16,4 @@ class Migration(migrations.Migration):
         make_matview_migration("voter.NCVoter", {"party_cd": "REP"}, {"gender_code": "M"}),
         make_matview_migration("voter.NCVoter", {"party_cd": "DEM"}, {"gender_code": "F"}),
         make_matview_migration("voter.NCVoter", {"party_cd": "DEM"}, {"gender_code": "M"}),
-
-        make_matview_migration("voter.NCVoter", {"party_cd": "DEM"}, {"gender_code": "Q"}),
     ))

@@ -34,12 +34,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     # Third party apps
     'rest_framework',
     'django_filters',
     'raven.contrib.django.raven_compat',
+
     # Internal
     'voter',
+    'matview',
+    'queryviews',
 ]
 
 MIDDLEWARE = [

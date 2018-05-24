@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from django.http import QueryDict
 from django.test import TestCase
@@ -56,3 +56,14 @@ class ViewTests(TestCase):
         views.add_filter(filter_list, filters, "party_cd", "DEM")
 
         assert filter_list[0]['count'] == 1
+
+
+class ViewTests(TestCase):
+    
+    def test_drilldown_view(self):
+        with patch("drilldown.views.add_filter") as add_filter:
+            request = Mock()
+            request.GET = QueryDict('party_cd=DEM')
+            views.drilldown(request)
+
+            add_filter.assert_called_once_with([], {}, "party_cd", "DEM")

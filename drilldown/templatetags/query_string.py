@@ -7,7 +7,8 @@ register = template.Library()
 
 @register.simple_tag
 def query_string(request, **kwargs):
-    """usages: {% query_transform request page=1 %}"""
+    """usage: {% query_string request page=1 %}"""
+
     updated = request.GET.copy()
 
     for k, v in kwargs.iteritems():
@@ -18,6 +19,8 @@ def query_string(request, **kwargs):
 
 @register.filter
 def qs_trim(request, remove):
+    """usage: {{ request|qs_trim:"key_to_remove" }}"""
+
     qs = request.GET.copy()
     try:
         del qs[remove]

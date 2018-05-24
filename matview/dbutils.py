@@ -91,6 +91,9 @@ def make_matview_migration(model, parent, filters):
     The generated migrations include a MATERIALIZED VIEW sql statement and a MatView instance to
     represent it for us.
 
+    NOTE: The filter keys and values are separated by underscores in the materialized view name.
+    They should never begin or end with underscores or the generated names may become invalid.
+
     `model` is a "appname.modelname" style string representing a large queryable model
     `filters` is a dictionary of key/value pairs that must match in the model's `data` JSON field
     `parent` is None if the model will be queried directly

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 
-from queryviews.models import get_query, get_count
+from queryviews.models import get_count
 
 
 FILTERS = {

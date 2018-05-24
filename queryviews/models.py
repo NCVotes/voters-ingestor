@@ -47,9 +47,12 @@ def register_query(model, filters):
 def get_count(model, filters):
     name = get_matview_name(model, filters)
     app_label, model_name = model.split('.')
-    count_model = queries[app_label][model_name][name + '__count']
+    try:
+        count_model = queries[app_label][model_name][name + '__count']
 
-    return count_model.objects.first().count
+        return count_model.objects.first().count
+    except KeyError:
+        return get_query(model, filters).count()
 
 
 def get_query(model, filters):

@@ -57,9 +57,6 @@ class ViewTests(TestCase):
 
         assert filter_list[0]['count'] == 1
 
-
-class ViewTests(TestCase):
-    
     def test_drilldown_view(self):
         with patch("drilldown.views.add_filter") as add_filter:
             request = Mock()

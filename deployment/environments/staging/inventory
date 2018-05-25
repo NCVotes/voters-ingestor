@@ -1,0 +1,13 @@
+staging ansible_host=ec2-34-201-22-50.compute-1.amazonaws.com
+
+[web]
+staging
+
+[queue]
+staging
+
+[worker]
+staging
+
+[papertrail]
+staging

@@ -11,3 +11,4 @@
       user: "{{ project_name }}"
       # send output to syslog: https://serverfault.com/a/434902/218035
       job: cd /var/www/{{ project_name }}; ./manage.sh voter_fetch 2>&1 | /usr/bin/logger -t voter_fetch; ./manage.sh voter_process_snapshot 2>&1 | /usr/bin/logger -t voter_process
+    when: env_name != 'staging'

@@ -1,0 +1,68 @@
+{% load l10n query_string %}
+<!doctype html>
+<head>
+    <title>NCVoter Drilldown</title>
+
+    <style>
+        body {
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+
+        h1 {
+            font-weight: 300;
+        }
+        h2 {
+            font-weight: 200;
+        }
+        h3 {
+            font-weight: 100;
+        }
+
+        .count {
+            float: right;
+            color: grey;
+            position: absolute;
+            bottom: 10px;
+            right: 0px;
+        }
+
+        .controls {
+            float: right;
+        }
+
+        .filter {
+            min-height: 100px;
+            border-bottom: 1px solid lightgrey;
+            margin: 15px 5px;
+            position: relative;
+        }
+
+        .filter:last-child {
+            border-bottom-color: blue;
+        }
+        .filter:last-child .count {
+            color: blue;
+            font-size: 300%;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="filter">
+            <h1>Voters</h1>
+            <span class="count">{{ total_count|localize }}</span>
+        </div>
+        {% for filter in applied_filters %}
+            <div class="filter">
+                {{ filter.description|safe }}
+
+                <span class="controls">
+                    <a href="?{{ request|qs_trim:filter.field }}">[delete]</a>
+                </span>
+                
+                <span class="count">{{ filter.count|localize }}</span>
+            </div>
+        {% endfor %}
+    </div>
+
+    Example filtering: Female Democrats in Durham County <a href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM</a>

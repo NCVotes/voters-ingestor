@@ -25,3 +25,6 @@ db_password: "{{ SECRET_DB_PASSWORD }}"
 secret_key: "{{ SECRET_KEY }}"
 
 broker_password: "{{ SECRET_BROKER_PASSWORD }}"
+
+unmanaged_users:
+  - ubuntu

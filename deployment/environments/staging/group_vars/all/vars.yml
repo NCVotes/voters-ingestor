@@ -1,0 +1,25 @@
+---
+env_name: staging
+domain: ncvotes-staging.caktus-built.com
+repo_branch: develop
+db_host: np1cgi5514y3t17.ci63lkx0to37.us-east-1.rds.amazonaws.com
+
+# SSL is terminated by AWS at the load balancer, but if the forwarded
+# protocol is not https, nginx will still redirect to https.
+cert_source: none
+force_ssl: true
+
+cloud_staticfiles: false
+source_is_local: false
+gunicorn_num_workers: 2
+use_newrelic: false
+
+# These are used by the role avazea.papertrail
+papertrail_preserve_fqdn: "on"
+papertrail_host: "{{ SECRET_PAPERTRAIL_HOST }}"
+papertrail_port: "{{ SECRET_PAPERTRAIL_PORT }}"
+papertrail_conf: "/etc/log_files.yml"
+
+extra_env:
+  # These get set in the process environment before starting Django
+  SENTRY_DSN: "{{ SECRET_SENTRY_DSN }}"

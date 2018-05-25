@@ -1,3 +1,6 @@
+import logging
+from datetime import datetime
+
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 from django.apps import apps
@@ -5,6 +8,8 @@ from django.db import models
 
 from matview.dbutils import get_matview_name
 
+
+logger = logging.getLogger(__name__)
 
 queries = {}
 
@@ -52,7 +57,13 @@ def get_count(model, filters):
 
         return count_model.objects.first().count
     except KeyError:
-        return get_query(model, filters).count()
+        # This is slower, potentially much slower! Log times for fallbacks.
+        start = datetime.now()
+        count = get_query(model, filters).count()
+        elapsed = datetime.now() - start
+        logger.warn("get_count(%r, %r) had to do a potentially slow query. (%ssec)" %
+            (model, filters, elapsed.seconds))
+        return count
 
 
 def get_query(model, filters):

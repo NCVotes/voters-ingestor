@@ -61,8 +61,10 @@ def get_count(model, filters):
         start = datetime.now()
         count = get_query(model, filters).count()
         elapsed = datetime.now() - start
-        logger.warn("get_count(%r, %r) had to do a potentially slow query. (%ssec)" %
-            (model, filters, elapsed.seconds))
+        logger.warn(
+            "get_count(%r, %r) had to do a potentially slow query. (%ssec)" %
+            (model, filters, elapsed.seconds)
+        )
         return count
 
 

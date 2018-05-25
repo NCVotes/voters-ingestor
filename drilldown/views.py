@@ -3,6 +3,13 @@ from django.shortcuts import render
 from queryviews.models import get_count
 
 
+# When we implement filter interfaces we add labels and descriptions here
+# FILTERS is a dictionary of all the data fields we can filter on
+# For each field, there is a dictionary mapping possible values to text for the interface
+# Availabel text items for each field/value pair is:
+# - description: Text to display on the filter droppdown that describes how this
+#   filter selects voters, such as "Who voted in the 2016 Primary". Can be HTML.
+# - label: Display label for the value, which could be used in filter interfaces
 FILTERS = {
     "gender_code": {
         "F": {
@@ -32,19 +39,28 @@ def add_filter(filter_list, filters, field, value):
     """Add a filter to the filter list of the current drilldown.
 
     `filter_list` is a list of dictionaries describing the current filters
-    `filters` is a dictionary of the current `data` JSON field filters to find the final results
-    `field` and `value` are a data entry to match in the results
+    `filters` is a dict added to by each call to add_filter(). This dict is passed to
+        get_count() and get_query() to count and select voters.
+    `field` and `value` are the key/value pair added to `filters` at this time
 
     The new filter will be added to `filter_list` with the appropriate count and
-    description, if available.
+    description, if available. The dictionary added will have at least these keys:
+
+    - `description` Text to display on the filter droppdown that describes how this
+        filter selects voters, such as "Who voted in the 2016 Primary". Can be HTML.
+    - `label` Display label for the value, which could be used in filter interfaces
+    - `field` Data field being filtered on
+    - `value` Data field value being filtered on
+    - `count` Number of voters matching this filter *after* applying previous filters
     """
 
     filters.update({field: value})
 
+    # Coded defaults for filters we haven't finished adding yet
     name = "%s=%s" % (field, value)
     label = name
     description = name
-
+    # Nice labels/descriptions for filters we have fully implemented
     if field in FILTERS and value in FILTERS[field]:
         label = FILTERS[field][value]['label']
         description = FILTERS[field][value]['description']

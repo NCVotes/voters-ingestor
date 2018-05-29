@@ -10,7 +10,7 @@ envs = {
         'host_string': 'ec2-35-170-20-68.compute-1.amazonaws.com',
     },
     'staging': {
-        'host_string': 'ec2-34-201-22-50.compute-1.amazonaws.com',
+        'host_string': 'ec2-50-19-207-189.compute-1.amazonaws.com',
     },
 }
 

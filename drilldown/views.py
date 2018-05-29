@@ -86,7 +86,7 @@ def add_filter(filter_list, filters, field, value):
         "name": label,
         "count": get_count("voter.NCVoter", filters),
         "description": description,
-        "options": FILTERS[field],
+        "options": FILTERS.get(field, {}),
     })
 
 

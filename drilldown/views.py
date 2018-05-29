@@ -1,7 +1,8 @@
+
 from django.conf import settings
 from django.shortcuts import render
 
-from queryviews.models import get_count
+from queryviews.models import get_count, get_random_sample
 
 
 # When we implement filter interfaces we add labels and descriptions here
@@ -97,12 +98,14 @@ def drilldown(request):
     for field, value in request.GET.items():
         add_filter(applied_filters, filters, field, value)
 
-    count = get_count("voter.NCVoter", {})
+    total_count = get_count("voter.NCVoter", {})
+    sample_results = get_random_sample(20, "voter.NCVoter", filters)
 
     return render(request, 'drilldown/drilldown.html', {
-        "total_count": count,
+        "total_count": total_count,
         "applied_filters": applied_filters,
         "applied_filter_keys": set(f['field'] for f in applied_filters),
         "FILTERS": FILTERS,
         "FILTER_NAMES": FILTER_NAMES,
+        "sample_results": sample_results,
     })

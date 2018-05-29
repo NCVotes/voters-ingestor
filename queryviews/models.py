@@ -1,4 +1,5 @@
 import logging
+import random
 from datetime import datetime
 
 from django.conf import settings
@@ -100,6 +101,35 @@ def get_query(model, filters):
             (model, filters)
         )
         return apps.get_model(app_label, model_name).objects.filter(**{'data__' + k: v for k, v in filters.items()})
+
+
+def get_random_sample(n, model, filters):
+    """Get `n` random sample rows from a query as efficiently as possible from a very large set."""
+
+    # First create the QuerySet from which we want to get a random sample
+    # Our goal is to never actually execute this query
+    query = get_query(model, filters)
+
+    # Keep track of the sample as we build it
+    sample_results = []
+
+    # Find a range of ID numbers for the query and get a list of potential IDs
+    # which we'll randomly shuffle
+    low_id = query.values_list('id', flat=True).order_by('id')[0]
+    high_id = query.values_list('id', flat=True).order_by('-id')[0]
+    ids = list(range(low_id, high_id + 1))
+    random.shuffle(ids)
+
+    # Until we've found `n` samples or run out of IDs, try the shuffled IDs
+    while len(sample_results) < n:
+        i = ids.pop()
+        try:
+            sample = query.get(id=i)
+        except models.ObjectDoesNotExist:
+            continue
+        sample_results.append(sample)
+
+    return sample_results
 
 
 register_query("voter.NCVoter", {})

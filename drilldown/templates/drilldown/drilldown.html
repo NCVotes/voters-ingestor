@@ -23,6 +23,7 @@
             transition: all 1s;
             overflow: hidden;
         }
+        .shown-1000 { max-height: 1000px; }
         .hidden {
             max-height: 0px;
             transition: all 1s;
@@ -137,6 +138,13 @@
         {% endfor %}
     </div>
 
+    [<a onclick="javascript:toggle(document.querySelector('#sample'))">toggle samples</a>]
+    <ul id="sample" class="hidden shown-1000">
+    {% for sample_result in sample_results %}
+        <li>{{ sample_result.data.first_name }} {{ sample_result.data.last_name }}<br />
+    {% endfor %}
+    </ul>
+
     <div>
         Example filtering: Female Democrats in Durham County <a href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM</a>
     </div>
@@ -149,6 +157,10 @@
         function hide(el) {
             el.classList.remove('shown')
             el.classList.add('hidden')
+        }
+        function toggle(el) {
+            el.classList.toggle('shown')
+            el.classList.toggle('hidden')
         }
 
         function onClickEdit(a) {

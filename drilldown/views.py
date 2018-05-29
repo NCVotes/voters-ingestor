@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import render
 
 from queryviews.models import get_count
@@ -28,10 +29,24 @@ FILTERS = {
             "description": "Who is a <em>Democrat</em>",
         },
         "REP": {
-            "label": "Female",
+            "label": "Republican",
             "description": "Who is a <em>Republican</em>",
         },
     },
+
+    "county_desc": {
+        county: {
+            "label": county.title(),
+            "description": "Who live in <em>%s</em> county" % (county.title(),),
+        }
+        for county in settings.COUNTIES
+    },
+}
+
+FILTER_NAMES = {
+    "gender_code": "Gender",
+    "party_cd": "Party",
+    "county_desc": "County",
 }
 
 
@@ -81,7 +96,12 @@ def drilldown(request):
     for field, value in request.GET.items():
         add_filter(applied_filters, filters, field, value)
 
+    count = get_count("voter.NCVoter", {})
+
     return render(request, 'drilldown/drilldown.html', {
-        "total_count": get_count("voter.NCVoter", {}),
+        "total_count": count,
         "applied_filters": applied_filters,
+        "applied_filter_keys": set(f['field'] for f in applied_filters),
+        "FILTERS": FILTERS,
+        "FILTER_NAMES": FILTER_NAMES,
     })

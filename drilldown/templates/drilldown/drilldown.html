@@ -18,8 +18,18 @@
             font-weight: 100;
         }
 
+        .shown {
+            max-height: 100px;
+            transition: all 1s;
+            overflow: hidden;
+        }
+        .hidden {
+            max-height: 0px;
+            transition: all 1s;
+            overflow: hidden;
+        }
+
         .count {
-            float: right;
             color: grey;
             position: absolute;
             bottom: 10px;
@@ -27,7 +37,13 @@
         }
 
         .controls {
-            float: right;
+            position: absolute;
+            right: 0px;
+            top: 0px;
+        }
+        .controls a {
+            color: blue;
+            text-decoration: underline;
         }
 
         .filter {
@@ -54,10 +70,32 @@
         </div>
         {% for filter in applied_filters %}
             <div class="filter">
-                {{ filter.description|safe }}
+                {{ filter.description|safe }}<br />
+
+                <form method="GET" action="{{ request.get_full_path }}" class="hidden">
+                    {% for af in applied_filters %}
+                        {% if filter.field != af.field %}
+                            <input type="hidden" name="{{ af.field }}" value="{{ af.value }}" />
+                        {% else %}
+                            {% for field, values in FILTERS.items %}
+                                {% if field == filter.field %}
+                                    <select name="{{ field }}">
+                                        <option>-</option>
+                                        {% for value, options in values.items %}
+                                            <option value="{{ value }}">{{ options.label }}</button><br/>
+                                        {% endfor %}
+                                    </select>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+
+                    <button type="submit">Apply</button>
+                </form>
 
                 <span class="controls">
-                    <a href="?{{ request|qs_trim:filter.field }}">[delete]</a>
+                    [<a href="?{{ request|qs_trim:filter.field }}">delete</a>]
+                    [<a onclick="javascript:onClickEdit(this)">edit</a>]
                 </span>
                 
                 <span class="count">{{ filter.count|localize }}</span>
@@ -65,4 +103,63 @@
         {% endfor %}
     </div>
 
-    Example filtering: Female Democrats in Durham County <a href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM</a>
+    <div class="add-filter-list">
+        {% for field, values in FILTERS.items %}
+            {% if field not in applied_filter_keys %}
+                <div class="add-filter shown">
+                    <h3>{% for fname, flabel in FILTER_NAMES.items %}
+                        {% if fname == field %}
+                            {{ flabel }}
+                        {% endif %}
+                    {% endfor %}[<a onclick="javascript:onAddFilter(this)">+</a>]</h3>
+                    <form method="GET" action="{{ request.get_full_path }}" class="hidden">
+                        {% for filter in applied_filters %}
+                            <input type="hidden" name="{{ filter.field }}" value="{{ filter.value }}" />
+                        {% endfor %}
+
+                        <select name="{{ field }}">
+                            <option>-</option>
+                            {% for value, options in values.items %}
+                                <option value="{{ value }}">{{ options.label }}</button><br/>
+                            {% endfor %}
+                        </select>
+
+                        <button type="submit">Apply</button>
+                    </form>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div>
+        Example filtering: Female Democrats in Durham County <a href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM</a>
+    </div>
+
+    <script>
+        function show(el) {
+            el.classList.add('shown')
+            el.classList.remove('hidden')
+        }
+        function hide(el) {
+            el.classList.remove('shown')
+            el.classList.add('hidden')
+        }
+
+        function onClickEdit(a) {
+            let $form = a.closest('.filter').querySelector('form')
+            show($form)
+        }
+
+        function onAddFilter(a) {
+            let $ctn = a.closest('.add-filter')
+            let $form = a.closest('.add-filter').querySelector('form')
+            let $list = a.closest('.add-filter-list')
+
+            show($form)
+            $list.querySelectorAll('.add-filter').forEach((el) => {
+                if (el != $ctn) {
+                    hide(el)
+                }
+            })
+        }
+    </script>

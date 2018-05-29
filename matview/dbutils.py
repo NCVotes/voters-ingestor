@@ -61,7 +61,7 @@ def get_matview_name(model, filters):
         for k in sorted(filters.keys())
     )
     name = 'matview_mv_%s_%s_%s' % (app_label, model_name, name)
-    return name.lower().strip('_')
+    return name.lower().replace(' ', '_').strip('_')
 
 
 def _make_matview_python_migration(model, filters, src, src_name):
@@ -142,3 +142,7 @@ def make_matview_migration(model, parent, filters):
             lambda apps, schema: apps.get_model("matview", "MatView").objects.filter(filters=filters).delete()
         ),
     ]
+
+
+def make_matview_migration_combinations(model, filters):
+    fkeys = sorted(filters)

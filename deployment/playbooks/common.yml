@@ -3,3 +3,8 @@
     become: yes
     roles:
       - tequila-common
+    tasks:
+      - name: Ensure unzip command is present
+        apt:
+          name: unzip
+          state: present

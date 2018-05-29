@@ -15,29 +15,29 @@ FILTERS = {
     "gender_code": {
         "F": {
             "label": "Female",
-            "description": "Who is <em>female</em>",
+            "description": "are <em>female</em>",
         },
         "M": {
             "label": "Male",
-            "description": "Who is <em>male</em>",
+            "description": "are <em>male</em>",
         },
     },
 
     "party_cd": {
         "DEM": {
             "label": "Democrat",
-            "description": "Who is a <em>Democrat</em>",
+            "description": "are <em>Democrats</em>",
         },
         "REP": {
             "label": "Republican",
-            "description": "Who is a <em>Republican</em>",
+            "description": "are <em>Republicans</em>",
         },
     },
 
     "county_desc": {
         county: {
             "label": county.title(),
-            "description": "Who live in <em>%s</em> county" % (county.title(),),
+            "description": "live in <em>%s</em> county" % (county.title(),),
         }
         for county in settings.COUNTIES
     },
@@ -86,6 +86,7 @@ def add_filter(filter_list, filters, field, value):
         "name": label,
         "count": get_count("voter.NCVoter", filters),
         "description": description,
+        "options": FILTERS[field],
     })
 
 

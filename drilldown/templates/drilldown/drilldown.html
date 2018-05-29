@@ -60,36 +60,41 @@
             color: blue;
             font-size: 300%;
         }
+
+        .filter .filter-desc::before {
+            content: "...and ";
+        }
+        .filter:nth-child(2) .filter-desc::before {
+            content: "Who ";
+        }
+        .filter:nth-child(2) .filter-desc::after {
+            content: "...";
+        }
     </style>
 </head>
 <body>
     <div>
         <div class="filter">
-            <h1>Voters</h1>
+            <h1>Voters...</h1>
             <span class="count">{{ total_count|localize }}</span>
         </div>
         {% for filter in applied_filters %}
             <div class="filter">
-                {{ filter.description|safe }}<br />
+                <span class="filter-desc">{{ filter.description|safe }}</span>
 
                 <form method="GET" action="{{ request.get_full_path }}" class="hidden">
                     {% for af in applied_filters %}
                         {% if filter.field != af.field %}
                             <input type="hidden" name="{{ af.field }}" value="{{ af.value }}" />
                         {% else %}
-                            {% for field, values in FILTERS.items %}
-                                {% if field == filter.field %}
-                                    <select name="{{ field }}">
-                                        <option>-</option>
-                                        {% for value, options in values.items %}
-                                            <option value="{{ value }}">{{ options.label }}</button><br/>
-                                        {% endfor %}
-                                    </select>
-                                {% endif %}
-                            {% endfor %}
+                            <select name="{{ filter.field }}">
+                                <option>-</option>
+                                {% for value, option in filter.options.items %}
+                                    <option value="{{ value }}">{{ option.label }}</button><br/>
+                                {% endfor %}
+                            </select>
                         {% endif %}
                     {% endfor %}
-
                     <button type="submit">Apply</button>
                 </form>
 
@@ -125,6 +130,7 @@
                         </select>
 
                         <button type="submit">Apply</button>
+                        <button onclick="javascript:onAddFilter(this);return false">Cancel</button>
                     </form>
                 </div>
             {% endif %}
@@ -155,11 +161,16 @@
             let $form = a.closest('.add-filter').querySelector('form')
             let $list = a.closest('.add-filter-list')
 
-            show($form)
-            $list.querySelectorAll('.add-filter').forEach((el) => {
-                if (el != $ctn) {
-                    hide(el)
-                }
-            })
+            if ($form.classList.contains('hidden')) {
+                show($form)
+                $list.querySelectorAll('.add-filter').forEach((el) => {
+                    if (el != $ctn) {
+                        hide(el)
+                    }
+                })
+            } else {
+                $list.querySelectorAll('.add-filter').forEach((el) => show(el))
+                $list.querySelectorAll('.add-filter form').forEach((el) => hide(el))
+            }
         }
     </script>

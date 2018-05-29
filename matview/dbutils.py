@@ -142,7 +142,3 @@ def make_matview_migration(model, parent, filters):
             lambda apps, schema: apps.get_model("matview", "MatView").objects.filter(filters=filters).delete()
         ),
     ]
-
-
-def make_matview_migration_combinations(model, filters):
-    fkeys = sorted(filters)

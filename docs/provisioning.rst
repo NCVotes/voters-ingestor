@@ -29,7 +29,7 @@ AWS Infrastructure
 ------------------------
 
 Infrastructure for this project is created with the "EC2 Instances, Without NAT Gateway"
-option from `AWS Container Basics <https://github.com/tobiasmcnulty/aws-container-basics>`_.
+option from `AWS Web Stacks <https://github.com/caktus/aws-web-stacks>`_.
 A snapshot of the JSON template is saved in this repository at
 ``deployment/cloudformation-stack.json``.
 
@@ -40,6 +40,7 @@ Before creating a stack you'll need to:
 
 To create a new stack, upload the CloudFormation template via the AWS Console. See the following LastPass entries for variable values:
 
+* Staging: aws-web-stacks: Staging Parameters
 * Production: aws-web-stacks: Production Parameters
 
 Other parameters should be self explanatory, or the defaults should be sufficient.

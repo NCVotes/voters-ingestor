@@ -179,6 +179,14 @@ deleted.
 
 The `--all` option can be given to delete all files, even those which have not yet been processed.
 
+## Branches
+
+The `develop` branch is our default branch. Changes to `develop` can be deployed to staging at any
+time.
+
+The `master` branch represents the code on the production server. In order to update production, the
+`develop` branch should be merged into the `master` branch, which then can be deployed to
+production.
 
 ## Deployment
 

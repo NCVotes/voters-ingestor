@@ -119,7 +119,7 @@ def get_random_sample(n, model, filters):
     # Stop early if we get no IDs, which means there are no results to sample from
     if low_id is None:
         return []
-    
+
     else:
         high_id = query.values_list('id', flat=True).order_by('-id').first()
         ids = list(range(low_id, high_id + 1))

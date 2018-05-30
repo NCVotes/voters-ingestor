@@ -1,3 +1,4 @@
+from collections import OrderedDict
 
 from django.conf import settings
 from django.shortcuts import render
@@ -35,13 +36,13 @@ FILTERS = {
         },
     },
 
-    "county_desc": {
-        county: {
+    "county_desc": OrderedDict(
+        (county, {
             "label": county.title(),
             "description": "live in <em>%s</em> county" % (county.title(),),
-        }
+        })
         for county in settings.COUNTIES
-    },
+    ),
 }
 
 FILTER_NAMES = {

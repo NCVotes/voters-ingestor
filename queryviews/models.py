@@ -116,27 +116,34 @@ def get_random_sample(n, model, filters):
     # Find a range of ID numbers for the query and get a list of potential IDs
     # which we'll randomly shuffle
     low_id = query.values_list('id', flat=True).order_by('id').first()
+
     # Stop early if we get no IDs, which means there are no results to sample from
     if low_id is None:
         return []
+    # We have some results to sample from, so continue
 
-    else:
-        high_id = query.values_list('id', flat=True).order_by('-id').first()
-        seen = set()
+    high_id = query.values_list('id', flat=True).order_by('-id').first()
+    seen = set()
 
-        # Until we've found `n` samples or run out of IDs, try the shuffled IDs
-        while len(sample_results) < n and len(seen) < (high_id - low_id):
-            i = random.randint(low_id, high_id)
-            while i in seen:
-                i = (i + 1) % (high_id + 1)
-            seen.add(i)
-            try:
-                sample = query.get(id=i)
-            except models.ObjectDoesNotExist:
-                continue
-            sample_results.append(sample)
+    # Until we've found `n` samples or run out of IDs, try the shuffled IDs
+    while len(sample_results) < n and len(seen) < (high_id - low_id):
+        
+        # Find the next possibly valid ID by picking a random number in the range
+        # and then finding the next number which hasn't been used.
+        i = random.randint(low_id, high_id)
+        while i in seen:
+            i = (i + 1) % (high_id + 1)
+        # Don't use this again
+        seen.add(i)
 
-        return sample_results
+        # If this Voter ID exists in the database, add it to our sample list
+        try:
+            sample = query.get(id=i)
+        except models.ObjectDoesNotExist:
+            continue
+        sample_results.append(sample)
+
+    return sample_results
 
 
 register_query("voter.NCVoter", {})

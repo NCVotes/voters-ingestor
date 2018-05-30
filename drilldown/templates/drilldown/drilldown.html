@@ -17,6 +17,26 @@
         h3 {
             font-weight: 100;
         }
+        a {
+            color: blue;
+            text-decoration: underline;
+        }
+
+        table {
+            min-width: 50vw;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        table thead {
+            background-color: #ddd;
+        }
+        table td {
+            border-bottom: 1px solid grey;
+            padding: 5px;
+        }
+        table tbody td:nth-child(even) {
+            background-color: #eee;
+        }
 
         .shown {
             max-height: 100px;
@@ -41,10 +61,6 @@
             position: absolute;
             right: 0px;
             top: 0px;
-        }
-        .controls a {
-            color: blue;
-            text-decoration: underline;
         }
 
         .filter {
@@ -139,11 +155,26 @@
     </div>
 
     [<a onclick="javascript:toggle(document.querySelector('#sample'))">toggle samples</a>]
-    <ul id="sample" class="hidden shown-1000">
-    {% for sample_result in sample_results %}
-        <li>{{ sample_result.data.first_name }} {{ sample_result.data.last_name }}<br />
-    {% endfor %}
-    </ul>
+    <div id="sample" class="hidden shown-1000">
+        <table>
+            <thead>
+                <td>Name
+                <td>Address
+                <td>City
+                <td>Zipcode
+            </thead>
+            <tbody>
+                {% for v in sample_results %}
+                <tr>
+                    <td>{{ v.data.first_name }} {{ v.data.last_name }}
+                    <td>{{ v.data.mail_addr1 }}
+                    <td>{{ v.data.mail_city }}
+                    <td>{{ v.data.mail_zipcode }}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
     <div>
         Example filtering: Female Democrats in Durham County <a href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM</a>

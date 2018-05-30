@@ -30,7 +30,7 @@ def qadashboard(request):
                         "last_name": lasts[i % len(lasts)],
                         "party_cd": 'DEM' if party.lower().startswith('d') else 'REP',
                         "gender_code": gender.upper()[0],
-                        "county_desc": county,
+                        "county_desc": county.upper(),
                     })
                     ncid += 1
             MatView.refresh_all()

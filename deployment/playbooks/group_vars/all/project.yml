@@ -9,7 +9,7 @@ repo:
   branch: "{{ repo_branch|default('master') }}"
 
 requirements_file: "{{ source_dir }}/requirements/production.txt"
-project_settings: "ncvoter.prod_settings"
+project_settings: "{{ env_settings }}"
 
 app_minions: "{{ groups['web'] | union(groups['worker']) }}"
 

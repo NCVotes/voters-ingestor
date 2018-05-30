@@ -21,6 +21,7 @@ SECRET_KEY = '&vp7)rox!ck7t^6@%8g%p+u==6r=lqt@d^__cbo7xj1uparp-3'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+ENVIRONMENT = "dev"
 
 ALLOWED_HOSTS = []
 
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
     'matview',
     'queryviews',
     'drilldown',
+    'qadashboard',
 ]
 
 MIDDLEWARE = [

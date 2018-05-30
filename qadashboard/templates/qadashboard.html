@@ -1,0 +1,19 @@
+<!doctype html>
+<head>
+    <title>QA Dashboard</title>
+<body>
+    <h1>QA Dashboard</h1>
+    {% if msg %}
+        <p>{{msg}}</p>
+    {% endif %}
+    <form action="." method="POST">
+        {% csrf_token %}
+        {{ reset_form.as_p }}<br/>
+        <p>
+            <i>Create 100 female and 50 male Republicans in Durham county:</i><br />
+            Durham R F 100<br />
+            Durham R M 50<br />
+        </p>
+        <input type="submit" value="Reset"/>
+    </form>
+</body>

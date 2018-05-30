@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import render
 
 from queryviews.models import get_count
@@ -14,24 +15,38 @@ FILTERS = {
     "gender_code": {
         "F": {
             "label": "Female",
-            "description": "Who is <em>female</em>",
+            "description": "are <em>female</em>",
         },
         "M": {
             "label": "Male",
-            "description": "Who is <em>male</em>",
+            "description": "are <em>male</em>",
         },
     },
 
     "party_cd": {
         "DEM": {
             "label": "Democrat",
-            "description": "Who is a <em>Democrat</em>",
+            "description": "are <em>Democrats</em>",
         },
         "REP": {
-            "label": "Female",
-            "description": "Who is a <em>Republican</em>",
+            "label": "Republican",
+            "description": "are <em>Republicans</em>",
         },
     },
+
+    "county_desc": {
+        county: {
+            "label": county.title(),
+            "description": "live in <em>%s</em> county" % (county.title(),),
+        }
+        for county in settings.COUNTIES
+    },
+}
+
+FILTER_NAMES = {
+    "gender_code": "Gender",
+    "party_cd": "Party",
+    "county_desc": "County",
 }
 
 
@@ -71,6 +86,7 @@ def add_filter(filter_list, filters, field, value):
         "name": label,
         "count": get_count("voter.NCVoter", filters),
         "description": description,
+        "options": FILTERS.get(field, {}),
     })
 
 
@@ -81,7 +97,12 @@ def drilldown(request):
     for field, value in request.GET.items():
         add_filter(applied_filters, filters, field, value)
 
+    count = get_count("voter.NCVoter", {})
+
     return render(request, 'drilldown/drilldown.html', {
-        "total_count": get_count("voter.NCVoter", {}),
+        "total_count": count,
         "applied_filters": applied_filters,
+        "applied_filter_keys": set(f['field'] for f in applied_filters),
+        "FILTERS": FILTERS,
+        "FILTER_NAMES": FILTER_NAMES,
     })

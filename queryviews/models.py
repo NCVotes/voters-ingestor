@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 
+from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 from django.apps import apps
@@ -94,6 +95,10 @@ def get_query(model, filters):
         remaining = {k: filters[k] for k in filters if k not in query.filters}
         return query.objects.filter(**{'data__' + k: v for k, v in remaining.items()})
     else:
+        logger.warn(
+            "get_query(%r, %r) had to do a potentially slow query against a source table." %
+            (model, filters)
+        )
         return apps.get_model(app_label, model_name).objects.filter(**{'data__' + k: v for k, v in filters.items()})
 
 
@@ -106,3 +111,6 @@ register_query("voter.NCVoter", {"gender_code": "F", "party_cd": "REP"})
 register_query("voter.NCVoter", {"gender_code": "M", "party_cd": "REP"})
 register_query("voter.NCVoter", {"gender_code": "F", "party_cd": "DEM"})
 register_query("voter.NCVoter", {"gender_code": "M", "party_cd": "DEM"})
+
+for county in settings.COUNTIES:
+    register_query("voter.NCVoter", {"county_desc": county})

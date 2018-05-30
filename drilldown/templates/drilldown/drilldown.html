@@ -33,6 +33,7 @@
         table td {
             border-bottom: 1px solid grey;
             padding: 5px;
+            min-width: 6vw;
         }
         table tbody td:nth-child(even) {
             background-color: #eee;
@@ -165,6 +166,7 @@
                 <td>Address
                 <td>City
                 <td>Zipcode
+                <td>Phone #
             </thead>
             <tbody>
                 {% for v in sample_results %}
@@ -176,6 +178,7 @@
                     <td>{{ v.data.mail_addr1 }}
                     <td>{{ v.data.mail_city }}
                     <td>{{ v.data.mail_zipcode }}
+                    <td>{{ v.data.area_cd }} {{ v.data.phone_num }}
                 </tr>
                 {% endfor %}
             </tbody>

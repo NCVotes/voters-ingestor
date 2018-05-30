@@ -39,6 +39,9 @@ def qadashboard(request):
                         "mail_city": random.choice("CITYVILLE TOWNPLACE NOWHERE".split()),
                         "mail_zipcode": str(random.randint(20000, 29999)),
 
+                        "area_cd": str(random.randint(100, 999)),
+                        "phone_num": str(random.randint(1000000, 9999999)),
+
                         "race_desc": random.choice("WHITE BLACK LATINO".split()),
                     })
                     ncid += 1

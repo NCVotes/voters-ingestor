@@ -115,21 +115,26 @@ def get_random_sample(n, model, filters):
 
     # Find a range of ID numbers for the query and get a list of potential IDs
     # which we'll randomly shuffle
-    low_id = query.values_list('id', flat=True).order_by('id')[0]
-    high_id = query.values_list('id', flat=True).order_by('-id')[0]
-    ids = list(range(low_id, high_id + 1))
-    random.shuffle(ids)
+    low_id = query.values_list('id', flat=True).order_by('id').first()
+    # Stop early if we get no IDs, which means there are no results to sample from
+    if low_id is None:
+        return []
+    
+    else:
+        high_id = query.values_list('id', flat=True).order_by('-id').first()
+        ids = list(range(low_id, high_id + 1))
+        random.shuffle(ids)
 
-    # Until we've found `n` samples or run out of IDs, try the shuffled IDs
-    while len(sample_results) < n:
-        i = ids.pop()
-        try:
-            sample = query.get(id=i)
-        except models.ObjectDoesNotExist:
-            continue
-        sample_results.append(sample)
+        # Until we've found `n` samples or run out of IDs, try the shuffled IDs
+        while len(sample_results) < n:
+            i = ids.pop()
+            try:
+                sample = query.get(id=i)
+            except models.ObjectDoesNotExist:
+                continue
+            sample_results.append(sample)
 
-    return sample_results
+        return sample_results
 
 
 register_query("voter.NCVoter", {})

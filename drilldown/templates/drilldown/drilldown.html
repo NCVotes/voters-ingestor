@@ -159,6 +159,9 @@
         <table>
             <thead>
                 <td>Name
+                <td>Race
+                <td>Gender
+                <td>Party
                 <td>Address
                 <td>City
                 <td>Zipcode
@@ -166,7 +169,10 @@
             <tbody>
                 {% for v in sample_results %}
                 <tr>
-                    <td>{{ v.data.first_name }} {{ v.data.last_name }}
+                    <td>{{ v.data.first_name }} {{ v.data.midl_name }} {{ v.data.last_name }}
+                    <td>{{ v.data.race_desc.title }}
+                    <td>{{ v.data.gender_code }}
+                    <td>{{ v.data.party_cd }}
                     <td>{{ v.data.mail_addr1 }}
                     <td>{{ v.data.mail_city }}
                     <td>{{ v.data.mail_zipcode }}

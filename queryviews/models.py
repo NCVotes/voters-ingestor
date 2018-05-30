@@ -122,12 +122,14 @@ def get_random_sample(n, model, filters):
 
     else:
         high_id = query.values_list('id', flat=True).order_by('-id').first()
-        ids = list(range(low_id, high_id + 1))
-        random.shuffle(ids)
+        seen = set()
 
         # Until we've found `n` samples or run out of IDs, try the shuffled IDs
-        while len(sample_results) < n:
-            i = ids.pop()
+        while len(sample_results) < n and len(seen) < (high_id - low_id):
+            i = random.randint(low_id, high_id)
+            while i in seen:
+                i = (i + 1) % (high_id + 1)
+            seen.add(i)
             try:
                 sample = query.get(id=i)
             except models.ObjectDoesNotExist:

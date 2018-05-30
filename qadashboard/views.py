@@ -12,6 +12,8 @@ class ResetForm(forms.Form):
 
 def qadashboard(request):
     msg = None
+    form = ResetForm()
+
     if request.method == 'POST':
         confirmation = request.POST.get('confirmation')
         if confirmation == 'YES':
@@ -33,9 +35,10 @@ def qadashboard(request):
                     ncid += 1
             MatView.refresh_all()
         else:
+            form = ResetForm(request.POST)
             msg = "You didn't say the magic word"
 
     return render(request, "qadashboard.html", {
         "msg": msg,
-        "reset_form": ResetForm(),
+        "reset_form": form,
     })

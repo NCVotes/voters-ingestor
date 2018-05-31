@@ -127,7 +127,7 @@ def get_random_sample(n, model, filters):
 
     # Until we've found `n` samples or run out of IDs, try the shuffled IDs
     while len(sample_results) < n and len(seen) < (high_id - low_id):
-        
+
         # Find the next possibly valid ID by picking a random number in the range
         # and then finding the next number which hasn't been used.
         i = random.randint(low_id, high_id)

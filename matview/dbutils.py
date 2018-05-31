@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import migrations
 from django.apps import apps
 
@@ -81,6 +82,7 @@ def _make_matview_python_migration(model, filters, src, src_name):
             src_name=src_name,
             matview_name=name,
             filters=filters,
+            last_updated=timezone.now(),
         )
     return _
 

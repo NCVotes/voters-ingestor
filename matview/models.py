@@ -49,4 +49,8 @@ class MatView(models.Model):
     @classmethod
     def refresh_all(cls, threads=1):
         tops = cls.objects.filter(parent=None)
-        refresh_in_threads(tops, threads)
+        if threads == 1:
+            for top in tops:
+                top.refresh()
+        else:
+            refresh_in_threads(tops, threads)

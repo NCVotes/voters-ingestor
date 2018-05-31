@@ -140,7 +140,11 @@ def get_random_sample(n, model, filters):
         try:
             sample = query.get(id=i)
         except models.ObjectDoesNotExist:
-            continue
+            # Try the next one we haven't already looked at
+            sample = query.filter(id__gt=i).exclude(id__in=seen).order_by('id').first()
+            if not sample:
+                continue
+            seen.add(sample.id)
         sample_results.append(sample)
 
     return sample_results

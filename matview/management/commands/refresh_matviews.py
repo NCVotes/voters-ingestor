@@ -1,7 +1,23 @@
+from threading import Lock
+
 from django.core.management import BaseCommand
 from django.db.models.signals import post_save
 
 from matview.models import MatView
+
+
+def synchronized(lock):
+    """ Synchronization decorator. """
+
+    def wrap(f):
+        def newFunction(*args, **kw):
+            lock.acquire()
+            try:
+                return f(*args, **kw)
+            finally:
+                lock.release()
+        return newFunction
+    return wrap
 
 
 class Command(BaseCommand):
@@ -17,7 +33,9 @@ class Command(BaseCommand):
         matviews = MatView.objects.all()
         total = matviews.count()
         n = 1
+        lock = Lock()
 
+        @synchronized(lock)
         def report_update(sender, **kwargs):
             nonlocal n
 

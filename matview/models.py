@@ -33,7 +33,7 @@ class MatView(models.Model):
     filters = JSONField(encoder=DjangoJSONEncoder)
     last_updated = models.DateTimeField()
 
-    def refresh(self, total=None):
+    def refresh(self):
         with transaction.atomic():
             with connection.cursor() as cursor:
                 self._last_started = timezone.now()

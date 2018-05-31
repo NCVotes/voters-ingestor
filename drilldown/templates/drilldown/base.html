@@ -1,0 +1,142 @@
+<!doctype html>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <style>
+        body {
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+
+        h1 {
+            font-weight: 300;
+        }
+        h2 {
+            font-weight: 200;
+        }
+        h3 {
+            font-weight: 100;
+        }
+        a {
+            color: blue;
+            text-decoration: underline;
+        }
+
+        table {
+            min-width: 50vw;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        table thead {
+            background-color: #ddd;
+        }
+        table td {
+            border-bottom: 1px solid grey;
+            padding: 5px;
+        }
+        table tbody td:nth-child(even) {
+            background-color: #eee;
+        }
+
+        .shown {
+            max-height: 100px;
+            transition: all 1s;
+            overflow: hidden;
+        }
+        .shown-1000 { max-height: 1000px; }
+        .hidden {
+            max-height: 0px;
+            transition: all 1s;
+            overflow: hidden;
+        }
+
+        .count {
+            color: grey;
+        }
+        .drilldown .count {
+            position: absolute;
+            bottom: 10px;
+            right: 0px;
+        }
+
+        .controls {
+            position: absolute;
+            right: 0px;
+            top: 0px;
+        }
+
+        .filter {
+            border-bottom: 1px solid lightgrey;
+            margin: 15px 5px;
+            position: relative;
+        }
+        .drilldown .filter {
+            min-height: 100px;
+        }
+
+        .filter:last-child {
+            border-bottom-color: blue;
+        }
+        .filter:last-child .count {
+            color: blue;
+        }
+        .drilldown .filter:last-child .count {
+            font-size: 300%;
+        }
+
+        .filter-desc {
+            min-width: 25vw;
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+        .filter .filter-desc::before {
+            content: "...and ";
+        }
+        .filter:nth-child(2) .filter-desc::before {
+            content: "Who ";
+        }
+        .filter:nth-child(2) .filter-desc::after {
+            content: "...";
+        }
+    </style>
+
+    <body>
+        {% block content %}{% endblock %}
+
+        <script>
+            function show(el) {
+                el.classList.add('shown')
+                el.classList.remove('hidden')
+            }
+            function hide(el) {
+                el.classList.remove('shown')
+                el.classList.add('hidden')
+            }
+            function toggle(el) {
+                el.classList.toggle('shown')
+                el.classList.toggle('hidden')
+            }
+    
+            function onClickEdit(a) {
+                let $form = a.closest('.filter').querySelector('form')
+                show($form)
+            }
+    
+            function onAddFilter(a) {
+                let $ctn = a.closest('.add-filter')
+                let $form = a.closest('.add-filter').querySelector('form')
+                let $list = a.closest('.add-filter-list')
+    
+                if ($form.classList.contains('hidden')) {
+                    show($form)
+                    $list.querySelectorAll('.add-filter').forEach((el) => {
+                        if (el != $ctn) {
+                            hide(el)
+                        }
+                    })
+                } else {
+                    $list.querySelectorAll('.add-filter').forEach((el) => show(el))
+                    $list.querySelectorAll('.add-filter form').forEach((el) => hide(el))
+                }
+            }
+        </script>
+    </body>
+</html>

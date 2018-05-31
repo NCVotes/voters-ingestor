@@ -100,7 +100,6 @@ def drilldown(request):
         add_filter(applied_filters, filters, field, value)
 
     total_count = get_count("voter.NCVoter", {})
-    sample_results = get_random_sample(20, "voter.NCVoter", filters)
 
     return render(request, 'drilldown/drilldown.html', {
         "total_count": total_count,
@@ -108,5 +107,25 @@ def drilldown(request):
         "applied_filter_keys": set(f['field'] for f in applied_filters),
         "FILTERS": FILTERS,
         "FILTER_NAMES": FILTER_NAMES,
+    })
+
+
+def sample(request):
+    applied_filters = []
+    filters = {}
+
+    for field, value in request.GET.items():
+        add_filter(applied_filters, filters, field, value)
+
+    total_count = get_count("voter.NCVoter", {})
+    sample_results = get_random_sample(20, "voter.NCVoter", filters)
+
+    return render(request, 'drilldown/sample.html', {
+        "total_count": total_count,
+        "applied_filters": applied_filters,
+        "applied_filter_keys": set(f['field'] for f in applied_filters),
+        "FILTERS": FILTERS,
+        "FILTER_NAMES": FILTER_NAMES,
+
         "sample_results": sample_results,
     })

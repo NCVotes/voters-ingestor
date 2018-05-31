@@ -3,6 +3,7 @@ from collections import OrderedDict
 from django.conf import settings
 from django.shortcuts import render
 
+from ncvoter.known_cities import KNOWN_CITIES
 from queryviews.models import get_count
 
 
@@ -43,12 +44,20 @@ FILTERS = {
         })
         for county in settings.COUNTIES
     ),
+
+    "res_city_desc": OrderedDict(
+        (city, {
+            'label': city.title(),
+            "description": "live in <em>%s</em>" % (city.title(),),
+        }) for city in KNOWN_CITIES
+    ),
 }
 
 FILTER_NAMES = {
     "gender_code": "Gender",
     "party_cd": "Party",
     "county_desc": "County",
+    "res_city_desc": "City",
 }
 
 

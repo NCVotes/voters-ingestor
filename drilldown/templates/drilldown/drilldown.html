@@ -109,22 +109,28 @@
     </div>
 
     <div class="add-filter-list">
-        {% for field, values in FILTERS.items %}
+        <label for="select-next-filter">Add Filter</label>
+        <select id="select-next-filter" onchange="javascript:onAddFilter(this)">
+            <option></option>
+            {% for field, filter_opt in FILTERS.items %}
+                {% if field not in applied_filter_keys %}
+                        <option>{{ filter_opt.0 }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+
+        {% for field, filter_opt in FILTERS.items %}
             {% if field not in applied_filter_keys %}
-                <div class="add-filter shown">
-                    <h3>{% for fname, flabel in FILTER_NAMES.items %}
-                        {% if fname == field %}
-                            {{ flabel }}
-                        {% endif %}
-                    {% endfor %}[<a onclick="javascript:onAddFilter(this)">+</a>]</h3>
-                    <form method="GET" action="{{ request.get_full_path }}" class="hidden">
+                <div class="add-filter add-filter-{{ filter_opt.0.lower }} hidden">
+                    <h3>{{ filter_opt.0 }}</h3>
+                    <form method="GET" action="{{ request.get_full_path }}">
                         {% for filter in applied_filters %}
                             <input type="hidden" name="{{ filter.field }}" value="{{ filter.value }}" />
                         {% endfor %}
 
                         <select name="{{ field }}">
                             <option>-</option>
-                            {% for value, options in values.items %}
+                            {% for value, options in filter_opt.1.items %}
                                 <option value="{{ value }}">{{ options.label }}</button><br/>
                             {% endfor %}
                         </select>
@@ -156,13 +162,13 @@
             show($form)
         }
 
-        function onAddFilter(a) {
-            let $ctn = a.closest('.add-filter')
-            let $form = a.closest('.add-filter').querySelector('form')
-            let $list = a.closest('.add-filter-list')
+        function onAddFilter(select) {
+            let $list = document.querySelector('.add-filter-list')
+            let $ctn = document.querySelector('.add-filter-' + select.value.toLowerCase())
+            let $form = $ctn.querySelector('form')
 
-            if ($form.classList.contains('hidden')) {
-                show($form)
+            if ($ctn.classList.contains('hidden')) {
+                show($ctn)
                 $list.querySelectorAll('.add-filter').forEach((el) => {
                     if (el != $ctn) {
                         hide(el)

@@ -14,7 +14,7 @@ from queryviews.models import get_count
 #   filter selects voters, such as "Who voted in the 2016 Primary". Can be HTML.
 # - label: Display label for the value, which could be used in filter interfaces
 FILTERS = {
-    "gender_code": {
+    "gender_code": ("Gender", {
         "F": {
             "label": "Female",
             "description": "are <em>female</em>",
@@ -23,9 +23,9 @@ FILTERS = {
             "label": "Male",
             "description": "are <em>male</em>",
         },
-    },
+    }),
 
-    "party_cd": {
+    "party_cd": ("Party", {
         "DEM": {
             "label": "Democrat",
             "description": "are <em>Democrats</em>",
@@ -34,15 +34,15 @@ FILTERS = {
             "label": "Republican",
             "description": "are <em>Republicans</em>",
         },
-    },
+    }),
 
-    "county_desc": OrderedDict(
+    "county_desc": ("County", OrderedDict(
         (county, {
             "label": county.title(),
             "description": "live in <em>%s</em> county" % (county.title(),),
         })
         for county in settings.COUNTIES
-    ),
+    )),
 }
 
 FILTER_NAMES = {
@@ -78,9 +78,10 @@ def add_filter(filter_list, filters, field, value):
     label = name
     description = name
     # Nice labels/descriptions for filters we have fully implemented
-    if field in FILTERS and value in FILTERS[field]:
-        label = FILTERS[field][value]['label']
-        description = FILTERS[field][value]['description']
+    if field in FILTERS and value in FILTERS[field][1]:
+        label = FILTERS[field][1][value]['label']
+        _, values = FILTERS[field]
+        description = values[value]['description']
 
     filter_list.append({
         "field": field,

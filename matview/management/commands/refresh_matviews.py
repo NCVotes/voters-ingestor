@@ -10,8 +10,8 @@ from matview.models import MatView
 def synchronized(lock):
     """ Synchronization decorator. """
 
-    @wraps(f)
     def wrap(f):
+        @wraps(f)
         def newFunction(*args, **kw):
             lock.acquire()
             try:

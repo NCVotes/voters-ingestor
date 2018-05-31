@@ -1,5 +1,3 @@
-import time
-
 from django.test import TestCase
 
 from voter.models import NCVoter

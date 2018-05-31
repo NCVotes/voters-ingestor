@@ -23,7 +23,7 @@ class UtilTests(TestCase):
         self.assertEqual(4, len(groups))
         self.assertEqual(1, lengths.count(3))
         self.assertEqual(3, lengths.count(4))
-    
+
     def test_partition_long(self):
         numbers = list(range(1, 18))
         groups = partition(numbers, 4)

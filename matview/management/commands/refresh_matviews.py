@@ -1,3 +1,4 @@
+from functools import wraps
 from threading import Lock
 
 from django.core.management import BaseCommand
@@ -9,6 +10,7 @@ from matview.models import MatView
 def synchronized(lock):
     """ Synchronization decorator. """
 
+    @wraps(f)
     def wrap(f):
         def newFunction(*args, **kw):
             lock.acquire()
@@ -40,8 +42,8 @@ class Command(BaseCommand):
             nonlocal n
 
             instance = kwargs.get('instance')
-            delta = (instance.last_updated - instance._last_started).microseconds / 1000
             if instance:
+                delta = (instance.last_updated - instance._last_started).microseconds / 1000
                 t = int(delta / options['threads'])
                 if t >= 1000:
                     ts = "%0.1fs" % (t / 1000,)

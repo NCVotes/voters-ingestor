@@ -1,7 +1,7 @@
 {% extends "drilldown/base.html" %}
 {% load l10n query_string %}
 
-{% block title %}NCVoter Drilldown{% endblock %}
+{% block title %}NCVoter Sample{% endblock %}
 
 {% block content %}
     <a href="{% url "drilldown" %}?{{ request.GET.urlencode }}">&lt; back to drilldown</a>
@@ -47,7 +47,5 @@
         </table>
     </div>
 
-    <div>
-        Example filtering: Female Democrats in Durham County <a href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM</a>
-    </div>
+    <a class="btn" href="?{{ request.GET.urlencode }}">Resample</a>
 {% endblock %}

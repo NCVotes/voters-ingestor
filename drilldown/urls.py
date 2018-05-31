@@ -1,9 +1,10 @@
 """ncvoter URL Configuration"""
 from django.urls import path
 
-from .views import drilldown
+from .views import drilldown, sample
 
 
 urlpatterns = [
-    path('', drilldown),
+    path('', drilldown, name="drilldown"),
+    path('sample/', sample, name="sample"),
 ]

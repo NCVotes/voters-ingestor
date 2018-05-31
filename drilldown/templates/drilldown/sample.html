@@ -1,0 +1,51 @@
+{% extends "drilldown/base.html" %}
+{% load l10n query_string %}
+
+{% block title %}NCVoter Sample{% endblock %}
+
+{% block content %}
+    <a href="{% url "drilldown" %}?{{ request.GET.urlencode }}">&lt; back to drilldown</a>
+    <div>
+        <div class="filter">
+            <h1 class="filter-desc">Voters...</h1>
+            <span class="count">{{ total_count|localize }}</span>
+        </div>
+        {% for filter in applied_filters %}
+            <div class="filter">
+                <span class="filter-desc">{{ filter.description|safe }}</span>
+                <span class="count">{{ filter.count|localize }}</span>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div id="sample">
+        <table>
+            <thead>
+                <td>Name
+                <td>Race
+                <td>Gender
+                <td>Party
+                <td>Address
+                <td>City
+                <td>Zipcode
+                <td>Phone #
+            </thead>
+            <tbody>
+                {% for v in sample_results %}
+                <tr>
+                    <td>{{ v.data.first_name }} {{ v.data.midl_name }} {{ v.data.last_name }}
+                    <td>{{ v.data.race_desc.title }}
+                    <td>{{ v.data.gender_code }}
+                    <td>{{ v.data.party_cd }}
+                    <td>{{ v.data.mail_addr1 }}
+                    <td>{{ v.data.mail_city }}
+                    <td>{{ v.data.mail_zipcode }}
+                    <td>{{ v.data.area_cd }} {{ v.data.phone_num }}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <a class="btn" href="?{{ request.GET.urlencode }}">Resample</a>
+{% endblock %}

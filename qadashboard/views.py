@@ -1,3 +1,5 @@
+import random
+
 from django import forms
 from django.shortcuts import render
 
@@ -27,10 +29,20 @@ def qadashboard(request):
                 for i in range(int(count)):
                     NCVoter.objects.create(ncid=str(ncid), data={
                         "first_name": "FIRST%s" % (ncid,),
+                        "midl_name": lasts[i % len(lasts)],
                         "last_name": lasts[i % len(lasts)],
                         "party_cd": 'DEM' if party.lower().startswith('d') else 'REP',
                         "gender_code": gender.upper()[0],
                         "county_desc": county.upper(),
+
+                        "mail_addr1": "%s DIRT RD" % random.randint(100, 900),
+                        "mail_city": random.choice("CITYVILLE TOWNPLACE NOWHERE".split()),
+                        "mail_zipcode": str(random.randint(20000, 29999)),
+
+                        "area_cd": str(random.randint(100, 999)),
+                        "phone_num": str(random.randint(1000000, 9999999)),
+
+                        "race_desc": random.choice("WHITE BLACK LATINO".split()),
                     })
                     ncid += 1
             MatView.refresh_all()

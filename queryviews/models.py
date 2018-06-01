@@ -110,8 +110,8 @@ def get_random_sample(n, model, filters):
     # Our goal is to never actually execute this query
     query = get_query(model, filters)
     count = get_count(model, filters)
-    if n > count:
-        n = count
+    if n >= count:
+        return query
     offset = random.randint(0, count - n)
     return query[offset:offset + n]
 

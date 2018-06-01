@@ -78,14 +78,16 @@ def add_filter(filter_list, filters, field, value):
     label = name
     description = name
     # Nice labels/descriptions for filters we have fully implemented
-    if field in FILTERS and value in FILTERS[field][1]:
-        label = FILTERS[field][1][value]['label']
-        _, values = FILTERS[field]
-        description = values[value]['description']
+    if field in FILTERS:
+        label, field_opt = FILTERS[field]
+        values = list(field_opt)
+        if value in field_opt:
+            label = field_opt[value]['label']
+            description = field_opt[value]['description']
 
     filter_list.append({
         "field": field,
-        "value": value,
+        "value": values,
         "name": label,
         "count": get_count("voter.NCVoter", filters),
         "description": description,

@@ -173,8 +173,6 @@
                 let $ctn = document.querySelector('.add-filter-' + select.value.toLowerCase())
                 let $form = $ctn.querySelector('form')
 
-                hide($add);
-
                 if ($ctn.classList.contains('hidden')) {
                     show($ctn)
                     $list.querySelectorAll('.add-filter').forEach((el) => {

@@ -1,3 +1,4 @@
+import logging
 import os
 
 from datetime import datetime
@@ -7,6 +8,10 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
 from django.core.serializers.json import DjangoJSONEncoder
+
+from ncvoter.known_cities import KNOWN_CITIES
+
+logger = logging.getLogger(__file__)
 
 
 class FileTracker(models.Model):
@@ -227,6 +232,11 @@ class NCVoter(models.Model):
         if birth_age:
             parsed_row['birth_age'] = int(birth_age)
 
+        # Age should be an integer
+        age = row.get('age')
+        if age:
+            parsed_row['age'] = int(age)
+
         drivers_lic_str = row.get('drivers_lic', '')
         parsed_row['drivers_lic'] = (drivers_lic_str.strip().upper() == 'Y')
 
@@ -247,6 +257,13 @@ class NCVoter(models.Model):
             snapshot_dt = snapshot_dt[:10]
             snapshot_dt = datetime.strptime(snapshot_dt, '%Y-%m-%d').replace(tzinfo=pytz.timezone('US/Eastern'))
             parsed_row['snapshot_dt'] = snapshot_dt
+
+        city = row.get('res_city_desc')
+        if city not in KNOWN_CITIES:
+            logger.warning("City %s is not a known city. Either record is bad or %s needs to be added to KNOWN_CITIES.")
+            # Add to known cities temporarily (during this execution) so that
+            # we don't keep warning about it.
+            KNOWN_CITIES.append(city)
 
         return parsed_row
 

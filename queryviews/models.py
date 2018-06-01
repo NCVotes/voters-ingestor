@@ -63,7 +63,7 @@ def get_count(model, filters):
         start = datetime.now()
         count = get_query(model, filters).count()
         elapsed = datetime.now() - start
-        logger.warn(
+        logger.warning(
             "get_count(%r, %r) had to do a potentially slow query. (%ssec)" %
             (model, filters, elapsed.seconds)
         )
@@ -104,16 +104,15 @@ def get_query(model, filters):
 
 
 def get_random_sample(n, model, filters):
-    """Get `n` random sample rows from a query as efficiently as possible from a very large set."""
+    """Get up to `n` random sample rows from a query as efficiently as possible from a very large set."""
 
     # First create the QuerySet from which we want to get a random sample
     # Our goal is to never actually execute this query
     query = get_query(model, filters)
     count = get_count(model, filters)
-    offset_max = count - n
-    if offset_max <= 0:
-        return query.none()
-    offset = random.randint(0, offset_max)
+    if n > count:
+        n = count
+    offset = random.randint(0, count - n)
     return query[offset:offset + n]
 
 

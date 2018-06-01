@@ -109,16 +109,6 @@
     </div>
 
     <div class="add-filter-list">
-        <label for="select-next-filter">Add Filter</label>
-        <select id="select-next-filter" onchange="javascript:onAddFilter(this)">
-            <option></option>
-            {% for field, filter_opt in FILTERS.items %}
-                {% if field not in applied_filter_keys %}
-                        <option>{{ filter_opt.0 }}</option>
-                {% endif %}
-            {% endfor %}
-        </select>
-
         {% for field, filter_opt in FILTERS.items %}
             {% if field not in applied_filter_keys %}
                 <div class="add-filter add-filter-{{ filter_opt.0.lower }} hidden">
@@ -141,10 +131,20 @@
                 </div>
             {% endif %}
         {% endfor %}
+
+        <label for="select-next-filter">Add Filter</label>
+        <select id="select-next-filter" onchange="javascript:onAddFilter(this)">
+            <option></option>
+            {% for field, filter_opt in FILTERS.items %}
+                {% if field not in applied_filter_keys %}
+                        <option>{{ filter_opt.0 }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
     </div>
 
-    <div>
-        Example filtering: Female Democrats in Durham County <a href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM</a>
+    <div style="margin-top: 50px; color: grey;">
+        Example filtering: Female Democrats in Durham County <a style="color: grey" href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM</a>
     </div>
 
     <script>

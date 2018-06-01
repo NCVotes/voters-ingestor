@@ -58,7 +58,7 @@ class AgeFilterTest(FiltersTest):
         self.age_filter = AgeFilter()
 
     def test_age_filter_constructor_validation(self):
-        # It takes no parms
+        # It takes no params
         with self.assertRaises(TypeError):
             AgeFilter('foo')
 
@@ -84,14 +84,14 @@ class AgeFilterTest(FiltersTest):
         self.age_filter.set_values([20, 10])
         self.assertEqual(self.age_filter.values, [10, 20])
 
-    def test_get_parms(self):
+    def test_get_params(self):
         self.age_filter.set_values(['18', '27'])
         self.assertEqual(
             {
                 'age__gte': 18,
                 'age__lte': 27
             },
-            self.age_filter.get_filter_parms()
+            self.age_filter.get_filter_params()
         )
 
 
@@ -111,18 +111,18 @@ class FiltersFromRequestTest(FiltersTest):
 
     def test_with_age(self):
         mock_request = MagicMock(GET=QueryDict('age=2&age=10'))
-        applied, parms = filters_from_request(self.test_filters, mock_request)
+        applied, params = filters_from_request(self.test_filters, mock_request)
         self.assertEqual(len(applied), 1)
         self.assertIn('age', applied)
-        self.assertEqual({'age__gte': 2, 'age__lte': 10}, parms)
+        self.assertEqual({'age__gte': 2, 'age__lte': 10}, params)
 
     def test_choice_and_age(self):
         mock_request = MagicMock(GET=QueryDict('age=2&age=10&num=1'))
-        applied, parms = filters_from_request(self.test_filters, mock_request)
+        applied, params = filters_from_request(self.test_filters, mock_request)
         self.assertEqual(len(applied), 2)
         self.assertIn('age', applied)
         self.assertIn('num', applied)
-        self.assertEqual({'age__gte': 2, 'age__lte': 10, 'num': '1'}, parms)
+        self.assertEqual({'age__gte': 2, 'age__lte': 10, 'num': '1'}, params)
 
     def test_two_choices(self):
         mock_request = MagicMock(GET=QueryDict('indent=S&num=1'))

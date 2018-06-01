@@ -115,11 +115,7 @@ class AgeFilter(Filter):
     """
     Min and max ages.  values = [min, max] (integers)
     """
-    editing_template = Template("""
-        <input name="age" value="{{ filter.values.0 }}" type="number" placeholder="lowest age to include">
-        &ndash;
-        <input name="age" value="{{ filter.values.1 }}" type="number" placeholder="highest age to include">
-    """)
+    editing_template = "drilldown/edit_age_filter.html"
 
     def __init__(self):
         super().__init__(display_name='Age', field_name='age')
@@ -135,7 +131,7 @@ class AgeFilter(Filter):
         if self.values[1] < self.values[0]:
             self.values = [self.values[1], self.values[0]]
 
-    def get_filter_parms(self) -> Dict:
+    def get_filter_params(self) -> Dict:
         return dict(age__gte=self.values[0], age__lte=self.values[1])
 
     def description(self) -> str:

@@ -35,6 +35,8 @@ def qadashboard(request):
                         "gender_code": gender.upper()[0],
                         "county_desc": county.upper(),
 
+                        "age": random.randint(18, 90),
+
                         "mail_addr1": "%s DIRT RD" % random.randint(100, 900),
                         "mail_city": random.choice("CITYVILLE TOWNPLACE NOWHERE".split()),
                         "mail_zipcode": str(random.randint(20000, 29999)),

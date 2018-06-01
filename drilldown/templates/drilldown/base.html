@@ -20,6 +20,12 @@
             text-decoration: underline;
         }
 
+        form {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+
         button, .btn {
             display: inline-block;
             border: 1px solid grey;
@@ -88,6 +94,7 @@
             transition: all 1.5s;
             overflow: hidden;
         }
+        .shown-100 { max-height: 100px; }
         .shown-1000 { max-height: 1000px; }
         .hidden {
             max-height: 0px;

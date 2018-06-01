@@ -35,11 +35,12 @@ class ViewTests(TestCase):
         assert filter_list[0]['count'] == 0
 
     def test_add_filter_nice(self):
-        views.FILTERS["some_field"] = {}
-        views.FILTERS["some_field"]["some_value"] = {
-            "label": "Something",
-            "description": "Who match some criteria",
-        }
+        views.FILTERS["some_field"] = ("Something", {
+            "some_value": {
+                "label": "Something",
+                "description": "Who match some criteria",
+            },
+        })
 
         filter_list = []
         filters = {}

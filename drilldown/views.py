@@ -3,6 +3,7 @@ from collections import OrderedDict
 from django.conf import settings
 from django.shortcuts import render
 
+from ncvoter.known_cities import KNOWN_CITIES
 from queryviews.models import get_count, get_random_sample
 
 
@@ -43,12 +44,20 @@ FILTERS = {
         })
         for county in settings.COUNTIES
     )),
+
+    "res_city_desc": ("City", OrderedDict(
+        (city, {
+            'label': city.title(),
+            "description": "live in <em>%s</em>" % (city.title(),),
+        }) for city in KNOWN_CITIES
+    )),
 }
 
 FILTER_NAMES = {
     "gender_code": "Gender",
     "party_cd": "Party",
     "county_desc": "County",
+    "res_city_desc": "City",
 }
 
 
@@ -77,8 +86,10 @@ def add_filter(filter_list, filters, field, value):
     name = "%s=%s" % (field, value)
     label = name
     description = name
+    values = []
     # Nice labels/descriptions for filters we have fully implemented
     if field in FILTERS:
+        assert len(FILTERS[field]) == 2, FILTERS[field]
         label, field_opt = FILTERS[field]
         values = list(field_opt)
         if value in field_opt:

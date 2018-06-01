@@ -12,7 +12,7 @@
         </div>
         {% for filter in applied_filters %}
             <div class="filter">
-                <span class="filter-desc">{{ filter.get_description|safe }}</span>
+                <span class="filter-desc">{{ filter.description|safe }}</span>
                 <span class="count">{{ filter.count|localize }}</span>
             </div>
         {% endfor %}

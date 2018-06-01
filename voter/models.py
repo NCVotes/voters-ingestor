@@ -3,8 +3,10 @@ import os
 
 from datetime import datetime
 import pytz
+
 from django.db import models
 from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.indexes import GinIndex
 from django.core.serializers.json import DjangoJSONEncoder
 
 from ncvoter.known_cities import KNOWN_CITIES
@@ -202,11 +204,22 @@ class NCVHis(models.Model):
 
 
 class NCVoter(models.Model):
+    ncid = models.TextField('ncid', unique=True, db_index=True)
+    data = JSONField(
+        null=True,
+        default=None,
+        encoder=DjangoJSONEncoder,
+        help_text="Most recently known registration data for this voter, or NULL."
+    )
+    deleted = models.BooleanField(
+        default=False,
+        help_text="True if this voter not seen in most recent registration data."
+    )
 
     class Meta:
         verbose_name = "NC Voter"
         verbose_name_plural = "NC Voters"
-        # db_table = 'voter_ncvoter'
+        indexes = [GinIndex(fields=['data'])]
 
     @staticmethod
     def parse_row(row):
@@ -270,18 +283,6 @@ class NCVoter(models.Model):
 
     def build_current(self):
         return self.build_version(0)
-
-    ncid = models.TextField('ncid', unique=True, db_index=True)
-    data = JSONField(
-        null=True,
-        default=None,
-        encoder=DjangoJSONEncoder,
-        help_text="Most recently known registration data for this voter, or NULL."
-    )
-    deleted = models.BooleanField(
-        default=False,
-        help_text="True if this voter not seen in most recent registration data."
-    )
 
 
 COUNTY_CODES = {

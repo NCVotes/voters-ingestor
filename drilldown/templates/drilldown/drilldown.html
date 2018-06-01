@@ -1,79 +1,10 @@
+{% extends "drilldown/base.html" %}
 {% load l10n query_string %}
-<!doctype html>
-<head>
-    <title>NCVoter Drilldown</title>
 
-    <style>
-        body {
-            font-family: Verdana, Geneva, Tahoma, sans-serif;
-        }
+{% block title %}NCVoter Drilldown{% endblock %}
 
-        h1 {
-            font-weight: 300;
-        }
-        h2 {
-            font-weight: 200;
-        }
-        h3 {
-            font-weight: 100;
-        }
-
-        .shown {
-            max-height: 100px;
-            transition: all 1s;
-            overflow: hidden;
-        }
-        .hidden {
-            max-height: 0px;
-            transition: all 1s;
-            overflow: hidden;
-        }
-
-        .count {
-            color: grey;
-            position: absolute;
-            bottom: 10px;
-            right: 0px;
-        }
-
-        .controls {
-            position: absolute;
-            right: 0px;
-            top: 0px;
-        }
-        .controls a {
-            color: blue;
-            text-decoration: underline;
-        }
-
-        .filter {
-            min-height: 100px;
-            border-bottom: 1px solid lightgrey;
-            margin: 15px 5px;
-            position: relative;
-        }
-
-        .filter:last-child {
-            border-bottom-color: blue;
-        }
-        .filter:last-child .count {
-            color: blue;
-            font-size: 300%;
-        }
-
-        .filter .filter-desc::before {
-            content: "...and ";
-        }
-        .filter:nth-child(2) .filter-desc::before {
-            content: "Who ";
-        }
-        .filter:nth-child(2) .filter-desc::after {
-            content: "...";
-        }
-    </style>
-</head>
-<body>
-    <div>
+{% block content %}
+    <div class="drilldown">
         <div class="filter">
             <h1>Voters...</h1>
             <span class="count">{{ total_count|localize }}</span>
@@ -137,40 +68,9 @@
         {% endfor %}
     </div>
 
+    <a href="{% url "sample" %}?{{ request.GET.urlencode }}">get samples</a>
+
     <div>
         Example filtering: Female Democrats in Durham County <a href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM</a>
     </div>
-
-    <script>
-        function show(el) {
-            el.classList.add('shown')
-            el.classList.remove('hidden')
-        }
-        function hide(el) {
-            el.classList.remove('shown')
-            el.classList.add('hidden')
-        }
-
-        function onClickEdit(a) {
-            let $form = a.closest('.filter').querySelector('form')
-            show($form)
-        }
-
-        function onAddFilter(a) {
-            let $ctn = a.closest('.add-filter')
-            let $form = a.closest('.add-filter').querySelector('form')
-            let $list = a.closest('.add-filter-list')
-
-            if ($form.classList.contains('hidden')) {
-                show($form)
-                $list.querySelectorAll('.add-filter').forEach((el) => {
-                    if (el != $ctn) {
-                        hide(el)
-                    }
-                })
-            } else {
-                $list.querySelectorAll('.add-filter').forEach((el) => show(el))
-                $list.querySelectorAll('.add-filter form').forEach((el) => hide(el))
-            }
-        }
-    </script>
+{% endblock %}

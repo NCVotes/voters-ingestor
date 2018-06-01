@@ -23,10 +23,14 @@
         button, .btn {
             display: inline-block;
             border: 1px solid grey;
-            border-radius: 2px;
-            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 1rem;
+            height: 30px;
+            padding: 0 20px;
             margin: 5px;
-            background: #bbb;
+            text-align: center;
+            line-height: 25px;
+            background: #ddd;
             color: black;
             text-decoration: none;
             transition: background-color 0.25s;
@@ -36,6 +40,20 @@
         }
         button:active, .btn:active {
             background-color: #999;
+        }
+
+        select {
+            display: inline-block;
+            border: 1px solid grey;
+            border-radius: 5px;
+            height: 30px;
+            min-width: 200px;
+            padding: 0 20px;
+            margin: 5px;
+            background: #ddd;
+            color: black;
+            text-decoration: none;
+            transition: background-color 0.25s;
         }
 
         table {
@@ -54,9 +72,20 @@
             background-color: #eee;
         }
 
+        .row {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+        .justify-bottom {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
         .shown {
-            max-height: 100px;
-            transition: all 1s;
+            max-height: 250px;
+            transition: all 1.5s;
             overflow: hidden;
         }
         .shown-1000 { max-height: 1000px; }
@@ -105,7 +134,7 @@
             display: inline-block;
             padding-bottom: 5px;
         }
-        .filter .filter-desc:not(:first-child)::before {
+        .filter:not(:first-child):not(:nth-child(2))::before {
             content: "...and ";
         }
         .filter:nth-child(2) .filter-desc::before {
@@ -138,13 +167,14 @@
                 show($form)
             }
     
-            function onAddFilter(a) {
-                let $ctn = a.closest('.add-filter')
-                let $form = a.closest('.add-filter').querySelector('form')
-                let $list = a.closest('.add-filter-list')
-    
-                if ($form.classList.contains('hidden')) {
-                    show($form)
+            function onAddFilter(select) {
+                let $add = document.querySelector('.ctn-select-next-filter')
+                let $list = document.querySelector('.add-filter-list')
+                let $ctn = document.querySelector('.add-filter-' + select.value.toLowerCase())
+                let $form = $ctn.querySelector('form')
+
+                if ($ctn.classList.contains('hidden')) {
+                    show($ctn)
                     $list.querySelectorAll('.add-filter').forEach((el) => {
                         if (el != $ctn) {
                             hide(el)

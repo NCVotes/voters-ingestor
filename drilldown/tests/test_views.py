@@ -36,7 +36,7 @@ class ViewTests(TestCase):
         self.assertEqual(filters, {'county_desc': 'ORANGE'})
         self.assertEqual(1, len(applied))
         last_filter = list(applied.values())[-1]
-        self.assertEqual(last_filter.filter_parms, filters)
+        self.assertEqual(last_filter.filter_params, filters)
         self.assertIn('ORANGE'.title(), last_filter.description())
 
     def test_two_filters(self):
@@ -45,7 +45,7 @@ class ViewTests(TestCase):
         self.assertEqual(filters, {'county_desc': 'ORANGE', 'gender_code': 'F'})
         self.assertEqual(2, len(applied))
         last_filter = list(applied.values())[-1]
-        self.assertEqual(last_filter.filter_parms, filters)
+        self.assertEqual(last_filter.filter_params, filters)
         self.assertIn('female', last_filter.description())
 
     def test_drilldown_view(self):

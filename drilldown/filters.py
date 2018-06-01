@@ -3,7 +3,7 @@ from copy import copy
 from typing import Tuple, Dict, List, Optional
 
 from django.http import HttpRequest
-from django.template import Template, Context
+from django.template.loader import get_template
 
 from queryviews.models import get_count
 
@@ -19,17 +19,14 @@ class Filter:
     that can be passed to filters_from_request (below).
 
     Copies of those instances represent the selections a user has made
-    on the current page, and are returned by filters_from-request.
+    on the current page, and are returned by filters_from_request.
     """
 
     # Default template for rendering a filter's current values in a form.
-    values_template = Template(
-        """
-            {% for value in filter.values %}
-                <input name="{{ filter.field_name }}" type="hidden" value="{{ value }}"/>
-            {% endfor %}
-        """
-    )
+    values_template = "drilldown/filter_values.html"
+
+    # No default editing template
+    editing_template = None
 
     def __init__(self, display_name: str, field_name: str):
         """
@@ -50,7 +47,7 @@ class Filter:
         """
         self.values = values
 
-    def get_filter_parms(self) -> Dict:
+    def get_filter_params(self) -> Dict:
         """
         Return a dictionary with kwargs for filter() or Q() to narrow
         a queryset using this filter.
@@ -63,13 +60,13 @@ class Filter:
         """
         Return HTML for hidden input field(s) with the filter's current values.
         """
-        return self.values_template.render(Context({'filter': self}))
+        return get_template(self.values_template).render({'filter': self})
 
     def render_for_editing(self) -> str:
         """
         Return HTML to set the value(s) of the current filter.
         """
-        return self.editing_template.render(Context({'filter': self}))
+        return get_template(self.editing_template).render({'filter': self})
 
 
 class ChoiceFilter(Filter):
@@ -83,14 +80,7 @@ class ChoiceFilter(Filter):
            "have an <em>active</em> registration".
            By convention we put ``em`` around the part that can change.
     """
-    editing_template = Template("""
-        <select name="{{ filter.field_name }}">
-          <option>-</option>
-          {% for value, label, foo in filter.choices %}
-            <option value="{{ value }}" {% if value in filter.values %}selected{% endif %}>{{ label }}</option><br/>
-          {% endfor %}
-        </select>
-    """)
+    editing_template = "drilldown/edit_choice_filter.html"
 
     def __init__(self, display_name: str, field_name: str, choices: List[Tuple]):
         super().__init__(display_name, field_name)
@@ -107,7 +97,7 @@ class ChoiceFilter(Filter):
                        inserted in the phrase "Showing voters who <Description>".
                        E.g. "are <em>female</em>", "live in <em>Orange</em> county".""")
 
-    def get_filter_parms(self) -> Dict:
+    def get_filter_params(self) -> Dict:
         return {self.field_name: self.values[0]}
 
     def description(self) -> Optional[str]:
@@ -134,7 +124,7 @@ def filters_from_request(declared_filters: List[Filter], request: HttpRequest) -
     OrderedDict containing copies of the Filter objects corresponding
     to the query parameter keys, with the values from the query string
     set in them.
-    Set '.filter_parms' on each new filter to be the cumulative filter parameters.
+    Set '.filter_params' on each new filter to be the cumulative filter parameters.
     Set '.count' on each new filter to be the count after applying those filters.
 
     Returns a tuple containing:
@@ -142,16 +132,16 @@ def filters_from_request(declared_filters: List[Filter], request: HttpRequest) -
      - a dict with the final set of filter parameters.
     """
     applied_filters = OrderedDict()
-    filter_parms = {}
+    filter_params = {}
 
     for field_name in request.GET:
-        applied_filter = copy(get_filter_by_name(declared_filters, field_name))
-        applied_filter.set_values(request.GET.getlist(field_name))
+        filter_inst = copy(get_filter_by_name(declared_filters, field_name))
+        filter_inst.set_values(request.GET.getlist(field_name))
 
-        filter_parms.update(applied_filter.get_filter_parms())
-        applied_filter.count = get_count('voter.NCVoter', filter_parms)
-        applied_filter.filter_parms = filter_parms
+        filter_params.update(filter_inst.get_filter_params())
+        filter_inst.count = get_count('voter.NCVoter', filter_params)
+        filter_inst.filter_params = filter_params
 
-        applied_filters[field_name] = applied_filter
+        applied_filters[field_name] = filter_inst
 
-    return applied_filters, filter_parms
+    return applied_filters, filter_params

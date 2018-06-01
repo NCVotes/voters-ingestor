@@ -46,30 +46,30 @@ class ChoiceFilterTest(FiltersTest):
         c.set_values('1')
         self.assertEqual(c.description(), 'one person')
 
-    def test_get_parms(self):
+    def test_get_params(self):
         c = copy(self.test_filters[0])
         c.set_values('1')
-        self.assertEqual({'num': '1'}, c.get_filter_parms())
+        self.assertEqual({'num': '1'}, c.get_filter_params())
 
 
 class FiltersFromRequestTest(FiltersTest):
     def test_no_querystring(self):
         mock_request = MagicMock(GET=QueryDict())
-        applied, parms = filters_from_request(self.test_filters, mock_request)
+        applied, params = filters_from_request(self.test_filters, mock_request)
         self.assertEqual(applied, OrderedDict())
-        self.assertEqual({}, parms)
+        self.assertEqual({}, params)
 
     def test_with_choice(self):
         mock_request = MagicMock(GET=QueryDict('num=2'))
-        applied, parms = filters_from_request(self.test_filters, mock_request)
+        applied, params = filters_from_request(self.test_filters, mock_request)
         self.assertEqual(len(applied), 1)
         self.assertIn('num', applied)
-        self.assertEqual({'num': '2'}, parms)
+        self.assertEqual({'num': '2'}, params)
 
     def test_two_choices(self):
         mock_request = MagicMock(GET=QueryDict('indent=S&num=1'))
-        applied, parms = filters_from_request(self.test_filters, mock_request)
+        applied, params = filters_from_request(self.test_filters, mock_request)
         self.assertEqual(len(applied), 2)
         self.assertIn('indent', applied)
         self.assertIn('num', applied)
-        self.assertEqual({'indent': 'S', 'num': '1'}, parms)
+        self.assertEqual({'indent': 'S', 'num': '1'}, params)

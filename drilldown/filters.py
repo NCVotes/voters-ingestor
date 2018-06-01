@@ -121,6 +121,41 @@ class ChoiceFilter(Filter):
                 return description
 
 
+class AgeFilter(Filter):
+    """
+    Min and max ages.  values = [min, max] (integers)
+    """
+    editing_template = Template("""
+        <input name="age" value="{{ filter.values.0 }}" type="number" placeholder="lowest age to include">
+        &ndash;
+        <input name="age" value="{{ filter.values.1 }}" type="number" placeholder="highest age to include">
+    """)
+
+    def __init__(self):
+        super().__init__(display_name='Age', field_name='age')
+
+    def set_values(self, values: List[str]):
+        # Input values are strs because they come from the request parameters
+        if not hasattr(values, '__iter__') or isinstance(values, str):
+            raise ValueError("Values must be iterable")
+        if len(values) != 2:
+            raise ValueError("Values for age should be a minimum and maximum")
+        self.values = [int(v) for v in values]
+        # Make sure values are lowest first
+        if self.values[1] < self.values[0]:
+            self.values = [self.values[1], self.values[0]]
+
+    def get_filter_parms(self) -> Dict:
+        return dict(age__gte=self.values[0], age__lte=self.values[1])
+
+    def description(self) -> str:
+        """
+        Return the appropriate description for the currently selected choice.
+        """
+        values = self.values
+        return "have age between %d and %d" % (values[0], values[1])
+
+
 def get_filter_by_name(filter_list, field_name):
     for filter in filter_list:
         if filter.field_name == field_name:

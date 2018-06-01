@@ -10,67 +10,57 @@
             <span class="count">{{ total_count|localize }}</span>
         </div>
         {% for filter in applied_filters %}
+          {# for each filter they've already applied, show its value, and provide a way to display a form to edit its value #}
+          {# also provide a way to delete it from the applied filters #}
             <div class="filter">
                 <span class="filter-desc">{{ filter.description|safe }}</span>
 
                 <form method="GET" action="{{ request.get_full_path }}" class="hidden">
+                    {# need to add hidden fields to preserve the values of the filters other than the one we're going to edit #}
                     {% for af in applied_filters %}
-                        {% if filter.field != af.field %}
-                            <input type="hidden" name="{{ af.field }}" value="{{ af.value }}" />
-                        {% else %}
-                            <select name="{{ filter.field }}">
-                                <option>-</option>
-                                {% for value, option in filter.options.items %}
-                                    <option value="{{ value }}">{{ option.label }}</button><br/>
-                                {% endfor %}
-                            </select>
+                        {% if filter.field_name != af.field_name %}
+                           {{ af.render_values }}
                         {% endif %}
                     {% endfor %}
+                    {# now let them edit this filter #}
+                    {{ filter.render_for_editing }}
                     <button type="submit">Apply</button>
                 </form>
 
                 <span class="controls">
-                    [<a href="?{{ request|qs_trim:filter.field }}">delete</a>]
+                    [<a href="?{{ request|qs_trim:filter.field_name }}">delete</a>]
                     [<a onclick="javascript:onClickEdit(this)">edit</a>]
                 </span>
-                
                 <span class="count">{{ filter.count|localize }}</span>
+                <!-- {{ filter.filter_parms|safe }} --> {# for debugging, you can see the current filter parameters by viewing the page source #}
             </div>
         {% endfor %}
     </div>
 
     <div class="add-filter-list">
-        {% for field, values in FILTERS.items %}
-            {% if field not in applied_filter_keys %}
-                <div class="add-filter shown">
-                    <h3>{% for fname, flabel in FILTER_NAMES.items %}
-                        {% if fname == field %}
-                            {{ flabel }}
-                        {% endif %}
-                    {% endfor %}[<a onclick="javascript:onAddFilter(this)">+</a>]</h3>
-                    <form method="GET" action="{{ request.get_full_path }}" class="hidden">
-                        {% for filter in applied_filters %}
-                            <input type="hidden" name="{{ filter.field }}" value="{{ filter.value }}" />
-                        {% endfor %}
+      {# now let them add filters they have not already applied #}
+      {% for filter in unapplied_filters %}
+        <div class="add-filter shown">
+          <h3>{{ filter.display_name }} [<a onclick="javascript:onAddFilter(this)">+</a>]</h3>
+          <form method="GET" action="{{ request.get_full_path }}" class="hidden">
+            {# preserve filter values already selected #}
+            {% for filter in applied_filters %}
+              {{ filter.render_values }}
+            {% endfor %}
 
-                        <select name="{{ field }}">
-                            <option>-</option>
-                            {% for value, options in values.items %}
-                                <option value="{{ value }}">{{ options.label }}</button><br/>
-                            {% endfor %}
-                        </select>
+            {# edit this field #}
+            {{ filter.render_for_editing }}
 
-                        <button type="submit">Apply</button>
-                        <button onclick="javascript:onAddFilter(this);return false">Cancel</button>
-                    </form>
-                </div>
-            {% endif %}
-        {% endfor %}
+            <button type="submit">Apply</button>
+            <button onclick="javascript:onAddFilter(this);return false">Cancel</button>
+          </form>
+        </div>
+      {% endfor %}
     </div>
 
     <a href="{% url "sample" %}?{{ request.GET.urlencode }}">get samples</a>
 
     <div>
-        Example filtering: Female Democrats in Durham County <a href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM</a>
+        Example filtering: Female Democrats in Durham County <a href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM&amp;age=18&amp;age=90">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM&amp;age=18&amp;age=90</a>
     </div>
 {% endblock %}

@@ -232,6 +232,11 @@ class NCVoter(models.Model):
         if birth_age:
             parsed_row['birth_age'] = int(birth_age)
 
+        # Age should be an integer
+        age = row.get('age')
+        if age:
+            parsed_row['age'] = int(age)
+
         drivers_lic_str = row.get('drivers_lic', '')
         parsed_row['drivers_lic'] = (drivers_lic_str.strip().upper() == 'Y')
 

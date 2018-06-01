@@ -185,14 +185,15 @@ class VoterProcessChangeTrackerTest(TestCase):
         self.assertEqual(data["first_name"], 'VON')
         self.assertEqual(data["last_name"], 'WILSON')
 
-    def test_ignore_age(self):
+    def test_ignore_changes_in_age(self):
+        # Every year the ages change. The voters have not changed.
         self.load_two_snapshots()
 
         voter = NCVoter.objects.get(ncid="AS2035")
         change1, change2 = voter.changelog.all()
 
         self.assertEqual('A', change1.op_code)
-        self.assertEqual('68', change1.data.get('age'))
+        self.assertEqual(68, change1.data.get('age'))
         self.assertIsNone(change2.data.get('age'))
 
     def test_can_resume_from_last_line(self):

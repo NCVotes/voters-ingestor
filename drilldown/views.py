@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.shortcuts import render
 
-from drilldown.filters import ChoiceFilter, filters_from_request
+from drilldown.filters import ChoiceFilter, AgeFilter, filters_from_request
 from ncvoter.known_cities import KNOWN_CITIES
 from queryviews.models import get_count, get_random_sample
 
@@ -48,6 +48,7 @@ declared_filters = [
             for city in KNOWN_CITIES
         ]
     ),
+    AgeFilter(),
 ]
 
 

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 from django.http import QueryDict
 from django.test import TestCase
 
-from drilldown.filters import ChoiceFilter, filters_from_request
+from drilldown.filters import ChoiceFilter, AgeFilter, filters_from_request
 
 
 class FiltersTest(TestCase):
@@ -28,7 +28,8 @@ class FiltersTest(TestCase):
                 display_name="indenting",
                 field_name="indent",
 
-            )
+            ),
+            AgeFilter(),
         ]
 
 
@@ -52,6 +53,48 @@ class ChoiceFilterTest(FiltersTest):
         self.assertEqual({'num': '1'}, c.get_filter_params())
 
 
+class AgeFilterTest(FiltersTest):
+    def setUp(self):
+        self.age_filter = AgeFilter()
+
+    def test_age_filter_constructor_validation(self):
+        # It takes no params
+        with self.assertRaises(TypeError):
+            AgeFilter('foo')
+
+    def test_age_description(self):
+        self.age_filter.set_values([10, 20])
+        self.assertEqual(self.age_filter.description(), 'have age between 10 and 20')
+
+    def test_values_validation(self):
+        with self.assertRaises(ValueError):
+            self.age_filter.set_values(10)
+        with self.assertRaises(ValueError):
+            self.age_filter.set_values('10')
+        with self.assertRaises(ValueError):
+            self.age_filter.set_values([])
+        with self.assertRaises(ValueError):
+            self.age_filter.set_values([10])
+        with self.assertRaises(ValueError):
+            self.age_filter.set_values([10, 20, 30])
+        self.age_filter.set_values(['10', '20'])
+        self.assertEqual(self.age_filter.values, [10, 20])
+        self.age_filter.set_values([10, 20])
+        self.assertEqual(self.age_filter.values, [10, 20])
+        self.age_filter.set_values([20, 10])
+        self.assertEqual(self.age_filter.values, [10, 20])
+
+    def test_get_params(self):
+        self.age_filter.set_values(['18', '27'])
+        self.assertEqual(
+            {
+                'age__gte': 18,
+                'age__lte': 27
+            },
+            self.age_filter.get_filter_params()
+        )
+
+
 class FiltersFromRequestTest(FiltersTest):
     def test_no_querystring(self):
         mock_request = MagicMock(GET=QueryDict())
@@ -65,6 +108,21 @@ class FiltersFromRequestTest(FiltersTest):
         self.assertEqual(len(applied), 1)
         self.assertIn('num', applied)
         self.assertEqual({'num': '2'}, params)
+
+    def test_with_age(self):
+        mock_request = MagicMock(GET=QueryDict('age=2&age=10'))
+        applied, params = filters_from_request(self.test_filters, mock_request)
+        self.assertEqual(len(applied), 1)
+        self.assertIn('age', applied)
+        self.assertEqual({'age__gte': 2, 'age__lte': 10}, params)
+
+    def test_choice_and_age(self):
+        mock_request = MagicMock(GET=QueryDict('age=2&age=10&num=1'))
+        applied, params = filters_from_request(self.test_filters, mock_request)
+        self.assertEqual(len(applied), 2)
+        self.assertIn('age', applied)
+        self.assertIn('num', applied)
+        self.assertEqual({'age__gte': 2, 'age__lte': 10, 'num': '1'}, params)
 
     def test_two_choices(self):
         mock_request = MagicMock(GET=QueryDict('indent=S&num=1'))

@@ -53,7 +53,7 @@ declared_filters = [
 
 
 def drilldown(request):
-    applied_filters, final_filter_parms = filters_from_request(declared_filters, request)
+    applied_filters, final_filter_params = filters_from_request(declared_filters, request)
     unapplied_filters = [f for f in declared_filters if f.field_name not in applied_filters]
 
     total_count = get_count("voter.NCVoter", {})
@@ -66,8 +66,8 @@ def drilldown(request):
 
 
 def sample(request):
-    applied_filters, final_filter_parms = filters_from_request(declared_filters, request)
-    sample_results = get_random_sample(20, 'voter.NCVoter', final_filter_parms)
+    applied_filters, final_filter_params = filters_from_request(declared_filters, request)
+    sample_results = get_random_sample(20, 'voter.NCVoter', final_filter_params)
     total_count = get_count("voter.NCVoter", {})
 
     return render(request, 'drilldown/sample.html', {

@@ -128,3 +128,6 @@ register_query("voter.NCVoter", {"gender_code": "M", "party_cd": "DEM"})
 
 for county in settings.COUNTIES:
     register_query("voter.NCVoter", {"county_desc": county})
+
+for status_code, status_label, status_desc in settings.STATUS_CHOICES:
+    register_query("voter.NCVoter", {"voter_status_desc": status_code})

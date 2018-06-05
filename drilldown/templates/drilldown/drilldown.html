@@ -13,9 +13,15 @@
           {# for each filter they've already applied, show its value, and provide a way to display a form to edit its value #}
           {# also provide a way to delete it from the applied filters #}
             <div class="filter">
-                <span class="filter-desc">{{ filter.description|safe }}</span>
+                {% if filter.errors %}
+                    {% for error in filter.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% else %}
+                    <span class="filter-desc">{{ filter.description|safe }}</span>
+                {% endif %}
 
-                <form method="GET" action="{{ request.get_full_path }}" class="hidden">
+                <form method="GET" action="{{ request.get_full_path }}" class="{% if filter.errors %}shown{% else %}hidden{% endif %}">
                     {# need to add hidden fields to preserve the values of the filters other than the one we're going to edit #}
                     {% for af in applied_filters %}
                         {% if filter.field_name != af.field_name %}

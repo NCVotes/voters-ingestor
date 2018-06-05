@@ -10,13 +10,7 @@ declared_filters = [
     ChoiceFilter(
         display_name='Status',
         field_name='voter_status_desc',
-        choices=[
-            ('ACTIVE', 'Active', "are actively registered"),
-            ('DENIED', 'Denied', "were denied registration"),
-            ('INACTIVE', 'Inactive', "have inactive registrations"),
-            ('REMOVED', 'Removed', "have had their registration removed"),
-            ('TEMPORARY', 'Temporary', 'have temporary registrations'),
-        ]
+        choices=settings.STATUS_CHOICES,
     ),
     ChoiceFilter(
         display_name='Gender',

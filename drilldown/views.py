@@ -9,11 +9,8 @@ from queryviews.models import get_count, get_random_sample
 declared_filters = [
     ChoiceFilter(
         display_name='Status',
-        field_name='status_cd',
-        choices=[
-            ('A', 'Active', "are actively registered"),
-            ('R', 'Removed', "are removed")
-        ]
+        field_name='voter_status_desc',
+        choices=settings.STATUS_CHOICES,
     ),
     ChoiceFilter(
         display_name='Gender',

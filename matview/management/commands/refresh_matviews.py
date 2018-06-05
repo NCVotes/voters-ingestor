@@ -43,7 +43,7 @@ class Command(BaseCommand):
 
             instance = kwargs.get('instance')
             if instance:
-                delta = (instance.last_updated - instance._last_started).microseconds / 1000
+                delta = (instance.last_updated - instance._last_started).microseconds
                 t = int(delta / options['threads'])
                 if t >= 1000:
                     ts = "%0.1fs" % (t / 1000,)

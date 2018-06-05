@@ -134,7 +134,7 @@ def get_count(model, filters, fast_only=False):
         return count
 
 
-def get_query(model, filters, or_filters=None, fast_only=False):
+def get_query(model, filters, fast_only=False):
     filters = prepare_filters(filters)
     app_label, model_name = model.split('.')
     query_items = queries[app_label][model_name].items()
@@ -154,20 +154,12 @@ def get_query(model, filters, or_filters=None, fast_only=False):
         else:
             matches.append(query)
 
-    any_qs = models.Q()
-    if or_filters:
-        for one_or_filter in or_filters:
-            one_of = models.Q()
-            for field, value in one_or_filter.items():
-                one_of &= models.Q(**{'data__' + field: value})
-            any_qs |= one_of
-
     if matches:
         # Find the match with the smallest count
         matches = sorted(matches, key=lambda query: get_count(model, query.filters))
         query = matches[0]
         remaining = {k: filters[k] for k in filters if k not in query.filters}
-        q = models.Q(**{'data__' + k: v for k, v in remaining.items()}) & any_qs
+        q = models.Q(**{'data__' + k: v for k, v in remaining.items()})
         return query.objects.filter(q)
     else:
         if fast_only:
@@ -176,7 +168,7 @@ def get_query(model, filters, or_filters=None, fast_only=False):
             "get_query(%r, %r) had to do a potentially slow query against a source table." %
             (model, filters)
         )
-        q = models.Q(**{'data__' + k: v for k, v in filters.items()}) & any_qs
+        q = models.Q(**{'data__' + k: v for k, v in filters.items()})
         return apps.get_model(app_label, model_name).objects.filter(q)
 
 

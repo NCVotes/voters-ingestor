@@ -11,7 +11,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 
 from ncvoter.known_cities import KNOWN_CITIES
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class FileTracker(models.Model):
@@ -260,7 +260,7 @@ class NCVoter(models.Model):
 
         city = row.get('res_city_desc')
         if city not in KNOWN_CITIES:
-            logger.warning("City %s is not a known city. Either record is bad or %s needs to be added to KNOWN_CITIES.")
+            logger.warning("City %s is not a known city. Either record is bad or %s needs to be added to KNOWN_CITIES.", city)
             # Add to known cities temporarily (during this execution) so that
             # we don't keep warning about it.
             KNOWN_CITIES.append(city)

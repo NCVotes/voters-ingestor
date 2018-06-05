@@ -87,6 +87,31 @@ def prepare_filters(filters):
     return filters
 
 
+def split_flag_filters(filters):
+    """Given a set of filters which may contain flags return a list of filters which
+    are to be done in separate queries and combined.
+    """
+
+    sub_filters = []
+    for key in filters:
+        if '_' not in key:
+            continue
+        for flagname in flags:
+            flag = ''.join(sorted(key.split('_', 1)[1]))
+            if key.startswith(flagname + '_'):
+                if len(flag) <= 2:
+                    filters.pop(key)
+                    filters['%s_%s' % (flagname, flag)] = 'true' 
+                else:
+                    pairs = [x for x in re.split(r'(\w{2})', flag) if x]
+                    for pair in pairs:
+                        sub_filter = deepcopy(filters)
+                        sub_filter[flagname + '_' + pair] = 'true'
+                        sub_filter.pop(key)
+                        sub_filters.append(sub_filter)
+    return sub_filters
+
+
 def get_count(model, filters, fast_only=False):
     filters = prepare_filters(filters)
     # First, assume we have a materialized view that already has the count we need
@@ -94,30 +119,15 @@ def get_count(model, filters, fast_only=False):
     app_label, model_name = model.split('.')
     # Attempt to read that materialized count
     try:
-        for key in filters:
-            if '_' not in key:
-                continue
-            for flagname in flags:
-                flag = ''.join(sorted(key.split('_', 1)[1]))
-                if key.startswith(flagname + '_'):
-                    if len(flag) <= 2:
-                        filters.pop(key)
-                        filters['%s_%s' % (flagname, flag)] = 'true' 
-                    else:
-                        pairs = [x for x in re.split(r'(\w{2})', flag) if x]
-                        count = 0
-                        for pair in pairs:
-                            sub_filter = deepcopy(filters)
-                            sub_filter[flagname + '_' + pair] = 'true'
-                            sub_filter.pop(key)
-                            sub_count = get_count(model, sub_filter, fast_only=fast_only)
-                            count += sub_count
-                        return count
-        print("DIRECT", filters)
-
-        count_model = queries[app_label][model_name][name + '__count']
-
-        return count_model.objects.first().count
+        sub_filters = split_flag_filters(filters)
+        if sub_filters:
+            count = 0
+            for sub_filter in sub_filters:
+                count += get_count(model, sub_filter, fast_only=fast_only)
+            return count
+        else:
+            count_model = queries[app_label][model_name][name + '__count']
+            return count_model.objects.first().count
     # If such a materialized count does not exist, we'll use get_query() to find the
     # most efficient way we can, but it'll still be slower... potentially much slower!
     except KeyError:

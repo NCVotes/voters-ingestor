@@ -13,9 +13,15 @@
           {# for each filter they've already applied, show its value, and provide a way to display a form to edit its value #}
           {# also provide a way to delete it from the applied filters #}
             <div class="filter">
-                <span class="filter-desc">{{ filter.description|safe }}</span>
+                {% if filter.errors %}
+                    {% for error in filter.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% else %}
+                    <span class="filter-desc">{{ filter.description|safe }}</span>
+                {% endif %}
 
-                <form method="GET" action="{{ request.get_full_path }}" class="hidden">
+                <form method="GET" action="{{ request.get_full_path }}" class="{% if filter.errors %}shown{% else %}hidden{% endif %}">
                     {# need to add hidden fields to preserve the values of the filters other than the one we're going to edit #}
                     {% for af in applied_filters %}
                         {% if filter.field_name != af.field_name %}
@@ -37,33 +43,6 @@
         {% endfor %}
     </div>
 
-<!-- <<<<<<< HEAD
-    <div class="row">
-        <div class="add-filter-list">
-            {% for field, filter_opt in FILTERS.items %}
-                {% if field not in applied_filter_keys %}
-                    <div class="add-filter add-filter-{{ filter_opt.0.lower }} hidden">
-                        <h3>{{ filter_opt.0 }}</h3>
-                        <form method="GET" action="{{ request.get_full_path }}">
-                            {% for filter in applied_filters %}
-                                <input type="hidden" name="{{ filter.field }}" value="{{ filter.value }}" />
-                            {% endfor %}
-
-                            <select name="{{ field }}">
-                                <option>-</option>
-                                {% for value, options in filter_opt.1.items %}
-                                    <option value="{{ value }}">{{ options.label }}</button><br/>
-                                {% endfor %}
-                            </select>
-
-                            <br />
-                            <button type="submit">Apply</button>
-                            <button onclick="javascript:onAddFilter(this);return false">Cancel</button>
-                        </form>
-                    </div>
-                {% endif %}
-            {% endfor %}
-======= -->
     <div class="add-filter-list">
       {# now let them add filters they have not already applied #}
       {% for filter in unapplied_filters %}
@@ -83,7 +62,6 @@
         </div>
       {% endfor %}
     </div>
-<!-- >>>>>>> develop -->
 
     <div class="row">
         <div class="ctn-select-next-filter shown">

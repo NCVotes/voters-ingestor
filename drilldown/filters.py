@@ -36,6 +36,7 @@ class Filter:
         self.display_name = display_name
         self.field_name = field_name
         self.values = None
+        self.errors = None
 
     def set_values(self, values: List[str]):
         """
@@ -131,6 +132,8 @@ class AgeFilter(Filter):
         if None not in self.values:
             if self.values[1] < self.values[0]:
                 self.values = [self.values[1], self.values[0]]
+        if self.values == [None, None]:
+            self.errors = ["Must enter min age, max age, or both."]
 
     def get_filter_params(self) -> Dict:
         age_filter = {}

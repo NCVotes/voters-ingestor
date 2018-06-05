@@ -136,7 +136,7 @@ class QueryTestCase(TestCase):
 
 
 # class QueryOrTestCase(TestCase):
-    
+
 #     def setUp(self):
 #         ncid = 1
 #         for ncid, party, gender, first, last in (

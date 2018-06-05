@@ -141,15 +141,9 @@ class AgeFilter(Filter):
         return "have age between %d and %d" % (values[0], values[1])
 
 
-class RaceFilter(Filter):
-    """
-    Race filter, values are a list of race_code values.
+class RaceFilter(ChoiceFilter):
+    """Race filter, values are a list of race_code values."""
 
-    >>> race_codes
-    {('O', 'OTHER'), ('W', 'WHITE'), ('B', 'BLACK or AFRICAN AMERICAN'), ('M', 'TWO or MORE RACES'), ('I', 'INDIAN AMERICAN or ALASKA NATIVE'), ('U', 'UNDESIGNATED'), ('A', 'ASIAN'), ('I', 'AMERICAN INDIAN or ALASKA NATIVE')}
-    >>> ethnic_codes
-    {('NL', 'NOT HISPANIC or NOT LATINO'), ('HL', 'HISPANIC or LATINO'), ('UN', 'UNDESIGNATED')}
-    """
     editing_template = "drilldown/edit_multichoice_filter.html"
 
     RACES = {
@@ -163,7 +157,11 @@ class RaceFilter(Filter):
     }
 
     def __init__(self):
-        super().__init__(display_name='Race', field_name='race_code')
+        choices = [
+            (value, label, label.title())
+            for (value, label) in self.RACES.items()
+        ]
+        super().__init__(display_name='Race', field_name='race_code', choices=choices)
 
     @classmethod
     def get_raceflags(cls, limit=None, voter=None):
@@ -215,7 +213,7 @@ def filters_from_request(declared_filters: List[Filter], request: HttpRequest) -
      - an ordered dict with the applied filter objects keyed by field name.
      - a dict with the final set of filter parameters.
     """
-    from queryviews import get_count
+    from queryviews.models import get_count
 
     applied_filters = OrderedDict()
     filter_params = {}

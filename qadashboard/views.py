@@ -1,6 +1,7 @@
 import random
 
 from django import forms
+from django.conf import settings
 from django.shortcuts import render
 
 from voter.models import NCVoter, ChangeTracker
@@ -36,6 +37,8 @@ def qadashboard(request):
                         "party_cd": 'DEM' if party.lower().startswith('d') else 'REP',
                         "gender_code": gender.upper()[0],
                         "county_desc": county.upper(),
+
+                        "voter_status_desc": random.choice([status[0] for status in settings.STATUS_CHOICES]),
 
                         "age": random.randint(18, 90),
 

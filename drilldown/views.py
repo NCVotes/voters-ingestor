@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.shortcuts import render
 
-from drilldown.filters import ChoiceFilter, AgeFilter, filters_from_request
+from drilldown.filters import ChoiceFilter, AgeFilter, RaceFilter, filters_from_request
 from ncvoter.known_cities import KNOWN_CITIES
 from queryviews.models import get_count, get_random_sample
 
@@ -49,6 +49,7 @@ declared_filters = [
         ]
     ),
     AgeFilter(),
+    RaceFilter(),
 ]
 
 
@@ -60,7 +61,7 @@ def drilldown(request):
 
     return render(request, 'drilldown/drilldown.html', {
         "total_count": total_count,
-        "applied_filters": applied_filters.values(),
+        "applied_filters": applied_filters,
         "unapplied_filters": unapplied_filters,
     })
 
@@ -72,6 +73,6 @@ def sample(request):
 
     return render(request, 'drilldown/sample.html', {
         "total_count": total_count,
-        "applied_filters": applied_filters.values(),
+        "applied_filters": applied_filters,
         "sample_results": sample_results,
     })

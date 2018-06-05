@@ -49,6 +49,29 @@ class CountTestCase(TestCase):
         self.assertEqual(1, models.get_count("voter.NCVoter", {"party_cd": "REP", "gender_code": "F"}))
 
 
+# class CountOrTestCase(TestCase):
+
+#     def setUp(self):
+#         ncid = 1
+#         for party in ('DEM', 'REP'):
+#             for sexcode in ('M', 'F'):
+#                 data = {
+#                     "party_cd": party,
+#                     "gender_code": sexcode,
+#                 }
+#                 NCVoter.objects.create(ncid=str(ncid), data=data)
+#                 ncid += 1
+
+#         MatView.refresh_all()
+
+#     def test_count_all(self):
+#         men = models.get_count("voter.NCVoter", {"gender_code": "M"})
+#         women = models.get_count("voter.NCVoter", {"gender_code": "F"})
+#         people = models.get_count_or("voter.NCVoter", {"gender_code": "M"}, {"gender_code": "M"})
+
+#         assert people == men + women
+
+
 class QueryTestCase(TestCase):
 
     def setUp(self):
@@ -110,3 +133,44 @@ class QueryTestCase(TestCase):
         q = models.get_query("voter.NCVoter", {"party_cd": "DEM", "last_name": "Lambert"})
         ncids = q.values_list('ncid', flat=True)
         self.assertIsSubset(("A1", "A2"), ncids)
+
+
+# class QueryOrTestCase(TestCase):
+    
+#     def setUp(self):
+#         ncid = 1
+#         for ncid, party, gender, first, last in (
+#             ("A1", "DEM", "F", "Mary", "Lambert"),
+#             ("A2", "DEM", "M", "Harry", "Lambert"),
+#             ("A3", "DEM", "F", "Daria", "Smith"),
+#             ("A4", "REP", "M", "Timothy", "Bolton"),
+#             ("A5", "REP", "F", "Sarah", "Littleton"),
+#         ):
+#             NCVoter.objects.create(
+#                 ncid=ncid, data={
+#                     "party_cd": party,
+#                     "gender_code": gender,
+#                     "first_name": first,
+#                     "last_name": last,
+#                 }
+#             )
+
+#         MatView.refresh_all()
+
+#     def assertIsSubset(self, left, right):
+#         left = set(left)
+#         right = set(right)
+#         extra_left = left - right
+
+#         if extra_left:
+#             raise AssertionError(
+#                 "First set is not a subset of second. Values not in second set: %s"
+#                 % ', '.join(str(v) for v in extra_left))
+
+#     def test_or(self):
+#         # So we know we're querying the materialized views
+#         NCVoter.objects.all().delete()
+
+#         q = models.get_query_or("voter.NCVoter", {"party_cd": "REP"}, {"gender_code": "M"})
+#         ncids = q.values_list('ncid', flat=True)
+#         self.assertIsSubset(("A2", "A4", "A5"), ncids)

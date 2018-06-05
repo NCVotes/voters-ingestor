@@ -1,5 +1,7 @@
+import re
 import logging
 import random
+from copy import deepcopy
 from datetime import datetime
 
 from django.conf import settings
@@ -9,11 +11,15 @@ from django.apps import apps
 from django.db import models
 
 from matview.dbutils import get_matview_name
+from drilldown.filters import RaceFilter
 
 
 logger = logging.getLogger(__name__)
 
+
 queries = {}
+filter_preps = []
+flags = []
 
 
 def register_query(model, filters):
@@ -51,18 +57,70 @@ def register_query(model, filters):
     queries.setdefault(app_label, {}).setdefault(model_name, {})[name + '__count'] = count_model
 
 
-def get_count(model, filters):
+def register_flag(flagname):
+    """Registers a "flag" and its prep function.
+
+    Used like this:
+
+        @register_flag("raceflag")
+        def map_to_raceflag(filters):
+            race_code = filters.pop('race_code', None)
+            if race_code:
+                # race_code is give as a list of allowed values
+                race_flag = 'raceflag_' + (''.join(race_code)).lower()
+                filters[race_flag] = 'true'
+
+    For example, this will replace any `race_code` field with an appropriate `raceflag_*`
+    entries.
+    """
+
+    def _(callback):
+        filter_preps.append(callback)
+        flags.append(flagname)
+    return _
+
+
+def prepare_filters(filters):
+    filters = deepcopy(filters)
+    for func in filter_preps:
+        func(filters)
+    return filters
+
+
+def get_count(model, filters, fast_only=True):
+    filters = prepare_filters(filters)
+    # First, assume we have a materialized view that already has the count we need
     name = get_matview_name(model, filters)
     app_label, model_name = model.split('.')
+    # Attempt to read that materialized count
     try:
+        for key in filters:
+            for flagname in flags:
+                flag = key.split('_', 1)[1]
+                if key.startswith(flagname + '_') and len(flag) > 2:
+                    pairs = [x for x in re.split(r'(\w{2})', flag) if x]
+                    count = 0
+                    for pair in pairs:
+                        sub_filter = deepcopy(filters)
+                        sub_filter[flagname + '_' + pair] = 'true'
+                        sub_filter.pop(key)
+                        sub_count = get_count(model, sub_filter, fast_only=fast_only)
+                        count += sub_count
+                    return count
+        print("DIRECT", filters)
+
         count_model = queries[app_label][model_name][name + '__count']
 
         return count_model.objects.first().count
+    # If such a materialized count does not exist, we'll use get_query() to find the
+    # most efficient way we can, but it'll still be slower... potentially much slower!
     except KeyError:
-        # This is slower, potentially much slower! Log times for fallbacks.
+        if fast_only:
+            raise ValueError("Refusing to do a slow query. (%r)" % (filters,))
         start = datetime.now()
         count = get_query(model, filters).count()
         elapsed = datetime.now() - start
+        #  Log times for fallbacks, so we might identify them later to add more mat views
         logger.warning(
             "get_count(%r, %r) had to do a potentially slow query. (%ssec)" %
             (model, filters, elapsed.seconds)
@@ -70,8 +128,8 @@ def get_count(model, filters):
         return count
 
 
-def get_query(model, filters):
-    name = get_matview_name(model, filters)
+def get_query(model, filters, or_filters=None, fast_only=True):
+    filters = prepare_filters(filters)
     app_label, model_name = model.split('.')
     query_items = queries[app_label][model_name].items()
 
@@ -89,18 +147,31 @@ def get_query(model, filters):
                 break
         else:
             matches.append(query)
+
+    any_qs = models.Q()
+    if or_filters:
+        for one_or_filter in or_filters:
+            one_of = models.Q()
+            for field, value in one_or_filter.items():
+                one_of &= models.Q(**{'data__' + field: value})
+            any_qs |= one_of
+
     if matches:
         # Find the match with the smallest count
         matches = sorted(matches, key=lambda query: get_count(model, query.filters))
         query = matches[0]
         remaining = {k: filters[k] for k in filters if k not in query.filters}
-        return query.objects.filter(**{'data__' + k: v for k, v in remaining.items()})
+        q = models.Q(**{'data__' + k: v for k, v in remaining.items()}) & any_qs
+        return query.objects.filter(q)
     else:
+        if fast_only:
+            raise ValueError("Refusing to do a slow query. (%r)" % (filters,))
         logger.warn(
             "get_query(%r, %r) had to do a potentially slow query against a source table." %
             (model, filters)
         )
-        return apps.get_model(app_label, model_name).objects.filter(**{'data__' + k: v for k, v in filters.items()})
+        q = models.Q(**{'data__' + k: v for k, v in filters.items()}) & any_qs
+        return apps.get_model(app_label, model_name).objects.filter(q)
 
 
 def get_random_sample(n, model, filters):
@@ -128,3 +199,17 @@ register_query("voter.NCVoter", {"gender_code": "M", "party_cd": "DEM"})
 
 for county in settings.COUNTIES:
     register_query("voter.NCVoter", {"county_desc": county})
+
+
+@register_flag("raceflag")
+def map_to_raceflag(filters):
+    race_code = filters.pop('race_code', None)
+    if race_code:
+        # race_code is give as a list of allowed values
+        race_flag = 'raceflag_' + (''.join(race_code)).lower()
+        filters[race_flag] = 'true'
+
+
+for raceflag in RaceFilter.get_raceflags(2):
+    print("matview", raceflag)
+    register_query("voter.NCVoter", {raceflag: "true"})

@@ -1,11 +1,10 @@
 from collections import OrderedDict
 from copy import copy
+from itertools import combinations
 from typing import Tuple, Dict, List, Optional
 
 from django.http import HttpRequest
 from django.template.loader import get_template
-
-from queryviews.models import get_count
 
 
 class Filter:
@@ -142,6 +141,60 @@ class AgeFilter(Filter):
         return "have age between %d and %d" % (values[0], values[1])
 
 
+class RaceFilter(Filter):
+    """
+    Race filter, values are a list of race_code values.
+
+    >>> race_codes
+    {('O', 'OTHER'), ('W', 'WHITE'), ('B', 'BLACK or AFRICAN AMERICAN'), ('M', 'TWO or MORE RACES'), ('I', 'INDIAN AMERICAN or ALASKA NATIVE'), ('U', 'UNDESIGNATED'), ('A', 'ASIAN'), ('I', 'AMERICAN INDIAN or ALASKA NATIVE')}
+    >>> ethnic_codes
+    {('NL', 'NOT HISPANIC or NOT LATINO'), ('HL', 'HISPANIC or LATINO'), ('UN', 'UNDESIGNATED')}
+    """
+    editing_template = "drilldown/edit_multichoice_filter.html"
+
+    RACES = {
+        'O': 'OTHER',
+        'W': 'WHITE',
+        'B': 'BLACK or AFRICAN AMERICAN',
+        'M': 'TWO or MORE RACES',
+        'I': 'INDIAN AMERICAN or ALASKA NATIVE',
+        'U': 'UNDESIGNATED',
+        'A': 'ASIAN',
+    }
+
+    def __init__(self):
+        super().__init__(display_name='Race', field_name='race_code')
+
+    @classmethod
+    def get_raceflags(cls, limit=None, voter=None):
+        raceflags = set()
+
+        if limit is None:
+            limit = len(cls.RACES)
+        for i in range(1, limit + 1):
+            all_flags = ('raceflag_%s' % (''.join(sorted(f)),) for f in combinations(cls.RACES, i))
+            for rf in all_flags:
+                if voter is None or voter.data.get('race_code') in rf:
+                    raceflags.add(rf.lower())
+        return raceflags
+
+    def set_values(self, values: List[str]):
+        # Input values are strs because they come from the request parameters
+        if not hasattr(values, '__iter__') or isinstance(values, str):
+            raise ValueError("Values must be iterable")
+        self.values = values
+
+    def get_filter_params(self) -> Dict:
+        return {"race_code": self.values[0]}
+
+    def description(self) -> str:
+        """
+        Return the appropriate description for the currently selected choice.
+        """
+        values = self.values
+        return "has registered race of <em>%s</em>" % (self.RACES[values[0]],)
+
+
 def get_filter_by_name(filter_list, field_name):
     for filter in filter_list:
         if filter.field_name == field_name:
@@ -162,6 +215,8 @@ def filters_from_request(declared_filters: List[Filter], request: HttpRequest) -
      - an ordered dict with the applied filter objects keyed by field name.
      - a dict with the final set of filter parameters.
     """
+    from queryviews import get_count
+
     applied_filters = OrderedDict()
     filter_params = {}
 

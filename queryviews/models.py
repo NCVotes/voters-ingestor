@@ -103,7 +103,7 @@ def split_flag_filters(filters):
             if key.startswith(flagname + '_'):
                 if len(flag) <= 2:
                     filters.pop(key)
-                    filters['%s_%s' % (flagname, flag)] = 'true' 
+                    filters['%s_%s' % (flagname, flag)] = 'true'
                 else:
                     pairs = [x for x in re.split(r'(\w{2})', flag) if x]
                     for pair in pairs:

@@ -151,6 +151,9 @@ def get_query(model, filters, fast_only=False):
     app_label, model_name = model.split('.')
     query_items = queries[app_label][model_name].items()
 
+    if split_flag_filters(filters):
+        raise ValueError("get_query() does not support complex flag queries!")
+
     # Find a materialized view query with the best match for the filter
     matches = []
     for name, query in query_items:

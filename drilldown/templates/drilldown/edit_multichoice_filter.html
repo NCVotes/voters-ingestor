@@ -1,0 +1,6 @@
+<select multiple name="{{ filter.field_name }}">
+  <option>-</option>
+  {% for value, label, foo in filter.choices %}
+    <option value="{{ value }}" {% if value in filter.values %}selected{% endif %}>{{ label }}</option><br/>
+  {% endfor %}
+</select>

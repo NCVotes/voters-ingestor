@@ -149,7 +149,7 @@ class AgeFilter(Filter):
         """
         values = self.values
         if values[0] is None:
-            return "have age less than or equal to %d" % (values[1],)        
+            return "have age less than or equal to %d" % (values[1],)
         elif values[1] is None:
             return "have age greater than or equal to %d" % (values[0],)
         else:

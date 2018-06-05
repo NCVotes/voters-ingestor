@@ -35,6 +35,7 @@ class Filter:
         self.display_name = display_name
         self.field_name = field_name
         self.values = None
+        self.errors = None
 
     def set_values(self, values: List[str]):
         """
@@ -125,20 +126,33 @@ class AgeFilter(Filter):
             raise ValueError("Values must be iterable")
         if len(values) != 2:
             raise ValueError("Values for age should be a minimum and maximum")
-        self.values = [int(v) for v in values]
+        self.values = [int(v) if v else None for v in values]
         # Make sure values are lowest first
-        if self.values[1] < self.values[0]:
-            self.values = [self.values[1], self.values[0]]
+        if None not in self.values:
+            if self.values[1] < self.values[0]:
+                self.values = [self.values[1], self.values[0]]
+        if self.values == [None, None]:
+            self.errors = ["Must enter min age, max age, or both."]
 
     def get_filter_params(self) -> Dict:
-        return dict(age__gte=self.values[0], age__lte=self.values[1])
+        age_filter = {}
+        if self.values[0]:
+            age_filter["age__gte"] = self.values[0]
+        if self.values[1]:
+            age_filter["age__lte"] = self.values[1]
+        return age_filter
 
     def description(self) -> str:
         """
         Return the appropriate description for the currently selected choice.
         """
         values = self.values
-        return "have age between %d and %d" % (values[0], values[1])
+        if values[0] is None:
+            return "have age less than or equal to %d" % (values[1],)
+        elif values[1] is None:
+            return "have age greater than or equal to %d" % (values[0],)
+        else:
+            return "have age between %d and %d" % (values[0], values[1])
 
 
 class RaceFilter(ChoiceFilter):

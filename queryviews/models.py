@@ -239,3 +239,6 @@ def map_to_raceflag(filters):
 for raceflag in RaceFilter.get_raceflags(2):
     print("matview", raceflag)
     register_query("voter.NCVoter", {raceflag: "true"})
+
+for status_code, status_label, status_desc in settings.STATUS_CHOICES:
+    register_query("voter.NCVoter", {"voter_status_desc": status_code})

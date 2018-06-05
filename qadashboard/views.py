@@ -1,10 +1,12 @@
 import random
 
 from django import forms
+from django.conf import settings
 from django.shortcuts import render
 
 from voter.models import NCVoter, ChangeTracker
 from matview.models import MatView
+from ncvoter.known_cities import KNOWN_CITIES
 
 
 class ResetForm(forms.Form):
@@ -27,6 +29,7 @@ def qadashboard(request):
             lasts = "ABCDEFGH"
             for county, party, gender, count in lines:
                 for i in range(int(count)):
+                    city = random.choice(KNOWN_CITIES)
                     NCVoter.objects.create(ncid=str(ncid), data={
                         "first_name": "FIRST%s" % (ncid,),
                         "midl_name": lasts[i % len(lasts)],
@@ -35,11 +38,14 @@ def qadashboard(request):
                         "gender_code": gender.upper()[0],
                         "county_desc": county.upper(),
 
+                        "voter_status_desc": random.choice([status[0] for status in settings.STATUS_CHOICES]),
+
                         "age": random.randint(18, 90),
 
                         "mail_addr1": "%s DIRT RD" % random.randint(100, 900),
-                        "mail_city": random.choice("CITYVILLE TOWNPLACE NOWHERE".split()),
+                        "mail_city": city,
                         "mail_zipcode": str(random.randint(20000, 29999)),
+                        "res_city_desc": city,
 
                         "area_cd": str(random.randint(100, 999)),
                         "phone_num": str(random.randint(1000000, 9999999)),

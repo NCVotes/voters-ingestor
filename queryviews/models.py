@@ -1,4 +1,5 @@
 import re
+import itertools
 import logging
 import random
 from copy import deepcopy
@@ -92,6 +93,7 @@ def split_flag_filters(filters):
     are to be done in separate queries and combined.
     """
 
+    filters = prepare_filters(filters)
     sub_filters = []
     for key in filters:
         if '_' not in key:
@@ -185,14 +187,27 @@ def get_query(model, filters, fast_only=False):
 def get_random_sample(n, model, filters):
     """Get up to `n` random sample rows from a query as efficiently as possible from a very large set."""
 
-    # First create the QuerySet from which we want to get a random sample
-    # Our goal is to never actually execute this query
-    query = get_query(model, filters)
-    count = get_count(model, filters)
-    if n >= count:
-        return query
-    offset = random.randint(0, count - n)
-    return query[offset:offset + n]
+    # We need to find out if this is one filter or multiple sub-filters to combine
+    sub_filters = split_flag_filters(filters)
+    if sub_filters:
+        remainder = n % len(sub_filters)
+        samples_each = [int(n / len(sub_filters)) for _ in sub_filters]
+        s_i = random.randint(0, len(sub_filters) - 1)
+        samples_each[s_i] += remainder
+        return list(itertools.chain(*(
+            get_random_sample(sub_n, model, sub_filter)
+            for (sub_n, sub_filter) in zip(samples_each, sub_filters)
+        )))
+
+    else:
+        # First create the QuerySet from which we want to get a random sample
+        # Our goal is to never actually execute this query
+        query = get_query(model, filters)
+        count = get_count(model, filters)
+        if n >= count:
+            return query
+        offset = random.randint(0, count - n)
+        return query[offset:offset + n]
 
 
 register_query("voter.NCVoter", {})
@@ -214,7 +229,7 @@ def map_to_raceflag(filters):
     race_code = filters.pop('race_code', None)
     if race_code:
         # race_code is give as a list of allowed values
-        race_flag = 'raceflag_' + (''.join(race_code)).lower()
+        race_flag = 'raceflag_' + (''.join(sorted(race_code))).lower()
         filters[race_flag] = 'true'
 
 

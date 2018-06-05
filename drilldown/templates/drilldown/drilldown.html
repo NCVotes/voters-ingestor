@@ -9,7 +9,7 @@
             <h1>Voters...</h1>
             <span class="count">{{ total_count|localize }}</span>
         </div>
-        {% for filter in applied_filters %}
+        {% for field_name, filter in applied_filters.items %}
           {# for each filter they've already applied, show its value, and provide a way to display a form to edit its value #}
           {# also provide a way to delete it from the applied filters #}
             <div class="filter">
@@ -23,8 +23,8 @@
 
                 <form method="GET" action="{{ request.get_full_path }}" class="{% if filter.errors %}shown{% else %}hidden{% endif %}">
                     {# need to add hidden fields to preserve the values of the filters other than the one we're going to edit #}
-                    {% for af in applied_filters %}
-                        {% if filter.field_name != af.field_name %}
+                    {% for af_name, af in applied_filters.items %}
+                        {% if field_name != af_name %}
                            {{ af.render_values }}
                         {% endif %}
                     {% endfor %}
@@ -34,7 +34,7 @@
                 </form>
 
                 <span class="controls">
-                    <a class="btn" href="?{{ request|qs_trim:filter.field_name }}">delete</a>
+                    <a class="btn" href="?{{ request|qs_trim:field_name }}">delete</a>
                     <a class="btn" onclick="javascript:onClickEdit(this)">edit</a>
                 </span>
                 <span class="count">{{ filter.count|localize }}</span>

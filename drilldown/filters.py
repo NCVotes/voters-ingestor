@@ -160,31 +160,32 @@ class RaceFilter(ChoiceFilter):
 
     editing_template = "drilldown/edit_multichoice_filter.html"
 
-    RACES = {
-        'O': 'OTHER',
-        'W': 'WHITE',
-        'B': 'BLACK or AFRICAN AMERICAN',
-        'M': 'TWO or MORE RACES',
-        'I': 'INDIAN AMERICAN or ALASKA NATIVE',
-        'U': 'UNDESIGNATED',
-        'A': 'ASIAN',
-    }
+    RACES = (
+        ('O', 'Other', 'OTHER'),
+        ('W', 'White', 'WHITE'),
+        ('B', 'Black', 'BLACK or AFRICAN AMERICAN'),
+        ('M', 'Multi-racial', 'TWO or MORE RACES'),
+        ('I', 'Native', 'INDIAN AMERICAN or ALASKA NATIVE'),
+        ('U', 'Undesignated', 'UNDESIGNATED'),
+        ('A', 'Asian', 'ASIAN'),
+    )
 
     def __init__(self):
         choices = [
-            (value, label, label.title())
-            for (value, label) in self.RACES.items()
+            (value, label, desc.title())
+            for (value, label, desc) in self.RACES
         ]
         super().__init__(display_name='Race', field_name='race_code', choices=choices)
 
     @classmethod
     def get_raceflags(cls, limit=None, voter=None):
         raceflags = set()
+        racecodes = [_[0] for _ in cls.RACES]
 
         if limit is None:
-            limit = len(cls.RACES)
+            limit = len(racecodes)
         for i in range(1, limit + 1):
-            all_flags = ('raceflag_%s' % (''.join(sorted(f)),) for f in combinations(cls.RACES, i))
+            all_flags = ('raceflag_%s' % (''.join(sorted(f)),) for f in combinations(racecodes, i))
             for rf in all_flags:
                 if voter is None or voter.data.get('race_code') in rf:
                     raceflags.add(rf.lower())
@@ -197,14 +198,26 @@ class RaceFilter(ChoiceFilter):
         self.values = values
 
     def get_filter_params(self) -> Dict:
-        return {"race_code": self.values[0]}
+        return {"race_code": self.values}
+
+    def get_race_label(self, code):
+        for (rc, rl, rd) in self.RACES:
+            if rc == code:
+                return rl
 
     def description(self) -> str:
         """
         Return the appropriate description for the currently selected choice.
         """
         values = self.values
-        return "has registered race of <em>%s</em>" % (self.RACES[values[0]],)
+        desc = ""
+        for v in values:
+            label = self.get_race_label(v)
+            if label:
+                if desc:
+                    desc += " or "
+                desc += label
+        return "has registered race of <em>%s</em>" % (desc,)
 
 
 def get_filter_by_name(filter_list, field_name):

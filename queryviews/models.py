@@ -98,17 +98,21 @@ def get_count(model, filters, fast_only=False):
             if '_' not in key:
                 continue
             for flagname in flags:
-                flag = key.split('_', 1)[1]
-                if key.startswith(flagname + '_') and len(flag) > 2:
-                    pairs = [x for x in re.split(r'(\w{2})', flag) if x]
-                    count = 0
-                    for pair in pairs:
-                        sub_filter = deepcopy(filters)
-                        sub_filter[flagname + '_' + pair] = 'true'
-                        sub_filter.pop(key)
-                        sub_count = get_count(model, sub_filter, fast_only=fast_only)
-                        count += sub_count
-                    return count
+                flag = ''.join(sorted(key.split('_', 1)[1]))
+                if key.startswith(flagname + '_'):
+                    if len(flag) <= 2:
+                        filters.pop(key)
+                        filters['%s_%s' % (flagname, flag)] = 'true' 
+                    else:
+                        pairs = [x for x in re.split(r'(\w{2})', flag) if x]
+                        count = 0
+                        for pair in pairs:
+                            sub_filter = deepcopy(filters)
+                            sub_filter[flagname + '_' + pair] = 'true'
+                            sub_filter.pop(key)
+                            sub_count = get_count(model, sub_filter, fast_only=fast_only)
+                            count += sub_count
+                        return count
         print("DIRECT", filters)
 
         count_model = queries[app_label][model_name][name + '__count']

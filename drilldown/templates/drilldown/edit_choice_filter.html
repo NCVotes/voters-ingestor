@@ -1,5 +1,5 @@
 <select name="{{ filter.field_name }}">
-  <option>-</option>
+  <option>Select a {{ filter.display_name }}</option>
   {% for value, label, foo in filter.choices %}
     <option value="{{ value }}" {% if value in filter.values %}selected{% endif %}>{{ label }}</option><br/>
   {% endfor %}

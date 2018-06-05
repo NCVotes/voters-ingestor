@@ -87,7 +87,7 @@ def prepare_filters(filters):
     return filters
 
 
-def get_count(model, filters, fast_only=True):
+def get_count(model, filters, fast_only=False):
     filters = prepare_filters(filters)
     # First, assume we have a materialized view that already has the count we need
     name = get_matview_name(model, filters)
@@ -95,6 +95,8 @@ def get_count(model, filters, fast_only=True):
     # Attempt to read that materialized count
     try:
         for key in filters:
+            if '_' not in key:
+                continue
             for flagname in flags:
                 flag = key.split('_', 1)[1]
                 if key.startswith(flagname + '_') and len(flag) > 2:
@@ -128,7 +130,7 @@ def get_count(model, filters, fast_only=True):
         return count
 
 
-def get_query(model, filters, or_filters=None, fast_only=True):
+def get_query(model, filters, or_filters=None, fast_only=False):
     filters = prepare_filters(filters)
     app_label, model_name = model.split('.')
     query_items = queries[app_label][model_name].items()

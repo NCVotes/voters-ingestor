@@ -10,12 +10,9 @@ from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 from django.apps import apps
 from django.db import models
-from django.db.models.signals import pre_save
-from django.dispatch import receiver
 
 from matview.dbutils import get_matview_name
 from drilldown.filters import RaceFilter
-from voter.models import NCVoter
 
 
 logger = logging.getLogger(__name__)
@@ -239,12 +236,6 @@ def map_to_raceflag(filters):
         # race_code is give as a list of allowed values
         race_flag = 'raceflag_' + (''.join(sorted(race_code))).lower()
         filters[race_flag] = 'true'
-
-
-@receiver(pre_save, sender=NCVoter)
-def add_voter_race_flags(sender, instance, **kwargs):
-    for raceflag in RaceFilter.get_raceflags(voter=instance):
-        instance.data[raceflag] = "true"
 
 
 for raceflag in RaceFilter.get_raceflags(2):

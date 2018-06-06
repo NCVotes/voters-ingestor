@@ -1,5 +1,8 @@
 from unittest.mock import patch
+
 from django.test import TestCase
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 from voter.models import NCVoter
 from matview.models import MatView
@@ -116,6 +119,12 @@ class QueryTestCase(TestCase):
 
 
 class FlagTests(TestCase):
+    signal_setup = False
+
+    def add_voter_race_flags(self, voter):
+        for raceflag in RaceFilter.get_raceflags(voter=voter):
+            voter.data[raceflag] = "true"
+
     def setUp(self):
         ncid = 1
         for rc, rl, rd in RaceFilter.RACES:
@@ -124,10 +133,15 @@ class FlagTests(TestCase):
                     "party_cd": party,
                     "race_code": rc,
                 }
-                NCVoter.objects.create(ncid=str(ncid), data=data)
+                voter = NCVoter.objects.create(ncid=str(ncid), data=data)
+                self.add_voter_race_flags(voter)
+                voter.save()
                 ncid += 1
 
         MatView.refresh_all()
+
+        if not self.signal_setup:
+            self.signal_setup = True
 
     def test_flags_exist(self):
         assert NCVoter.objects.filter(data__race_code='W').first().data['raceflag_w'] == 'true'
@@ -155,15 +169,19 @@ class FlagTests(TestCase):
         assert 3 == models.get_count("voter.NCVoter", {"race_code": ["B", "A", "I"], "party_cd": "REP"})
 
     def test_sample_single_code(self):
+        get_query_orig = models.get_query
         i = iter(range(100))
         with patch("random.randint", lambda s, e: next(i)):
-            sample = models.get_random_sample(1, "voter.NCVoter", {"race_code": "B"})
-            assert len(sample) == 1
-            assert sample[0].ncid == NCVoter.objects.filter(data__race_code="B").values_list('ncid', flat=True)[0]
+            with patch("queryviews.models.get_query") as get_query_mock:
+                get_query_mock.side_effect = lambda *a, **kw: sorted(get_query_orig(*a, **kw), key=lambda v: v.id)
 
-            sample = models.get_random_sample(1, "voter.NCVoter", {"race_code": "B"})
-            assert len(sample) == 1
-            assert sample[0].ncid == NCVoter.objects.filter(data__race_code="B").values_list('ncid', flat=True)[1]
+                sample = models.get_random_sample(1, "voter.NCVoter", {"race_code": "B"})
+                assert len(sample) == 1
+                assert sample[0].ncid == NCVoter.objects.filter(data__race_code="B").values_list('ncid', flat=True)[0]
+
+                sample = models.get_random_sample(1, "voter.NCVoter", {"race_code": "B"})
+                assert len(sample) == 1
+                assert sample[0].ncid == NCVoter.objects.filter(data__race_code="B").values_list('ncid', flat=True)[1]
 
     def test_sample_pair(self):
         get_query_orig = models.get_query

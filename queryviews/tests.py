@@ -263,7 +263,6 @@ class FlagTests(TestCase):
                     assert count == 3
                     assert dem_filter.call_count == 2
 
-
     def test_count_other_facet_larger(self):
         """Make sure the flag logic is used when they are more efficient.
 

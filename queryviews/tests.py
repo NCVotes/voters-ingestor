@@ -1,8 +1,6 @@
 from unittest.mock import patch
 
 from django.test import TestCase
-from django.db.models.signals import pre_save
-from django.dispatch import receiver
 
 from voter.models import NCVoter
 from matview.models import MatView

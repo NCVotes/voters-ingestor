@@ -18,8 +18,7 @@ def forward(apps, schema):
             print(".", end="", flush=True)
         offset += limit
         limit += limit
-        print()
-        break
+        q = NCVoter.objects.all()[offset:limit]
 
 
 def backward(apps, schema):
@@ -33,10 +32,10 @@ def backward(apps, schema):
                 for raceflag in RaceFilter.get_raceflags():
                     voter.data.pop(raceflag, None)
                 voter.save()
-            offset += limit
+            print(".", end="", flush=True)
+        offset += limit
         limit += limit
-        print(".", end="", flush=True)
-    print()
+        q = NCVoter.objects.all()[offset:limit]
 
 
 class Migration(migrations.Migration):

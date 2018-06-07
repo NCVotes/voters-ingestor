@@ -2,6 +2,7 @@ from functools import wraps
 from threading import Lock
 
 from django.core.management import BaseCommand
+from django.db import connection
 from django.db.models.signals import post_save
 
 from matview.models import MatView
@@ -20,6 +21,22 @@ def synchronized(lock):
                 lock.release()
         return newFunction
     return wrap
+
+
+def vacuum():
+    """
+    Run vacuum analyze.
+    """
+    print("Starting VACUUM ANALYZE")
+    # Run outside of a transaction: https://stackoverflow.com/a/13955271/347942
+    connection.cursor()
+    realconn = connection.connection
+    old_isolation_level = realconn.isolation_level
+    realconn.set_isolation_level(0)
+    cursor = realconn.cursor()
+    cursor.execute('VACUUM ANALYZE')
+    realconn.set_isolation_level(old_isolation_level)
+    print("Completed VACUUM ANALYZE")
 
 
 class Command(BaseCommand):
@@ -57,3 +74,5 @@ class Command(BaseCommand):
         post_save.connect(report_update, sender=MatView)
 
         MatView.refresh_all(threads=options['threads'])
+
+        vacuum()

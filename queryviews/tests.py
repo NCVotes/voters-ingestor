@@ -1,7 +1,8 @@
 from unittest.mock import patch
 
-from django.test import TestCase
 from django.apps import apps
+from django.conf import settings
+from django.test import TestCase
 
 from voter.models import NCVoter
 from matview.models import MatView
@@ -124,7 +125,7 @@ class FlagTests(TestCase):
         for raceflag in RaceFilter.get_raceflags(voter=voter):
             voter.data[raceflag] = "true"
 
-    def create_some_voters(self, parties=('DEM', 'REP'), races=tuple(_[0] for _ in RaceFilter.RACES)):
+    def create_some_voters(self, parties=('DEM', 'REP'), races=tuple(_[0] for _ in settings.RACE_CHOICES)):
         for rc in races:
             for party in parties:
                 data = {
@@ -244,7 +245,7 @@ class FlagTests(TestCase):
         flag views.
         """
 
-        codes = [_[0] for _ in RaceFilter.RACES]
+        codes = [_[0] for _ in settings.RACE_CHOICES]
         self.create_some_voters(parties=('REP',), races=codes * 5)
         dem = apps.get_model("queryviews", "matview_mv_voter_ncvoter_party_cd_dem")
         ab = apps.get_model("queryviews", "matview_mv_voter_ncvoter_raceflag_ab_true")

@@ -58,7 +58,7 @@ def drilldown(request):
 
     return render(request, 'drilldown/drilldown.html', {
         "total_count": total_count,
-        "applied_filters": applied_filters,
+        "applied_filters": applied_filters.values(),
         "unapplied_filters": unapplied_filters,
     })
 
@@ -70,6 +70,6 @@ def sample(request):
 
     return render(request, 'drilldown/sample.html', {
         "total_count": total_count,
-        "applied_filters": applied_filters,
+        "applied_filters": applied_filters.values(),
         "sample_results": sample_results,
     })

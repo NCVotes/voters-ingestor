@@ -6,7 +6,7 @@
 {% block content %}
     <div class="drilldown">
         <div class="filter">
-            <h1>Voters...</h1>
+            <h1><a href="{% url 'drilldown' %}">Voters...</a></h1>
             <span class="count">{{ total_count|localize }}</span>
         </div>
         {% for filter in applied_filters %}

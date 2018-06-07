@@ -288,3 +288,13 @@ STATUS_CHOICES = [
     ('REMOVED', 'Removed', "have had their registration removed"),
     ('TEMPORARY', 'Temporary', 'have temporary registrations'),
 ]
+
+RACE_CHOICES = [
+    ('O', 'Other', 'OTHER'),
+    ('W', 'White', 'WHITE'),
+    ('B', 'Black', 'BLACK or AFRICAN AMERICAN'),
+    ('M', 'Multi-racial', 'TWO or MORE RACES'),
+    ('I', 'Native', 'INDIAN AMERICAN or ALASKA NATIVE'),
+    ('U', 'Undesignated', 'UNDESIGNATED'),
+    ('A', 'Asian', 'ASIAN'),
+]

@@ -39,6 +39,7 @@ def qadashboard(request):
                         "county_desc": county.upper(),
 
                         "voter_status_desc": random.choice([status[0] for status in settings.STATUS_CHOICES]),
+                        "race_code": random.choice([race_code[0] for race_code in settings.RACE_CHOICES]),
 
                         "age": random.randint(18, 90),
 

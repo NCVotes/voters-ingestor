@@ -241,7 +241,7 @@ def get_query(model, filters, fast_only=False):
         elapsed = datetime.now() - start
         logger.warn(
             "get_query(%r, %r) had to do a potentially slow query. (%s sec).",
-            model, filters, elapsed
+            model, filters, elapsed.seconds
         )
         return queryset
 

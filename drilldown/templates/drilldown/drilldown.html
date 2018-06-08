@@ -5,13 +5,13 @@
 
 {% block content %}
     <div class="drilldown">
-        <div class="filter">
+        <div class="filter onerow">
             <h1><a href="{% url 'drilldown' %}">Voters...</a></h1>
             <span class="count">{{ total_count|localize }}</span>
         </div>
         {% for filter in applied_filters %}
-          {# for each filter they've already applied, show its value, and provide a way to display a form to edit its value #}
-          {# also provide a way to delete it from the applied filters #}
+            {# for each filter they've already applied, show its value, and provide a way to display a form to edit its value #}
+            {# also provide a way to delete it from the applied filters #}
             <div class="filter">
                 {% if filter.errors %}
                     {% for error in filter.errors %}
@@ -21,31 +21,34 @@
                     <span class="filter-desc">{{ filter.description|safe }}</span>
                 {% endif %}
 
-                <form method="GET" action="{{ request.get_full_path }}" class="{% if filter.errors %}shown{% else %}hidden{% endif %}">
+                <form method="GET" action="{{ request.get_full_path }}" class="form-inline {% if not filter.errors %}hidden{% endif %}">
                     {# need to add hidden fields to preserve the values of the filters other than the one we're going to edit #}
                     {% for af in applied_filters %}
                         {% if filter.field_name != af.field_name %}
-                           {{ af.render_values }}
+                            {{ af.render_values }}
                         {% endif %}
                     {% endfor %}
                     {# now let them edit this filter #}
                     {{ filter.render_for_editing }}
-                    <button type="submit">Apply</button>
+                    <button class="btn btn-primary" type="submit">Apply</button>
                 </form>
 
                 <span class="controls">
-                    <a class="btn" href="?{{ request|qs_trim:filter.field_name }}">delete</a>
-                    <a class="btn" onclick="javascript:onClickEdit(this)">edit</a>
+                    <a class="btn btn-default" onclick="javascript:onClickEdit(this)">
+                        <span class="glyphicon glyphicon-pencil"></span>
+                    </a>
+                    <a class="btn btn-danger" href="?{{ request|qs_trim:filter.field_name }}">
+                        <span class="glyphicon glyphicon-trash"></span>
+                    </a>
                 </span>
                 <span class="count">{{ filter.count|localize }}</span>
-                <!-- {{ filter.filter_parms|safe }} --> {# for debugging, you can see the current filter parameters by viewing the page source #}
             </div>
         {% endfor %}
     </div>
 
-    <div class="row">
-        <div class="ctn-select-next-filter shown">
-            <select id="select-next-filter" onchange="javascript:onAddFilter(this)">
+    <div class="onerow">
+        <div class="ctn-select-next-filter">
+            <select class="form-control" id="select-next-filter" onchange="javascript:onAddFilter(this)">
                 <option>Select filter</option>
                 {% for filter in unapplied_filters %}
                     <option value="{{ filter.field_name }}">{{ filter.display_name }}</option>
@@ -53,16 +56,14 @@
             </select>
         </div>
 
-        <div class="justify-bottom">
-            <a class="btn" href="{% url "sample" %}?{{ request.GET.urlencode }}">get samples</a>
-        </div>
+        <a class="btn btn-info" href="{% url "sample" %}?{{ request.GET.urlencode }}">View sample</a>
     </div>
 
     <div class="add-filter-list">
         {# now let them add filters they have not already applied #}
         {% for filter in unapplied_filters %}
             <div class="add-filter add-filter-{{ filter.field_name }} hidden">
-                <form method="GET" action="{{ request.get_full_path }}">
+                <form class="form-inline" method="GET" action="{{ request.get_full_path }}">
                     {# preserve filter values already selected #}
                     {% for filter in applied_filters %}
                         {{ filter.render_values }}
@@ -71,13 +72,9 @@
                     {# edit this field #}
                     {{ filter.render_for_editing }}
 
-                    <button type="submit">Apply</button>
+                    <button class="btn btn-primary" type="submit">Apply</button>
                 </form>
             </div>
         {% endfor %}
-    </div>
-
-    <div style="margin-top: 50px; color: grey;">
-        Example filtering: Female Democrats in Durham County <a style="color: grey" href="?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM">?gender_code=F&amp;party_cd=DEM&amp;county_desc=DURHAM</a>
     </div>
 {% endblock %}

@@ -1,200 +1,126 @@
-<!doctype html>
-<head>
-    <title>{% block title %}{% endblock %}</title>
-    <style>
-     body {
-         font-family: Verdana, Geneva, Tahoma, sans-serif;
-     }
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>{% block title %}{% endblock %}</title>
 
-     h1 {
-         font-weight: 300;
-     }
-     h2 {
-         font-weight: 200;
-     }
-     h3 {
-         font-weight: 100;
-     }
-     a {
-         color: blue;
-         text-decoration: underline;
-     }
+        <!-- Bootstrap 3 -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <!-- Bootstrap multiselect -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-multiselect/0.9.15/css/bootstrap-multiselect.css" type="text/css"/>
 
-     button, .btn {
-         display: inline-block;
-         border: 1px solid grey;
-         border-radius: 5px;
-         font-size: 1rem;
-         height: 30px;
-         padding: 0 20px;
-         margin: 5px;
-         text-align: center;
-         line-height: 25px;
-         background: #ddd;
-         color: black;
-         text-decoration: none;
-         transition: background-color 0.25s;
-     }
-     button:hover, .btn:hover {
-         background-color: #ccc;
-     }
-     button:active, .btn:active {
-         background-color: #999;
-     }
+        <style>
+         .onerow {
+             display: flex;
+             flex-direction: row;
+             justify-content: space-between;
+             padding: 10px 0;
+         }
 
-     select {
-         display: inline-block;
-         border: 1px solid grey;
-         border-radius: 5px;
-         height: 30px;
-         min-width: 200px;
-         padding: 0 20px;
-         margin: 5px;
-         background: #ddd;
-         color: black;
-         text-decoration: none;
-         transition: background-color 0.25s;
-     }
-     select[multiple] {
-         height: 120px;
-     }
-     select[multiple] option:checked {
-         background: linear-gradient(0deg, orange 0%, orange 100%);
-     }
-     table {
-         min-width: 50vw;
-         border-collapse: separate;
-         border-spacing: 0;
-     }
-     table thead {
-         background-color: #ddd;
-     }
-     table td {
-         border-bottom: 1px solid grey;
-         padding: 5px;
-     }
-     table tbody td:nth-child(even) {
-         background-color: #eee;
-     }
+         .count {
+             color: grey;
+             font-size: 150%;
+         }
+         .drilldown .count {
+             position: absolute;
+             bottom: 10px;
+             right: 0px;
+         }
 
-     .row {
-         display: flex;
-         flex-direction: row;
-         justify-content: space-between;
-     }
-     .justify-bottom {
-         display: flex;
-         flex-direction: column;
-         justify-content: flex-end;
-     }
+         .controls {
+             position: absolute;
+             right: 0px;
+             top: 0px;
+         }
 
-     .shown {
-         max-height: 250px;
-         transition: all 1.5s;
-         overflow: hidden;
-     }
-     .shown-1000 { max-height: 1000px; }
-     .hidden {
-         max-height: 0px;
-         transition: all 1s;
-         overflow: hidden;
-     }
+         .filter {
+             border-bottom: 1px solid lightgrey;
+             margin: 15px 5px;
+             position: relative;
+         }
+         .drilldown .filter {
+             min-height: 100px;
+         }
 
-     .count {
-         color: grey;
-     }
-     .drilldown .count {
-         position: absolute;
-         bottom: 10px;
-         right: 0px;
-     }
+         .filter:last-child {
+             border-bottom-color: blue;
+         }
+         .filter:last-child .count {
+             color: blue;
+         }
+         .drilldown .filter:last-child .count {
+             font-size: 300%;
+         }
 
-     .controls {
-         position: absolute;
-         right: 0px;
-         top: 0px;
-     }
+         .filter-desc {
+             min-width: 25vw;
+             display: inline-block;
+             padding-bottom: 5px;
+         }
+         .filter:not(:first-child):not(:nth-child(2))::before {
+             content: "...and ";
+         }
+         .filter:nth-child(2) .filter-desc::before {
+             content: "Who ";
+         }
+         .filter:nth-child(2) .filter-desc::after {
+             content: "...";
+         }
 
-     .filter {
-         border-bottom: 1px solid lightgrey;
-         margin: 15px 5px;
-         position: relative;
-     }
-     .drilldown .filter {
-         min-height: 100px;
-     }
+         .error {
+             color: darkred;
+             font-weight: bold;
+         }
+        </style>
 
-     .filter:last-child {
-         border-bottom-color: blue;
-     }
-     .filter:last-child .count {
-         color: blue;
-     }
-     .drilldown .filter:last-child .count {
-         font-size: 300%;
-     }
+        <body>
+            <div class="container">
+                {% block content %}{% endblock %}
+            </div>
 
-     .filter-desc {
-         min-width: 25vw;
-         display: inline-block;
-         padding-bottom: 5px;
-     }
-     .filter:not(:first-child):not(:nth-child(2))::before {
-         content: "...and ";
-     }
-     .filter:nth-child(2) .filter-desc::before {
-         content: "Who ";
-     }
-     .filter:nth-child(2) .filter-desc::after {
-         content: "...";
-     }
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+            <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-multiselect/0.9.15/js/bootstrap-multiselect.min.js"></script>
 
-     .error {
-         color: darkred;
-         font-weight: bold;
-     }
-    </style>
+            <script>
+             function show(el) {
+                 el.classList.remove('hidden')
+             }
+             function hide(el) {
+                 el.classList.add('hidden')
+             }
+             function toggle(el) {
+                 el.classList.toggle('hidden')
+             }
 
-    <body>
-        {% block content %}{% endblock %}
+             function onClickEdit(a) {
+                 let $form = a.closest('.filter').querySelector('form')
+                 show($form)
+             }
 
-        <script>
-            function show(el) {
-                el.classList.add('shown')
-                el.classList.remove('hidden')
-            }
-            function hide(el) {
-                el.classList.remove('shown')
-                el.classList.add('hidden')
-            }
-            function toggle(el) {
-                el.classList.toggle('shown')
-                el.classList.toggle('hidden')
-            }
+             function onAddFilter(select) {
+                 let $add = document.querySelector('.ctn-select-next-filter')
+                 let $list = document.querySelector('.add-filter-list')
+                 let $ctn = document.querySelector('.add-filter-' + select.value.toLowerCase())
+                 let $form = $ctn.querySelector('form')
 
-            function onClickEdit(a) {
-                let $form = a.closest('.filter').querySelector('form')
-                show($form)
-            }
+                 if ($ctn.classList.contains('hidden')) {
+                     show($ctn)
+                     $list.querySelectorAll('.add-filter').forEach((el) => {
+                         if (el != $ctn) {
+                             hide(el)
+                         }
+                     })
+                 } else {
+                     $list.querySelectorAll('.add-filter').forEach((el) => show(el))
+                     $list.querySelectorAll('.add-filter form').forEach((el) => hide(el))
+                 }
+             }
+            </script>
 
-            function onAddFilter(select) {
-                let $add = document.querySelector('.ctn-select-next-filter')
-                let $list = document.querySelector('.add-filter-list')
-                let $ctn = document.querySelector('.add-filter-' + select.value.toLowerCase())
-                let $form = $ctn.querySelector('form')
-
-                if ($ctn.classList.contains('hidden')) {
-                    show($ctn)
-                    $list.querySelectorAll('.add-filter').forEach((el) => {
-                        if (el != $ctn) {
-                            hide(el)
-                        }
-                    })
-                } else {
-                    $list.querySelectorAll('.add-filter').forEach((el) => show(el))
-                    $list.querySelectorAll('.add-filter form').forEach((el) => hide(el))
-                }
-            }
-        </script>
-    </body>
+            <script type="text/javascript">
+             $(document).ready(function() {
+                 $('#multiselect-filter').multiselect();
+             });
+            </script>
+        </body>
 </html>

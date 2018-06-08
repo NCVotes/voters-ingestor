@@ -19,33 +19,33 @@
     </div>
 
     <div id="sample">
-        <table>
+        <table class="table table-striped table-bordered table-hover table-condensed">
             <thead>
-                <td>Name
-                <td>Race
-                <td>Gender
-                <td>Party
-                <td>Address
-                <td>City
-                <td>Zipcode
-                <td>Phone #
+                <th>Name</th>
+                <th>Race</th>
+                <th>Gender</th>
+                <th>Party</th>
+                <th>Address</th>
+                <th>City</th>
+                <th>Zipcode</th>
+                <th>Phone #</th>
             </thead>
             <tbody>
                 {% for v in sample_results %}
-                <tr>
-                    <td>{{ v.data.first_name }} {{ v.data.midl_name }} {{ v.data.last_name }}
-                    <td>{{ v.data.race_desc.title }}
-                    <td>{{ v.data.gender_code }}
-                    <td>{{ v.data.party_cd }}
-                    <td>{{ v.data.mail_addr1 }}
-                    <td>{{ v.data.mail_city }}
-                    <td>{{ v.data.mail_zipcode }}
-                    <td>{{ v.data.area_cd }} {{ v.data.phone_num }}
-                </tr>
+                    <tr>
+                        <td>{{ v.data.first_name }} {{ v.data.midl_name }} {{ v.data.last_name }}</td>
+                        <td>{{ v.data.race_desc.title }}</td>
+                        <td>{{ v.data.gender_code }}</td>
+                        <td>{{ v.data.party_cd }}</td>
+                        <td>{{ v.data.mail_addr1 }}</td>
+                        <td>{{ v.data.mail_city }}</td>
+                        <td>{{ v.data.mail_zipcode }}</td>
+                        <td>{{ v.data.area_cd }} {{ v.data.phone_num }}</td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <a class="btn" href="?{{ request.GET.urlencode }}">Resample</a>
+    <a class="btn btn-info" href="?{{ request.GET.urlencode }}">Resample</a>
 {% endblock %}

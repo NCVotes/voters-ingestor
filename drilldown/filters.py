@@ -217,7 +217,7 @@ class RaceFilter(ChoiceFilter):
                 if desc:
                     desc += " or "
                 desc += label
-        return "has registered race of <em>%s</em>" % (desc,)
+        return "have registered race of <em>%s</em>" % (desc,)
 
 
 def get_filter_by_name(filter_list, field_name):

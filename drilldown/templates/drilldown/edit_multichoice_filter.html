@@ -1,4 +1,4 @@
-<select multiple name="{{ filter.field_name }}">
+<select multiple="multiple" id="multiselect-filter" name="{{ filter.field_name }}">
   {% for value, label, foo in filter.choices %}
     <option value="{{ value }}" {% if value in filter.values %}selected{% endif %}>{{ label }}</option><br/>
   {% endfor %}

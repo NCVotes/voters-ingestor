@@ -1,4 +1,4 @@
-<select name="{{ filter.field_name }}">
+<select class="form-control" name="{{ filter.field_name }}">
   <option>Select a {{ filter.display_name }}</option>
   {% for value, label, foo in filter.choices %}
     <option value="{{ value }}" {% if value in filter.values %}selected{% endif %}>{{ label }}</option><br/>

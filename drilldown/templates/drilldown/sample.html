@@ -40,7 +40,7 @@
                         <td>{{ v.data.mail_addr1 }}</td>
                         <td>{{ v.data.mail_city }}</td>
                         <td>{{ v.data.mail_zipcode }}</td>
-                        <td>{{ v.data.area_cd }} {{ v.data.phone_num }}</td>
+                        <td>{% if v.data.full_phone_number %}{{ v.data.full_phone_number }}{% else %}{{ v.data.area_cd }} {{ v.data.phone_num }}{% endif %}</td>
                     </tr>
                 {% endfor %}
             </tbody>

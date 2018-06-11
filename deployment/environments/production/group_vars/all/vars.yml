@@ -24,3 +24,4 @@ papertrail_conf: "/etc/log_files.yml"
 extra_env:
   # These get set in the process environment before starting Django
   SENTRY_DSN: "{{ SECRET_SENTRY_DSN }}"
+  USE_SINGLE_QUERY_VIEW: 1

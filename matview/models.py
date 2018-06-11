@@ -26,31 +26,5 @@ def refresh_in_threads(matviews, threads):
         thread.join()
 
 
-class MatView(models.Model):
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name="children")
-    src_name = models.CharField(max_length=255)
-    matview_name = models.CharField(max_length=255)
-    filters = JSONField(encoder=DjangoJSONEncoder)
-    last_updated = models.DateTimeField()
-
-    def refresh(self):
-        with transaction.atomic():
-            with connection.cursor() as cursor:
-                self._last_started = timezone.now()
-                if self.filters:
-                    cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY %s" % self.matview_name)
-                cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY %s__count" % self.matview_name)
-            self.last_updated = timezone.now()
-            self.save()
-
-        for child in self.children.all():
-            child.refresh()
-
-    @classmethod
-    def refresh_all(cls, threads=1):
-        tops = cls.objects.filter(parent=None)
-        if threads == 1:
-            for top in tops:
-                top.refresh()
-        else:
-            refresh_in_threads(tops, threads)
+class MatView(object):
+    pass

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from voter.models import FileTracker, ChangeTracker, NCVoter, NCVHis, BadLineRange
+from voter.models import FileTracker, ChangeTracker, NCVoter, NCVHis, BadLineRange, NCVoterQueryView, NCVoterQueryCache
 
 
 @admin.register(FileTracker)
@@ -30,3 +30,13 @@ class NCVoter(admin.ModelAdmin):
 @admin.register(BadLineRange)
 class BadLineRangeAdmin(admin.ModelAdmin):
     list_display = ('filename', 'first_line_no', 'last_line_no', 'message')
+
+
+@admin.register(NCVoterQueryView)
+class NCVoterQueryViewAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(NCVoterQueryCache)
+class NCVoterQueryCacheAdmin(admin.ModelAdmin):
+    pass

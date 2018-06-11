@@ -1,8 +1,7 @@
 import logging
 
 from django.core.management import BaseCommand
-from django.db import transaction
-
+from django.db import connection, transaction
 
 import hashlib
 import os
@@ -10,7 +9,7 @@ import sys
 import traceback
 from bencode import bencode
 
-from voter.models import FileTracker, ChangeTracker, NCVoter, BadLineRange, BadLineTracker
+from voter.models import FileTracker, ChangeTracker, NCVoter, BadLineRange, BadLineTracker, NCVoterQueryView
 from voter.utils import out, tqdm_or_quiet
 
 logger = logging.getLogger(__name__)
@@ -397,6 +396,22 @@ def remove_files(file_tracker, output=True):
         pass
 
 
+def vacuum():
+    """
+    Run vacuum analyze.
+    """
+    print("Starting VACUUM ANALYZE")
+    # Run outside of a transaction: https://stackoverflow.com/a/13955271/347942
+    connection.cursor()
+    realconn = connection.connection
+    old_isolation_level = realconn.isolation_level
+    realconn.set_isolation_level(0)
+    cursor = realconn.cursor()
+    cursor.execute('VACUUM ANALYZE')
+    realconn.set_isolation_level(old_isolation_level)
+    print("Completed VACUUM ANALYZE")
+
+
 class Command(BaseCommand):
     help = "Process voter snapshot files and save them into the database"
 
@@ -416,3 +431,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         process_files(**options)
+        vacuum()
+        NCVoterQueryView.refresh()

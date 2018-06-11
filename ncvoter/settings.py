@@ -151,6 +151,11 @@ LOGGING = {
             'handlers': ['console'],
             'propagate': False,
         },
+        'voter': {
+            'level': 'INFO',
+            'handlers': ['console'],
+            'propagate': False,
+        },
     },
 }
 

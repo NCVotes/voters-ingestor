@@ -13,7 +13,7 @@ from django.db import models
 
 from drilldown.filters import RaceFilter
 from matview.dbutils import get_matview_name
-from voter.models import NCVoter, NCVoterQueryView
+from voter.models import NCVoter, NCVoterQueryView, NCVoterQueryCache
 
 
 logger = logging.getLogger(__name__)
@@ -163,9 +163,15 @@ def get_count(model, filters, fast_only=False):
     If `fast_only` is True, then we ONLY return results from our materialized views and never drop
     down to the underlying table. This is mainly beneficial when testing.
     """
-    if settings.USE_SINGLE_QUERY_VIEW:
-        return get_query(model, filters).count()
     filters = prepare_filters(filters)
+    if settings.USE_SINGLE_QUERY_VIEW:
+        cached_count_query = NCVoterQueryCache.objects.filter(qs_filters=filters).first()
+        if cached_count_query:
+            count = cached_count_query.count
+        else:
+            count = get_query(model, filters).count()
+            NCVoterQueryCache.objects.create(qs_filters=filters, count=count)
+        return count
     # First, assume we have a materialized view that already has the count we need
     name = get_matview_name(model, filters)
     app_label, model_name = model.split('.')
@@ -206,7 +212,6 @@ def get_query(model, filters, fast_only=False):
     down to the underlying table. This is mainly beneficial when testing.
     """
     if settings.USE_SINGLE_QUERY_VIEW:
-        filters = prepare_filters(filters)
         return NCVoterQueryView.objects.filter(**filters)
 
     filters = prepare_filters(filters)
@@ -275,6 +280,7 @@ def get_random_sample(n, model, filters):
     else:
         # First create the QuerySet from which we want to get a random sample
         # Our goal is to never actually execute this query
+        filters = prepare_filters(filters)
         query = get_query(model, filters)
         if settings.USE_SINGLE_QUERY_VIEW:
             voter_pks = query.values_list('pk', flat=True)

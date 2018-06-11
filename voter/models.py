@@ -4,10 +4,11 @@ import os
 from datetime import datetime
 import pytz
 
-from django.db import models
+from django.db import connection, models, transaction
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
 from django.core.serializers.json import DjangoJSONEncoder
+from django.utils.timezone import now
 
 from ncvoter.known_cities import KNOWN_CITIES
 
@@ -305,6 +306,27 @@ class NCVoterQueryView(models.Model):
     class Meta:
         managed = False
         db_table = 'voter_ncvoterqueryview'
+
+    @classmethod
+    def refresh(cls):
+        logger.info('Starting refresh of NCVoterQueryView at %s', now())
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute('REFRESH MATERIALIZED VIEW CONCURRENTLY voter_ncvoterqueryview')
+        logger.info('Refreshing %d NCVoterQueryCache counts at %s', NCVoterQueryCache.objects.count(), now())
+        for cached_query in NCVoterQueryCache.objects.all():
+            cached_query.count = NCVoterQueryView.objects.filter(**cached_query.qs_filters).count()
+            cached_query.save(update_fields=['count'])
+        logger.info('Done refreshing all NCVoterQueryCache counts at %s', now())
+
+
+class NCVoterQueryCache(models.Model):
+    qs_filters = JSONField(
+        encoder=DjangoJSONEncoder,
+        help_text="Dictionary of queryset filters for NCVoterQueryView.",
+        unique=True
+    )
+    count = models.IntegerField()
 
 
 RACE_CODES = {

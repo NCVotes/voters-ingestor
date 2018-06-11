@@ -4,11 +4,17 @@ from django.shortcuts import render
 from drilldown.filters import ChoiceFilter, AgeFilter, RaceFilter, filters_from_request
 from ncvoter.known_cities import KNOWN_CITIES
 from queryviews.models import get_count, get_random_sample
+from voter.constants import STATUS_CHOICES, COUNTIES
 
 
 declared_filters = [
     ChoiceFilter(
         display_name='Status',
+        field_name='status_cd',
+        choices=STATUS_CHOICES,
+    ),
+    ChoiceFilter(
+        display_name='Status (old approach)',
         field_name='voter_status_desc',
         choices=settings.STATUS_CHOICES,
     ),
@@ -31,6 +37,14 @@ declared_filters = [
     ),
     ChoiceFilter(
         display_name='County',
+        field_name='county_id',
+        choices=[
+            (str(i), county.title(), "live in <em>%s</em> county" % county.title())
+            for i, county in enumerate(COUNTIES, start=1)
+        ]
+    ),
+    ChoiceFilter(
+        display_name='County (old approach)',
         field_name='county_desc',
         choices=[
             (county, county.title(), "live in <em>%s</em> county" % county.title())

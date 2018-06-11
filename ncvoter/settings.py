@@ -298,3 +298,7 @@ RACE_CHOICES = [
     ('U', 'Undesignated', 'UNDESIGNATED'),
     ('A', 'Asian', 'ASIAN'),
 ]
+
+
+# Feature Flag to try alternative querying approach
+USE_SINGLE_QUERY_VIEW = os.environ.get('USE_SINGLE_QUERY_VIEW', False)

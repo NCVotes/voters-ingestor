@@ -9,6 +9,9 @@ DOMAIN = os.environ['DOMAIN']
 ALLOWED_HOSTS = [DOMAIN]
 ENVIRONMENT = "production"
 
+# remove debug toolbar
+INSTALLED_APPS.pop(INSTALLED_APPS.index('debug_toolbar'))  # noqa: F405
+MIDDLEWARE.pop(MIDDLEWARE.index('debug_toolbar.middleware.DebugToolbarMiddleware'))  # noqa: F405
 
 # Database values
 DB_NAME = os.environ['DB_NAME']

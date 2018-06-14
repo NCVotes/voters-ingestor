@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -40,16 +41,16 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'raven.contrib.django.raven_compat',
+    'debug_toolbar',
 
     # Internal
     'voter',
-    'matview',
-    'queryviews',
     'drilldown',
     'qadashboard',
 ]
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -173,6 +174,10 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 50,
 }
 
+# Django Debug Toolbar
+INTERNAL_IPS = ['127.0.0.1', ]
+
+
 NCVOTER_DOWNLOAD_PATH = "downloads/ncvoter"
 NCVHIS_DOWNLOAD_PATH = "downloads/ncvhis"
 NCSBE_S3_URL_BASE = "https://s3.amazonaws.com/dl.ncsbe.gov/data/"
@@ -182,128 +187,6 @@ NCVOTER_LATEST_COUNTY_URL_BASE = NCSBE_S3_URL_BASE + "ncvoter"
 NCVHIS_LATEST_COUNTY_URL_BASE = NCSBE_S3_URL_BASE + "ncvhis"
 NCVOTER_HISTORICAL_SNAPSHOT_URL = NCSBE_S3_URL_BASE + "Snapshots/"
 
-COUNTIES = [
-    "ALAMANCE",
-    "ALEXANDER",
-    "ALLEGHANY",
-    "ANSON",
-    "ASHE",
-    "AVERY",
-    "BEAUFORT",
-    "BERTIE",
-    "BLADEN",
-    "BRUNSWICK",
-    "BUNCOMBE",
-    "BURKE",
-    "CABARRUS",
-    "CALDWELL",
-    "CAMDEN",
-    "CARTERET",
-    "CASWELL",
-    "CATAWBA",
-    "CHATHAM",
-    "CHEROKEE",
-    "CHOWAN",
-    "CLAY",
-    "CLEVELAND",
-    "COLUMBUS",
-    "CRAVEN",
-    "CUMBERLAND",
-    "CURRITUCK",
-    "DARE",
-    "DAVIDSON",
-    "DAVIE",
-    "DUPLIN",
-    "DURHAM",
-    "EDGECOMBE",
-    "FORSYTH",
-    "FRANKLIN",
-    "GASTON",
-    "GATES",
-    "GRAHAM",
-    "GRANVILLE",
-    "GREENE",
-    "GUILFORD",
-    "HALIFAX",
-    "HARNETT",
-    "HAYWOOD",
-    "HENDERSON",
-    "HERTFORD",
-    "HOKE",
-    "HYDE",
-    "IREDELL",
-    "JACKSON",
-    "JOHNSTON",
-    "JONES",
-    "LEE",
-    "LENOIR",
-    "LINCOLN",
-    "MCDOWELL",
-    "MACON",
-    "MADISON",
-    "MARTIN",
-    "MECKLENBURG",
-    "MITCHELL",
-    "MONTGOMERY",
-    "MOORE",
-    "NASH",
-    "NEW HANOVER",
-    "NORTHAMPTON",
-    "ONSLOW",
-    "ORANGE",
-    "PAMLICO",
-    "PASQUOTANK",
-    "PENDER",
-    "PERQUIMANS",
-    "PERSON",
-    "PITT",
-    "POLK",
-    "RANDOLPH",
-    "RICHMOND",
-    "ROBESON",
-    "ROCKINGHAM",
-    "ROWAN",
-    "RUTHERFORD",
-    "SAMPSON",
-    "SCOTLAND",
-    "STANLY",
-    "STOKES",
-    "SURRY",
-    "SWAIN",
-    "TRANSYLVANIA",
-    "TYRRELL",
-    "UNION",
-    "VANCE",
-    "WAKE",
-    "WARREN",
-    "WASHINGTON",
-    "WATAUGA",
-    "WAYNE",
-    "WILKES",
-    "WILSON",
-    "YADKIN",
-    "YANCEY",
-]
-
-# Code, Label, Description
-STATUS_CHOICES = [
-    ('ACTIVE', 'Active', "are actively registered"),
-    ('DENIED', 'Denied', "were denied registration"),
-    ('INACTIVE', 'Inactive', "have inactive registrations"),
-    ('REMOVED', 'Removed', "have had their registration removed"),
-    ('TEMPORARY', 'Temporary', 'have temporary registrations'),
-]
-
-RACE_CHOICES = [
-    ('O', 'Other', 'OTHER'),
-    ('W', 'White', 'WHITE'),
-    ('B', 'Black', 'BLACK or AFRICAN AMERICAN'),
-    ('M', 'Multi-racial', 'TWO or MORE RACES'),
-    ('I', 'Native', 'INDIAN AMERICAN or ALASKA NATIVE'),
-    ('U', 'Undesignated', 'UNDESIGNATED'),
-    ('A', 'Asian', 'ASIAN'),
-]
-
-
-# Feature Flag to try alternative querying approach
-USE_SINGLE_QUERY_VIEW = os.environ.get('USE_SINGLE_QUERY_VIEW', False)
+if 'test' in sys.argv:
+    # turn down logging during tests
+    LOGGING['handlers']['console']['level'] = 'ERROR'

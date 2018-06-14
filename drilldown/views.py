@@ -1,74 +1,50 @@
-from django.conf import settings
 from django.shortcuts import render
 
-from drilldown.filters import ChoiceFilter, AgeFilter, RaceFilter, filters_from_request
-from ncvoter.known_cities import KNOWN_CITIES
-from queryviews.models import get_count, get_random_sample
-from voter.constants import STATUS_CHOICES, COUNTIES
+from drilldown.filters import ChoiceFilter, MultiChoiceFilter, AgeFilter, filters_from_request
+from voter.models import NCVoter
+from voter.constants import STATUS_FILTER_CHOICES, COUNTY_FILTER_CHOICES, GENDER_FILTER_CHOICES, \
+    PARTY_FILTER_CHOICES, CITY_FILTER_CHOICES, RACE_FILTER_CHOICES
 
 
 declared_filters = [
     ChoiceFilter(
         display_name='Status',
         field_name='status_cd',
-        choices=STATUS_CHOICES,
-    ),
-    ChoiceFilter(
-        display_name='Status (old approach)',
-        field_name='voter_status_desc',
-        choices=settings.STATUS_CHOICES,
+        choices=STATUS_FILTER_CHOICES,
     ),
     ChoiceFilter(
         display_name='Gender',
         field_name='gender_code',
-        choices=[
-            ('F', 'Female', "are <em>female</em>"),
-            ('M', 'Male', "are <em>male</em>"),
-        ]
+        choices=GENDER_FILTER_CHOICES,
     ),
     ChoiceFilter(
         display_name='Party',
         field_name='party_cd',
-        choices=[
-            ('DEM', "Democrat", "are <em>Democrats</em>"),
-            ('REP', "Republican", "are <em>Republicans</em>"),
-            ('UNA', 'Unaffiliated', "are <em>Unaffiliated</em>"),
-        ]
+        choices=PARTY_FILTER_CHOICES,
     ),
     ChoiceFilter(
         display_name='County',
         field_name='county_id',
-        choices=[
-            (str(i), county.title(), "live in <em>%s</em> county" % county.title())
-            for i, county in enumerate(COUNTIES, start=1)
-        ]
-    ),
-    ChoiceFilter(
-        display_name='County (old approach)',
-        field_name='county_desc',
-        choices=[
-            (county, county.title(), "live in <em>%s</em> county" % county.title())
-            for county in settings.COUNTIES
-        ]
+        choices=COUNTY_FILTER_CHOICES,
     ),
     ChoiceFilter(
         display_name='City',
         field_name='res_city_desc',
-        choices=[
-            (city, city.title(), "live in <em>%s</em> " % city.title())
-            for city in KNOWN_CITIES
-        ]
+        choices=CITY_FILTER_CHOICES,
+    ),
+    MultiChoiceFilter(
+        display_name='race',
+        field_name='race_code',
+        choices=RACE_FILTER_CHOICES,
     ),
     AgeFilter(),
-    RaceFilter(),
 ]
 
 
 def drilldown(request):
     applied_filters, final_filter_params = filters_from_request(declared_filters, request)
     unapplied_filters = [f for f in declared_filters if f.field_name not in applied_filters]
-
-    total_count = get_count("voter.NCVoter", {})
+    total_count = NCVoter.get_count(filters={})
 
     return render(request, 'drilldown/drilldown.html', {
         "total_count": total_count,
@@ -79,8 +55,8 @@ def drilldown(request):
 
 def sample(request):
     applied_filters, final_filter_params = filters_from_request(declared_filters, request)
-    sample_results = get_random_sample(20, 'voter.NCVoter', final_filter_params)
-    total_count = get_count("voter.NCVoter", {})
+    sample_results = NCVoter.get_random_sample(final_filter_params, 20)
+    total_count = NCVoter.get_count(filters={})
 
     return render(request, 'drilldown/sample.html', {
         "total_count": total_count,

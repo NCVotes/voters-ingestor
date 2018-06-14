@@ -1,12 +1,11 @@
 import random
 
 from django import forms
-from django.conf import settings
 from django.shortcuts import render
 
-from voter.models import NCVoter, ChangeTracker
-from matview.models import MatView
 from ncvoter.known_cities import KNOWN_CITIES
+from voter.constants import STATUS_FILTER_CHOICES, RACE_FILTER_CHOICES, COUNTIES
+from voter.models import NCVoter, ChangeTracker, NCVoterQueryView
 
 
 class ResetForm(forms.Form):
@@ -37,9 +36,10 @@ def qadashboard(request):
                         "party_cd": 'DEM' if party.lower().startswith('d') else 'REP',
                         "gender_code": gender.upper()[0],
                         "county_desc": county.upper(),
+                        "county_id": COUNTIES.index(county.upper()) + 1,
 
-                        "voter_status_desc": random.choice([status[0] for status in settings.STATUS_CHOICES]),
-                        "race_code": random.choice([race_code[0] for race_code in settings.RACE_CHOICES]),
+                        "status_cd": random.choice([status[0] for status in STATUS_FILTER_CHOICES]),
+                        "race_code": random.choice([race_code[0] for race_code in RACE_FILTER_CHOICES]),
 
                         "age": random.randint(18, 90),
 
@@ -54,7 +54,7 @@ def qadashboard(request):
                         "race_desc": random.choice("WHITE BLACK LATINO".split()),
                     })
                     ncid += 1
-            MatView.refresh_all()
+            NCVoterQueryView.refresh()
         else:
             form = ResetForm(request.POST)
             msg = "You didn't say the magic word"

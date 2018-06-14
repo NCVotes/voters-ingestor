@@ -10,8 +10,9 @@
             <span class="count">{{ total_count|localize }}</span>
         </div>
         {% for filter in applied_filters %}
-            {# for each filter they've already applied, show its value, and provide a way to display a form to edit its value #}
-            {# also provide a way to delete it from the applied filters #}
+            {# for each filter they've already applied: #}
+            {#   1. show its value #}
+            {#   2. show a form to edit its value or delete it from the applied filters #}
             <div class="filter">
                 {% if filter.errors %}
                     {% for error in filter.errors %}
@@ -51,7 +52,7 @@
             <select class="form-control" id="select-next-filter" onchange="javascript:onAddFilter(this)">
                 <option>Select filter</option>
                 {% for filter in unapplied_filters %}
-                    <option value="{{ filter.field_name }}">{{ filter.display_name }}</option>
+                    <option value="{{ filter.field_name }}">{{ filter.display_name|title }}</option>
                 {% endfor %}
             </select>
         </div>

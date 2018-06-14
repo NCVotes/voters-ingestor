@@ -305,23 +305,23 @@ class VoterProcessChangeTrackerTest(TestCase):
         """
 
         add = ChangeTracker(
-            voter = NCVoter(ncid="A1"),
-            md5_hash = "0000000000000000",
-            snapshot_dt = "2000-01-01",
-            file_tracker = create_file_tracker(1),
-            file_lineno = 1,
-            op_code = "A",
-            data = {"first_name": "Mary", "last_name": "Godwin"},
+            voter=NCVoter(ncid="A1"),
+            md5_hash="0000000000000000",
+            snapshot_dt="2000-01-01",
+            file_tracker=create_file_tracker(1),
+            file_lineno=1,
+            op_code="A",
+            data={"first_name": "Mary", "last_name": "Godwin"},
         )
 
         modify = ChangeTracker(
-            voter = NCVoter(ncid="A1"),
-            md5_hash = "0000000000000001",
-            snapshot_dt = "2001-01-01",
-            file_tracker = add.file_tracker,
-            file_lineno = 2,
-            op_code = "M",
-            data = {"first_name": "Mary", "last_name": "Shelley"},
+            voter=NCVoter(ncid="A1"),
+            md5_hash="0000000000000001",
+            snapshot_dt="2001-01-01",
+            file_tracker=add.file_tracker,
+            file_lineno=2,
+            op_code="M",
+            data={"first_name": "Mary", "last_name": "Shelley"},
         )
 
         with mock.patch("voter.management.commands.voter_process_snapshot.flush") as flush:

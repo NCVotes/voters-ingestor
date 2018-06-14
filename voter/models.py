@@ -1,6 +1,6 @@
 import logging
 import os
-
+import random
 from datetime import datetime
 import pytz
 
@@ -8,7 +8,6 @@ from django.db import connection, models, transaction
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
 from django.core.serializers.json import DjangoJSONEncoder
-from django.utils.timezone import now
 
 from ncvoter.known_cities import KNOWN_CITIES
 
@@ -290,8 +289,43 @@ class NCVoter(models.Model):
     def build_current(self):
         return self.build_version(0)
 
+    @classmethod
+    def get_count(cls, filters):
+        """
+        Get the count from the cache table if possible, otherwise compute it from the materialized view.
+        """
+        cached_count_query = NCVoterQueryCache.objects.filter(qs_filters=filters).first()
+        if cached_count_query:
+            count = cached_count_query.count
+        else:
+            count = NCVoterQueryView.objects.filter(**filters).count()
+            NCVoterQueryCache.objects.create(qs_filters=filters, count=count)
+        return count
+
+    @classmethod
+    def get_random_sample(cls, filters, n):
+        """
+        Apply filters to NCVoter and return a random sample of N voter records (as a queryset).
+        """
+        count = cls.get_count(filters)
+        query = NCVoterQueryView.objects.filter(**filters)
+        if n >= count:
+            # there are fewer than N records, so return them all
+            voter_pks = query.values_list('pk', flat=True)
+        else:
+            # this 'randomness' assumes that records in NCVoterQueryView are not ordered in any
+            # meaningful way
+            offset = random.randint(0, count - n)
+            voter_pks = query[offset:offset + n].values_list('pk', flat=True)
+        return NCVoter.objects.filter(pk__in=voter_pks)
+
 
 class NCVoterQueryView(models.Model):
+    """
+    This is an unmanaged model which maps to a materialized view. Our goal is to keep each row in
+    this view as small as possible, with only the facets we need for search. All other voter data
+    remains in the NCVoter.data JSON field, and we can join with it as needed.
+    """
     party_cd = models.CharField('party code', max_length=3)
     county_id = models.IntegerField('county code')
     race_code = models.CharField('race code', max_length=1)
@@ -309,99 +343,32 @@ class NCVoterQueryView(models.Model):
 
     @classmethod
     def refresh(cls):
-        logger.info('Starting refresh of NCVoterQueryView at %s', now())
+        """
+        Refresh the materialized view and refresh each of the cached query counts.
+        """
+        logger.info('Starting refresh of NCVoterQueryView')
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute('REFRESH MATERIALIZED VIEW CONCURRENTLY voter_ncvoterqueryview')
-        logger.info('Refreshing %d NCVoterQueryCache counts at %s', NCVoterQueryCache.objects.count(), now())
+        logger.info('Refreshing %d NCVoterQueryCache counts', NCVoterQueryCache.objects.count())
         for cached_query in NCVoterQueryCache.objects.all():
             cached_query.count = NCVoterQueryView.objects.filter(**cached_query.qs_filters).count()
             cached_query.save(update_fields=['count'])
-        logger.info('Done refreshing all NCVoterQueryCache counts at %s', now())
+        logger.info('Done refreshing all NCVoterQueryCache counts')
 
 
 class NCVoterQueryCache(models.Model):
+    """
+    Cache table of queryset filters and the resulting counts from applying those filters to the
+    NCVoterQueryView model.
+
+    We never invalidate these, so it is important that these be deleted (or better yet, refreshed)
+    whenever new data is available in the NCVoter table. This is currently accomplished by calling
+    NCVoterQueryView.refresh() after each import.
+    """
     qs_filters = JSONField(
         encoder=DjangoJSONEncoder,
         help_text="Dictionary of queryset filters for NCVoterQueryView.",
         unique=True
     )
     count = models.IntegerField()
-
-
-RACE_CODES = {
-    'B': 'BLACK or AFRICAN AMERICAN',
-    'I': 'AMERICAN INDIAN or ALASKA NATIVE',
-    'O': 'OTHER',
-    'W': 'WHITE',
-    'U': 'UNDESIGNATED',
-    'A': 'ASIAN',
-    'M': 'TWO or MORE RACES',
-}
-
-GENDER_CODES = {
-    'M': 'M',
-    'F': 'F',
-}
-
-STATE_ABBREVS = [
-    ('AL', 'Alabama'),
-    ('AK', 'Alaska'),
-    ('AS', 'American Samoa'),
-    ('AZ', 'Arizona'),
-    ('AR', 'Arkansas'),
-    ('CA', 'California'),
-    ('CO', 'Colorado'),
-    ('CT', 'Connecticut'),
-    ('DE', 'Delaware'),
-    ('DC', 'District of Columbia'),
-    ('FM', 'Federated States of Micronesia'),
-    ('FL', 'Florida'),
-    ('GA', 'Georgia'),
-    ('GU', 'Guam'),
-    ('HI', 'Hawaii'),
-    ('ID', 'Idaho'),
-    ('IL', 'Illinois'),
-    ('IN', 'Indiana'),
-    ('IA', 'Iowa'),
-    ('KS', 'Kansas'),
-    ('KY', 'Kentucky'),
-    ('LA', 'Louisiana'),
-    ('ME', 'Maine'),
-    ('MH', 'Marshall Islands'),
-    ('MD', 'Maryland'),
-    ('MA', 'Massachusetts'),
-    ('MI', 'Michigan'),
-    ('MN', 'Minnesota'),
-    ('MS', 'Mississippi'),
-    ('MO', 'Missouri'),
-    ('MT', 'Montana'),
-    ('NE', 'Nebraska'),
-    ('NV', 'Nevada'),
-    ('NH', 'New Hampshire'),
-    ('NJ', 'New Jersey'),
-    ('NM', 'New Mexico'),
-    ('NY', 'New York'),
-    ('NC', 'North Carolina'),
-    ('ND', 'North Dakota'),
-    ('MP', 'Northern Mariana Islands'),
-    ('OH', 'Ohio'),
-    ('OK', 'Oklahoma'),
-    ('OR', 'Oregon'),
-    ('PW', 'Palau'),
-    ('PA', 'Pennsylvania'),
-    ('PR', 'Puerto Rico'),
-    ('RI', 'Rhode Island'),
-    ('SC', 'South Carolina'),
-    ('SD', 'South Dakota'),
-    ('TN', 'Tennessee'),
-    ('TX', 'Texas'),
-    ('UT', 'Utah'),
-    ('VT', 'Vermont'),
-    ('VI', 'Virgin Islands'),
-    ('VA', 'Virginia'),
-    ('WA', 'Washington'),
-    ('WV', 'West Virginia'),
-    ('WI', 'Wisconsin'),
-    ('WY', 'Wyoming'),
-]

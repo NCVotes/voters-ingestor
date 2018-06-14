@@ -1,4 +1,3 @@
-"""ncvoter URL Configuration"""
 from django.urls import path
 
 from .views import drilldown, sample

@@ -9,3 +9,9 @@ fabric3==1.14.post1
 ansible==2.4.3.0
 awscli==1.14.64
 awslogs==0.10.0
+
+django-debug-toolbar==1.9.1
+  sqlparse==0.2.4
+factory-boy==2.11.1
+  Faker==0.8.15
+  text-unidecode==1.2

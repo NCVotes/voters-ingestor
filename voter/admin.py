@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from voter.models import FileTracker, ChangeTracker, NCVoter, NCVHis, BadLineRange, NCVoterQueryView, NCVoterQueryCache
+from voter.models import FileTracker, ChangeTracker, NCVoter, NCVHis, BadLineRange, \
+    NCVoterQueryView, NCVoterQueryCache
 
 
 @admin.register(FileTracker)
@@ -34,7 +35,18 @@ class BadLineRangeAdmin(admin.ModelAdmin):
 
 @admin.register(NCVoterQueryView)
 class NCVoterQueryViewAdmin(admin.ModelAdmin):
-    pass
+    actions = None
+    list_display_links = None
+    list_display = ('id', 'party_cd', 'county_id', 'race_code', 'ethnic_code', 'status_cd', 'birth_state',
+                    'gender_code', 'age', 'res_city_desc', 'zip_code', )
+    list_filter = ('party_cd', 'race_code', 'ethnic_code', 'status_cd', 'gender_code', )
+    search_fields = ('id', )
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(NCVoterQueryCache)

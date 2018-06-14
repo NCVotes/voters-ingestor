@@ -1,6 +1,9 @@
+from unittest.mock import patch
+
 from django.test import TestCase
 
-from voter.models import FileTracker, BadLineTracker, BadLineRange
+from voter.models import FileTracker, BadLineTracker, BadLineRange, NCVoter, NCVoterQueryView
+from voter.tests import factories
 
 
 class FileTrackerTest(TestCase):
@@ -102,3 +105,19 @@ class BadLineTrackerTest(TestCase):
         self.assertEqual('the line was bad', r.message)
         self.assertEqual('filename', r.filename)
         self.assertFalse(r.is_warning)
+
+
+class NCVoterTest(TestCase):
+
+    def test_get_count_uses_materialized_view(self):
+        factories.NCVoter()
+        # materialized query view is not refreshed, so will get zero records
+        self.assertEqual(NCVoter.get_count({}), 0)
+        NCVoterQueryView.refresh()
+        self.assertEqual(NCVoter.get_count({}), 1)
+
+    def test_get_count_is_cached_in_db(self):
+        factories.NCVoterQueryCache(qs_filters={}, count=23)
+        with patch('voter.models.NCVoterQueryView.objects.filter') as mock_queryview:
+            self.assertEqual(NCVoter.get_count({}), 23)
+        mock_queryview.assert_not_called()

@@ -266,7 +266,7 @@ the ``src`` like so::
 Additional Read-only PostgreSQL Users
 -------------------------------------
 
-First create a read-only group (if not already created) as the ``ncvotes`` user::
+First create a read-only group (if not already created) as the ``ncvoter`` user::
 
   -- Create a group
   CREATE ROLE readaccess;

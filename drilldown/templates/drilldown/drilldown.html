@@ -52,7 +52,7 @@
             <select class="form-control" id="select-next-filter" onchange="javascript:onAddFilter(this)">
                 <option>Select filter</option>
                 {% for filter in unapplied_filters %}
-                    <option value="{{ filter.field_name }}">{{ filter.display_name.title }}</option>
+                    <option value="{{ filter.field_name }}">{{ filter.display_name|title }}</option>
                 {% endfor %}
             </select>
         </div>

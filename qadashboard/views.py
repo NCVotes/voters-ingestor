@@ -4,7 +4,7 @@ from django import forms
 from django.shortcuts import render
 
 from ncvoter.known_cities import KNOWN_CITIES
-from voter.constants import STATUS_FILTER_CHOICES, RACE_FILTER_CHOICES
+from voter.constants import STATUS_FILTER_CHOICES, RACE_FILTER_CHOICES, COUNTIES
 from voter.models import NCVoter, ChangeTracker, NCVoterQueryView
 
 
@@ -36,6 +36,7 @@ def qadashboard(request):
                         "party_cd": 'DEM' if party.lower().startswith('d') else 'REP',
                         "gender_code": gender.upper()[0],
                         "county_desc": county.upper(),
+                        "county_id": COUNTIES.index(county.upper()) + 1,
 
                         "status_cd": random.choice([status[0] for status in STATUS_FILTER_CHOICES]),
                         "race_code": random.choice([race_code[0] for race_code in RACE_FILTER_CHOICES]),

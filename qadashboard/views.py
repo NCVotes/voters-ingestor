@@ -33,25 +33,25 @@ def qadashboard(request):
                         "first_name": "FIRST%s" % (ncid,),
                         "midl_name": lasts[i % len(lasts)],
                         "last_name": lasts[i % len(lasts)],
+
                         "party_cd": 'DEM' if party.lower().startswith('d') else 'REP',
                         "gender_code": gender.upper()[0],
+
                         "county_desc": county.upper(),
                         "county_id": COUNTIES.index(county.upper()) + 1,
 
                         "status_cd": random.choice([status[0] for status in STATUS_FILTER_CHOICES]),
+
                         "race_code": random.choice([race_code[0] for race_code in RACE_FILTER_CHOICES]),
 
                         "age": random.randint(18, 90),
 
-                        "mail_addr1": "%s DIRT RD" % random.randint(100, 900),
-                        "mail_city": city,
-                        "mail_zipcode": str(random.randint(20000, 29999)),
+                        "res_street_address": "%s DIRT RD" % random.randint(100, 900),
                         "res_city_desc": city,
+                        "zip_code": str(random.randint(20000, 29999)),
 
                         "area_cd": str(random.randint(100, 999)),
                         "phone_num": str(random.randint(1000000, 9999999)),
-
-                        "race_desc": random.choice("WHITE BLACK LATINO".split()),
                     })
                     ncid += 1
             NCVoterQueryView.refresh()

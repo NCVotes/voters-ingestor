@@ -38,9 +38,9 @@
                             {% firstof v.data.midl_name v.data.middle_name %}
                             {{ v.data.last_name }}
                         </td>
-                        <td>{{ v.data.race_desc.title }}</td>
-                        <td>{% firstof v.data.gender_code v.data.sex_code %}</td>
-                        <td>{{ v.data.party_cd }}</td>
+                        <td>{{ v.get_race_label }}</td>
+                        <td>{{ v.get_gender_label }}</td>
+                        <td>{{ v.get_party_label }}</td>
                         <td>
                             {% if v.data.res_street_address %}
                                 {{ v.data.res_street_address }}

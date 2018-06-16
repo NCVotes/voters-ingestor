@@ -10,6 +10,7 @@ from django.contrib.postgres.indexes import GinIndex
 from django.core.serializers.json import DjangoJSONEncoder
 
 from ncvoter.known_cities import KNOWN_CITIES
+from voter.constants import GENDER_FILTER_CHOICES, PARTY_FILTER_CHOICES, RACE_FILTER_CHOICES
 
 logger = logging.getLogger(__name__)
 
@@ -288,6 +289,24 @@ class NCVoter(models.Model):
 
     def build_current(self):
         return self.build_version(0)
+
+    def get_race_label(self):
+        race_code = self.data.get('race_code', 'U')
+        for code, label, description in RACE_FILTER_CHOICES:
+            if code == race_code:
+                return label
+
+    def get_gender_label(self):
+        gender_code = self.data.get('gender_code') or self.data.get('sex_code', 'U')
+        for code, label, description in GENDER_FILTER_CHOICES:
+            if code == gender_code:
+                return label
+
+    def get_party_label(self):
+        party_code = self.data.get('party_cd', 'UNA')
+        for code, label, description in PARTY_FILTER_CHOICES:
+            if code == party_code:
+                return label
 
     @classmethod
     def get_count(cls, filters):

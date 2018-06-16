@@ -33,14 +33,30 @@
             <tbody>
                 {% for v in sample_results %}
                     <tr>
-                        <td>{{ v.data.first_name }} {{ v.data.midl_name }} {{ v.data.last_name }}</td>
+                        <td>
+                            {{ v.data.first_name }}
+                            {% firstof v.data.midl_name v.data.middle_name %}
+                            {{ v.data.last_name }}
+                        </td>
                         <td>{{ v.data.race_desc.title }}</td>
-                        <td>{{ v.data.gender_code }}</td>
+                        <td>{% firstof v.data.gender_code v.data.sex_code %}</td>
                         <td>{{ v.data.party_cd }}</td>
-                        <td>{{ v.data.mail_addr1 }}</td>
-                        <td>{{ v.data.mail_city }}</td>
-                        <td>{{ v.data.mail_zipcode }}</td>
-                        <td>{% if v.data.full_phone_number %}{{ v.data.full_phone_number }}{% else %}{{ v.data.area_cd }} {{ v.data.phone_num }}{% endif %}</td>
+                        <td>
+                            {% if v.data.res_street_address %}
+                                {{ v.data.res_street_address }}
+                            {% else %}
+                                {{ v.data.house_num }} {{ v.data.street_name }} {{ v.data.street_type_cd }}
+                            {% endif %}
+                        </td>
+                        <td>{{ v.data.res_city_desc }}</td>
+                        <td>{{ v.data.zip_code }}</td>
+                        <td>
+                            {% if v.data.full_phone_number %}
+                                {{ v.data.full_phone_number }}
+                            {% else %}
+                                {{ v.data.area_cd }} {{ v.data.phone_num }}
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

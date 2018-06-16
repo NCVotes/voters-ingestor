@@ -51,4 +51,5 @@ class NCVoterQueryViewAdmin(admin.ModelAdmin):
 
 @admin.register(NCVoterQueryCache)
 class NCVoterQueryCacheAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('qs_filters', 'count')
+    search_fields = ('qs_filters', )

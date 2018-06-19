@@ -3,7 +3,7 @@ from django.shortcuts import render
 from drilldown.filters import ChoiceFilter, MultiChoiceFilter, AgeFilter, filters_from_request
 from voter.models import NCVoter
 from voter.constants import STATUS_FILTER_CHOICES, COUNTY_FILTER_CHOICES, GENDER_FILTER_CHOICES, \
-    PARTY_FILTER_CHOICES, CITY_FILTER_CHOICES, RACE_FILTER_CHOICES
+    PARTY_FILTER_CHOICES, CITY_FILTER_CHOICES, RACE_FILTER_CHOICES, STATE_FILTER_CHOICES
 
 
 declared_filters = [
@@ -31,6 +31,11 @@ declared_filters = [
         display_name='City',
         field_name='res_city_desc',
         choices=CITY_FILTER_CHOICES,
+    ),
+    ChoiceFilter(
+        display_name='Birth state',
+        field_name='birth_state',
+        choices=STATE_FILTER_CHOICES,
     ),
     MultiChoiceFilter(
         display_name='race',

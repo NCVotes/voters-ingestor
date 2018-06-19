@@ -209,3 +209,8 @@ STATE_ABBREVS = [
     ('WI', 'Wisconsin'),
     ('WY', 'Wyoming'),
 ]
+
+STATE_FILTER_CHOICES = [
+    (str(abb), name, "were born in <em>%s</em>" % name)
+    for abb, name in STATE_ABBREVS
+]

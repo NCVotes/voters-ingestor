@@ -211,6 +211,6 @@ STATE_ABBREVS = [
 ]
 
 STATE_FILTER_CHOICES = [
-    (str(abb), name, "were born in <em>%s</em>" % name)
+    (abb, name, "were born in <em>%s</em>" % name)
     for abb, name in STATE_ABBREVS
 ]

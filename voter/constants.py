@@ -1225,9 +1225,9 @@ CITY_FILTER_CHOICES = [
 ZIP_CODE_FILTER_CHOICES = [
     (
         str(z),
-        '%s (%s in %s County)' % (str(z), state, county),
-        "live within <em>%s (%s in %s County)</em>" % (str(z), state, county)
-    ) for z, state, county in ZIP_CODES
+        '%s (%s in %s County)' % (str(z), city, county),
+        "live within <em>%s (%s in %s County)</em>" % (str(z), city, county)
+    ) for z, city, county in ZIP_CODES
 ]
 
 RACE_FILTER_CHOICES = [

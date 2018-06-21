@@ -113,6 +113,7 @@ class ChoiceFilter(Filter):
             if value == selected_value:
                 return description
 
+
 class FreeTextFilter(Filter):
     """
     a simple input without any dropdown options.  prefix is used in the despcription of

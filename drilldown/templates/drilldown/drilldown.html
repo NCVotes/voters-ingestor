@@ -27,7 +27,7 @@
                     {% for af in applied_filters %}
                         {% if filter.field_name != af.field_name %}
                             {{ af.render_values }}
-                        {% elif filter.field_name == af.field_name %}
+                        {% else %}
                             {{ filter.render_for_editing }}
                         {% endif %}
                     {% endfor %}

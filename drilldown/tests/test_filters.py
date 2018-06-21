@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from django.http import QueryDict
 from django.test import TestCase
 
-from drilldown.filters import ChoiceFilter, MultiChoiceFilter, AgeFilter, filters_from_request
+from drilldown.filters import ChoiceFilter, MultiChoiceFilter, AgeFilter, FreeTextFilter, filters_from_request
 
 
 class FiltersTest(TestCase):
@@ -39,6 +39,11 @@ class FiltersTest(TestCase):
 
             ),
             AgeFilter(),
+            FreeTextFilter(
+                display_name='Random anything',
+                field_name='rando',
+                prefix='go to the',
+            ),
         ]
 
 
@@ -134,6 +139,16 @@ class AgeFilterTest(FiltersTest):
         )
 
 
+class FreeTextFilterTest(FiltersTest):
+    def setUp(self):
+        self.free = copy(self.test_filters[4])
+
+    def test_it(self):
+        self.free.set_values(['dance party'])
+        self.assertEqual(self.free.description(), 'go to the dance party')
+        self.assertEqual(self.free.get_filter_params(), {'rando': 'dance party'})
+
+
 @patch('drilldown.filters.NCVoter')
 class FiltersFromRequestTest(FiltersTest):
     def test_no_querystring(self, mock_ncvoter):
@@ -171,6 +186,13 @@ class FiltersFromRequestTest(FiltersTest):
         self.assertIn('indent', applied)
         self.assertIn('num', applied)
         self.assertEqual({'indent': 'S', 'num': '1'}, params)
+
+    def test_free_text(self, mock_ncvoter):
+        mock_request = MagicMock(GET=QueryDict('rando=quincieñera'))
+        applied, params = filters_from_request(self.test_filters, mock_request)
+        self.assertEqual(len(applied), 1)
+        self.assertIn('rando', applied)
+        self.assertEqual({'rando': 'quincieñera'}, params)
 
     @patch('drilldown.filters.logger.warning')
     def test_with_nonexistent_choice(self, mock_warning, mock_ncvoter):

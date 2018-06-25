@@ -114,6 +114,28 @@ class ChoiceFilter(Filter):
                 return description
 
 
+class FreeTextFilter(Filter):
+    """
+    a simple input without any dropdown options.  prefix is used in the despcription of
+    the filter on the front-end. e.g 'live within' for zipcodes.
+    """
+    editing_template = "drilldown/edit_free_text_filter.html"
+
+    def __init__(self, display_name: str, field_name: str, prefix: str):
+        super().__init__(display_name, field_name)
+        self.prefix = prefix
+
+    def get_filter_params(self) -> Dict:
+        return {self.field_name: self.values[0]}
+
+    def description(self) -> Optional[str]:
+        """
+        Return the appropriate description for the currently selected choice.
+        Or None.
+        """
+        return '%s %s' % (self.prefix, self.values[0])
+
+
 class AgeFilter(Filter):
     """
     Min and max ages.  values = [min, max] (integers)

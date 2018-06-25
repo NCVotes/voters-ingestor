@@ -70,6 +70,9 @@
              color: darkred;
              font-weight: bold;
          }
+         .js-error {
+            padding:5px 0 0 0;
+         }
         </style>
 
         <body>
@@ -115,6 +118,19 @@
                      $list.querySelectorAll('.add-filter form').forEach((el) => hide(el))
                  }
              }
+
+             function validateZipCode() {
+                let input = $('input[name=zip_code].form-control')
+                input.siblings('.btn').on('click', function(e){
+                    let val = input[0].value
+                    if(isNaN(val) || val.length != 5 || val.charAt(0) != '2'){
+                        e.preventDefault()
+                        input.siblings('.js-error')
+                        .html('NC zip codes have to be 5 digit numeric values starting in \'2\'');
+                    }
+                 })
+             }
+             validateZipCode()
             </script>
 
             <script type="text/javascript">

@@ -28,3 +28,5 @@ broker_password: "{{ SECRET_BROKER_PASSWORD }}"
 
 unmanaged_users:
   - ubuntu
+
+http_auth: "{{ SECRET_HTTP_AUTH }}"

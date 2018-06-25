@@ -27,10 +27,12 @@
                     {% for af in applied_filters %}
                         {% if filter.field_name != af.field_name %}
                             {{ af.render_values }}
+                        {% else %}
+                            {{ filter.render_for_editing }}
                         {% endif %}
                     {% endfor %}
                     {# now let them edit this filter #}
-                    {{ filter.render_for_editing }}
+
                     <button class="btn btn-primary" type="submit">Apply</button>
                     <div class="js-error error"></div>
                 </form>

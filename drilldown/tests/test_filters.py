@@ -158,21 +158,21 @@ class FiltersFromRequestTest(FiltersTest):
         self.assertEqual({}, params)
 
     def test_with_choice(self, mock_ncvoter):
-        mock_request = MagicMock(GET=QueryDict('num=2'))
+        mock_request = MagicMock(META={'QUERY_STRING': 'num=2'}, GET=QueryDict('num=2'))
         applied, params = filters_from_request(self.test_filters, mock_request)
         self.assertEqual(len(applied), 1)
         self.assertIn('num', applied)
         self.assertEqual({'num': '2'}, params)
 
     def test_with_age(self, mock_ncvoter):
-        mock_request = MagicMock(GET=QueryDict('age=2&age=10'))
+        mock_request = MagicMock(META={'QUERY_STRING': 'age=2&age=10'}, GET=QueryDict('age=2&age=10'))
         applied, params = filters_from_request(self.test_filters, mock_request)
         self.assertEqual(len(applied), 1)
         self.assertIn('age', applied)
         self.assertEqual({'age__gte': 2, 'age__lte': 10}, params)
 
     def test_choice_and_age(self, mock_ncvoter):
-        mock_request = MagicMock(GET=QueryDict('age=2&age=10&num=1'))
+        mock_request = MagicMock(META={'QUERY_STRING': 'age=2&age=10&num=1'}, GET=QueryDict('age=2&age=10&num=1'))
         applied, params = filters_from_request(self.test_filters, mock_request)
         self.assertEqual(len(applied), 2)
         self.assertIn('age', applied)
@@ -180,7 +180,7 @@ class FiltersFromRequestTest(FiltersTest):
         self.assertEqual({'age__gte': 2, 'age__lte': 10, 'num': '1'}, params)
 
     def test_two_choices(self, mock_ncvoter):
-        mock_request = MagicMock(GET=QueryDict('indent=S&num=1'))
+        mock_request = MagicMock(META={'QUERY_STRING': 'indent=S&num=1'}, GET=QueryDict('indent=S&num=1'))
         applied, params = filters_from_request(self.test_filters, mock_request)
         self.assertEqual(len(applied), 2)
         self.assertIn('indent', applied)
@@ -188,7 +188,7 @@ class FiltersFromRequestTest(FiltersTest):
         self.assertEqual({'indent': 'S', 'num': '1'}, params)
 
     def test_free_text(self, mock_ncvoter):
-        mock_request = MagicMock(GET=QueryDict('rando=quincieñera'))
+        mock_request = MagicMock(META={'QUERY_STRING': 'rando=quincieñera'}, GET=QueryDict('rando=quincieñera'))
         applied, params = filters_from_request(self.test_filters, mock_request)
         self.assertEqual(len(applied), 1)
         self.assertIn('rando', applied)
@@ -196,7 +196,7 @@ class FiltersFromRequestTest(FiltersTest):
 
     @patch('drilldown.filters.logger.warning')
     def test_with_nonexistent_choice(self, mock_warning, mock_ncvoter):
-        mock_request = MagicMock(GET=QueryDict('foo=2'))
+        mock_request = MagicMock(META={'QUERY_STRING': 'foo=2'}, GET=QueryDict('foo=2'))
         applied, params = filters_from_request(self.test_filters, mock_request)
         # no filters applied, and a warning is issued
         self.assertEqual(len(applied), 0)

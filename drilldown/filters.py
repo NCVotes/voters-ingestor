@@ -238,6 +238,7 @@ def filters_from_request(declared_filters: List[Filter], request: HttpRequest) -
     """
     applied_filters = OrderedDict()
     filter_params = {}
+    # We can't use request.GET (an unordered dictionary) because we need the order provided in the query string
     request_fields = ordered_unique_fields(request.META['QUERY_STRING'])
 
     for field_name in request_fields:

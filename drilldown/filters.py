@@ -238,7 +238,16 @@ def filters_from_request(declared_filters: List[Filter], request: HttpRequest) -
     applied_filters = OrderedDict()
     filter_params = {}
 
-    for field_name in request.GET:
+    # constructing 'request_fields' in lieu of request.GET to assure the query string be read in order
+    all_request_fields = [x.split('=')[0] for x in request.META['QUERY_STRING'].split('&')]
+    unique_fields = set(all_request_fields)
+    request_fields = []
+    for field in all_request_fields:
+        if field in unique_fields:
+            request_fields.append(field)
+            unique_fields.remove(field)
+
+    for field_name in request_fields:
         filter_inst = copy(get_filter_by_name(declared_filters, field_name))
         if filter_inst:
             filter_inst.set_values(request.GET.getlist(field_name))

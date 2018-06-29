@@ -7,6 +7,7 @@ from django.http import HttpRequest
 from django.template.loader import get_template
 
 from voter.models import NCVoter
+from .utils import ordered_unique_keys
 
 
 logger = logging.getLogger(__name__)
@@ -237,8 +238,10 @@ def filters_from_request(declared_filters: List[Filter], request: HttpRequest) -
     """
     applied_filters = OrderedDict()
     filter_params = {}
+    # We can't use request.GET (an unordered dictionary) because we need the order provided in the query string
+    request_fields = ordered_unique_keys(request.META['QUERY_STRING'])
 
-    for field_name in request.GET:
+    for field_name in request_fields:
         filter_inst = copy(get_filter_by_name(declared_filters, field_name))
         if filter_inst:
             filter_inst.set_values(request.GET.getlist(field_name))

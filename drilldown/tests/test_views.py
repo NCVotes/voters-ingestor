@@ -18,7 +18,7 @@ class DrilldownViewTests(TestCase):
         assert len(applied) == 0
 
     def test_one_filter(self):
-        mock_request = MagicMock(GET=QueryDict('county_id=68'))
+        mock_request = MagicMock(META={'QUERY_STRING': 'county_id=68'}, GET=QueryDict('county_id=68'))
         applied, filters = filters_from_request(declared_filters, mock_request)
         self.assertEqual(filters, {'county_id': '68'})
         self.assertEqual(1, len(applied))
@@ -27,7 +27,7 @@ class DrilldownViewTests(TestCase):
         self.assertIn('ORANGE'.title(), last_filter.description())
 
     def test_two_filters(self):
-        mock_request = MagicMock(GET=QueryDict('county_id=68&gender_code=F'))
+        mock_request = MagicMock(META={'QUERY_STRING': 'county_id=68&gender_code=F'}, GET=QueryDict('county_id=68&gender_code=F'))
         applied, filters = filters_from_request(declared_filters, mock_request)
         self.assertEqual(filters, {'county_id': '68', 'gender_code': 'F'})
         self.assertEqual(2, len(applied))

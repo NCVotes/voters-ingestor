@@ -43,7 +43,7 @@ def qadashboard(request):
                         "status_cd": random.choice([status[0] for status in STATUS_FILTER_CHOICES]),
 
                         "race_code": random.choice([race_code[0] for race_code in RACE_FILTER_CHOICES]),
-                        "ethnic_code": 'UN' if random.random() < 0.03 else 'HL',  # ~3% Hispanic voters
+                        "ethnic_code": 'UN' if random.random() > 0.03 else 'HL',  # ~3% Hispanic voters
 
                         "age": random.randint(18, 90),
 

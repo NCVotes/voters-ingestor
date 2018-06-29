@@ -37,9 +37,9 @@ class BadLineRangeAdmin(admin.ModelAdmin):
 class NCVoterQueryViewAdmin(admin.ModelAdmin):
     actions = None
     list_display_links = None
-    list_display = ('id', 'party_cd', 'county_id', 'race_code', 'ethnic_code', 'status_cd', 'birth_state',
+    list_display = ('id', 'party_cd', 'county_id', 'race_ethnicity_code', 'status_cd', 'birth_state',
                     'gender_code', 'age', 'res_city_desc', 'zip_code', )
-    list_filter = ('party_cd', 'race_code', 'ethnic_code', 'status_cd', 'gender_code', )
+    list_filter = ('party_cd', 'race_ethnicity_code', 'status_cd', 'gender_code', )
     search_fields = ('id', )
 
     def has_add_permission(self, request, obj=None):

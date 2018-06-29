@@ -43,8 +43,8 @@ declared_filters = [
         prefix='live within',
     ),
     MultiChoiceFilter(
-        display_name='race',
-        field_name='race_code',
+        display_name='race / ethnicity',
+        field_name='race_ethnicity_code',
         choices=RACE_FILTER_CHOICES,
     ),
     AgeFilter(),

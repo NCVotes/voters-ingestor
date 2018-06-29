@@ -190,7 +190,7 @@ class MultiChoiceFilter(ChoiceFilter):
     editing_template = "drilldown/edit_multichoice_filter.html"
 
     def get_filter_params(self) -> Dict:
-        # convert a filter like {'race_code': ['B', 'W']} to {'race_code__in': ['B', 'W']}
+        # convert a filter like {'field': ['val1', 'val2']} to {'field__in': ['val1', 'val2']}
         return {self.field_name + "__in": self.values}
 
     def get_label(self, chosen_code):

@@ -139,13 +139,15 @@ CITY_FILTER_CHOICES = [
 RACE_FILTER_CHOICES = [
     ('A', 'Asian', 'Asian'),
     ('B', 'Black', 'Black or African American'),
+    # 'H' is not a race_code in the NCVoter data, but we populate our materialized
+    # view with that value if the ethnic_code of a voter is HL (Hispanic/Latino)
+    ('H', 'Hispanic', 'Hispanic/Latino'),
     ('M', 'Multi-racial', 'Two or More Races'),
     ('I', 'Native', 'Indian American or Alaska Native'),
     ('O', 'Other', 'Other'),
     ('U', 'Undesignated', 'Undesignated'),
     ('W', 'White', 'White'),
 ]
-
 
 STATE_ABBREVS = [
     ('AL', 'Alabama'),

@@ -292,6 +292,11 @@ class NCVoter(models.Model):
 
     def get_race_label(self):
         race_code = self.data.get('race_code', 'U')
+        ethnic_code = self.data.get('ethnic_code')
+        if ethnic_code == 'HL':
+            # If voter's ethnic_code is 'HL' (Hispanic/Latino), then display their 'Race /
+            # Ethnicity' value as 'Hispanic/Latino', regardless of what their race_code value is
+            race_code = 'H'
         for code, label, description in RACE_FILTER_CHOICES:
             if code == race_code:
                 return label
@@ -347,8 +352,7 @@ class NCVoterQueryView(models.Model):
     """
     party_cd = models.CharField('party code', max_length=3)
     county_id = models.IntegerField('county code')
-    race_code = models.CharField('race code', max_length=1)
-    ethnic_code = models.CharField('ethnicity code', max_length=2)
+    race_ethnicity_code = models.CharField('race code', max_length=1)
     status_cd = models.CharField('voter status code', max_length=1)
     birth_state = models.CharField('birth state', max_length=2, blank=True)
     gender_code = models.CharField('gender code', max_length=1)

@@ -7,7 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('voter.urls')),
 
-    path('voter-interview-tool/', include('drilldown.urls')),
+    path('', include('drilldown.urls')),
 ]
 
 if settings.ENVIRONMENT != "production":

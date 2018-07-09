@@ -1,6 +1,8 @@
 ---
 env_name: production
-domain: ncvotes.caktus-built.com
+domain: voter.nc-votes.org
+additional_domains:
+  - ncvotes.caktus-built.com
 repo_branch: master
 db_host: np34zh3hnkd2b.ci63lkx0to37.us-east-1.rds.amazonaws.com
 env_settings: ncvoter.prod_settings

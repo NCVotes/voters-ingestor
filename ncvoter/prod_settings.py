@@ -6,7 +6,12 @@ from ncvoter.settings import *  # noqa: F403, F401
 DEBUG = False
 SECRET_KEY = os.environ['SECRET_KEY']
 DOMAIN = os.environ['DOMAIN']
+ADDITIONAL_DOMAINS = os.environ.get('ADDITIONAL_DOMAINS')
 ALLOWED_HOSTS = [DOMAIN]
+# if ADDITIONAL_DOMAINS is set, then it will be a comma-delimited list of domains
+if ADDITIONAL_DOMAINS:
+    for domain in ADDITIONAL_DOMAINS.split(','):
+        ALLOWED_HOSTS.append(domain)
 ENVIRONMENT = "production"
 
 # remove debug toolbar
